@@ -1,0 +1,471 @@
+<title>Decodable Check</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=Andika:wght@400;700&display=swap');
+
+  :root{
+    --paper:#F5F2EA;
+    --card:#FBFAF5;
+    --ink:#22273A;
+    --ink-soft:#565C72;
+    --line:#E1DCCD;
+    --line-strong:#D2CBB6;
+    --accent:#E4572E;
+    --accent-ink:#B23A17;
+
+    /* semantic highlighter set */
+    --ok-bg:#CBE7CE;      --ok-ink:#2E7D57;   --ok-edge:#A9D6B0;
+    --new-bg:#F6E1B8;     --new-ink:#9A5B00;  --new-edge:#EACB8A;
+    --tricky-bg:#E6DAF3;  --tricky-ink:#6A45A6;--tricky-edge:#D3C0EC;
+
+    --shadow:0 1px 2px rgba(34,39,58,.06), 0 8px 24px rgba(34,39,58,.05);
+    --radius:14px;
+  }
+  :root:not([data-theme="light"]){
+    @media (prefers-color-scheme: dark){
+      --paper:#181B24;
+      --card:#20242F;
+      --ink:#ECEAE1;
+      --ink-soft:#A7ABBC;
+      --line:#2E333F;
+      --line-strong:#3A404E;
+      --accent:#F2724C;
+      --accent-ink:#F79570;
+      --ok-bg:#20463A;   --ok-ink:#8FD9AC;  --ok-edge:#2F6B54;
+      --new-bg:#4A3717;  --new-ink:#F0C784; --new-edge:#6B4F22;
+      --tricky-bg:#3A2E52;--tricky-ink:#C9AEEE;--tricky-edge:#553F76;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.28);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#181B24;
+    --card:#20242F;
+    --ink:#ECEAE1;
+    --ink-soft:#A7ABBC;
+    --line:#2E333F;
+    --line-strong:#3A404E;
+    --accent:#F2724C;
+    --accent-ink:#F79570;
+    --ok-bg:#20463A;   --ok-ink:#8FD9AC;  --ok-edge:#2F6B54;
+    --new-bg:#4A3717;  --new-ink:#F0C784; --new-edge:#6B4F22;
+    --tricky-bg:#3A2E52;--tricky-ink:#C9AEEE;--tricky-edge:#553F76;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.28);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Public Sans",system-ui,-apple-system,sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 22px 64px}
+
+  /* ---- masthead ---- */
+  header.mast{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:22px}
+  .brand{display:flex;flex-direction:column;gap:4px}
+  .kicker{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-ink);font-weight:700}
+  h1{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:clamp(30px,4.6vw,46px);line-height:1.02;margin:2px 0 0;text-wrap:balance;letter-spacing:-.01em}
+  .sub{color:var(--ink-soft);max-width:52ch;font-size:15px;margin-top:8px}
+  .theme-btn{border:1px solid var(--line-strong);background:var(--card);color:var(--ink-soft);
+    border-radius:999px;padding:8px 14px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px}
+  .theme-btn:hover{color:var(--ink);border-color:var(--ink-soft)}
+
+  /* ---- layout ---- */
+  .grid{display:grid;grid-template-columns:300px 1fr;gap:22px;align-items:start}
+  @media(max-width:860px){.grid{grid-template-columns:1fr}}
+
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .panel.controls{padding:18px 18px 20px;position:sticky;top:18px}
+  @media(max-width:860px){.panel.controls{position:static}}
+
+  .panel-title{font-family:"Fraunces",serif;font-weight:600;font-size:19px;margin:0 0 3px}
+  .panel-note{font-size:12.5px;color:var(--ink-soft);margin:0 0 14px}
+
+  /* skill checklist */
+  .phase{border-top:1px dashed var(--line-strong);padding:11px 0 4px}
+  .phase:first-of-type{border-top:none;padding-top:2px}
+  .phase-head{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+  .phase-num{font-family:"Fraunces",serif;font-weight:600;font-size:12px;color:var(--accent-ink);
+    border:1px solid var(--line-strong);border-radius:6px;min-width:22px;height:22px;display:grid;place-items:center;background:var(--paper)}
+  .phase-name{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft)}
+  .skill{display:flex;align-items:baseline;gap:9px;padding:5px 6px;border-radius:8px;cursor:pointer;user-select:none}
+  .skill:hover{background:var(--paper)}
+  .skill input{margin:0;position:relative;top:1px;accent-color:var(--accent);width:15px;height:15px;cursor:pointer}
+  .skill .n{font-size:14px;font-weight:600}
+  .skill .ex{font-family:"Andika",sans-serif;font-size:12.5px;color:var(--ink-soft)}
+  .ctl-row{display:flex;gap:8px;margin-top:16px}
+  .mini{flex:1;border:1px solid var(--line-strong);background:var(--paper);color:var(--ink-soft);
+    border-radius:9px;padding:8px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+  .mini:hover{color:var(--ink);border-color:var(--ink-soft)}
+
+  /* ---- workbench ---- */
+  .bench{display:flex;flex-direction:column;gap:22px}
+
+  .scorecard{display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center;padding:20px 22px}
+  @media(max-width:520px){.scorecard{grid-template-columns:1fr;justify-items:center;text-align:center}}
+  .gauge{position:relative;width:132px;height:132px;flex:none}
+  .gauge .pct{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .gauge .pct b{font-family:"Fraunces",serif;font-weight:600;font-size:32px;line-height:1;font-variant-numeric:tabular-nums}
+  .gauge .pct span{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);margin-top:3px}
+
+  .readout{display:flex;flex-direction:column;gap:12px;min-width:0}
+  .verdict{font-family:"Fraunces",serif;font-size:20px;font-weight:600;line-height:1.15;text-wrap:balance}
+  .tallies{display:flex;gap:9px;flex-wrap:wrap}
+  .tally{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:7px 11px 7px 9px;background:var(--paper)}
+  .tally .swatch{width:13px;height:13px;border-radius:4px;border:1px solid rgba(0,0,0,.08)}
+  .tally .num{font-weight:700;font-variant-numeric:tabular-nums;font-size:15px}
+  .tally .lbl{font-size:12px;color:var(--ink-soft)}
+
+  /* passage */
+  .passage-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+  .passage-head h2{font-family:"Fraunces",serif;font-weight:600;font-size:16px;margin:0}
+  .tabs{display:flex;background:var(--paper);border:1px solid var(--line-strong);border-radius:9px;padding:3px}
+  .tab{border:none;background:none;font:inherit;font-size:12.5px;font-weight:600;color:var(--ink-soft);padding:5px 12px;border-radius:6px;cursor:pointer}
+  .tab[aria-selected="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+
+  .reader,.editor{font-family:"Andika","Public Sans",sans-serif;font-size:20px;line-height:2.05;padding:22px 24px 26px;min-height:230px}
+  .reader{white-space:pre-wrap}
+  .editor{width:100%;border:none;background:none;color:var(--ink);resize:vertical;outline:none;display:block}
+  .editor:focus{background:var(--paper)}
+
+  .w{border-radius:5px;padding:1px 2px;margin:0 -1px;cursor:default;transition:filter .12s;position:relative}
+  .w.ok{background:var(--ok-bg);box-shadow:inset 0 -2px 0 var(--ok-edge)}
+  .w.new{background:var(--new-bg);box-shadow:inset 0 -2px 0 var(--new-edge)}
+  .w.tricky{background:var(--tricky-bg);box-shadow:inset 0 -2px 0 var(--tricky-edge);border-bottom:2px solid transparent}
+  .w:hover{filter:brightness(.96)}
+
+  .legend{display:flex;gap:16px;flex-wrap:wrap;padding:12px 24px 20px;font-size:12.5px;color:var(--ink-soft)}
+  .legend .item{display:flex;align-items:center;gap:7px}
+  .legend .chip{width:15px;height:15px;border-radius:4px}
+
+  /* tooltip */
+  .tip{position:fixed;z-index:50;background:var(--ink);color:var(--paper);font-size:12px;line-height:1.35;
+    padding:7px 10px;border-radius:8px;max-width:240px;pointer-events:none;opacity:0;transform:translateY(3px);
+    transition:opacity .1s,transform .1s;box-shadow:0 6px 20px rgba(0,0,0,.28)}
+  .tip.show{opacity:1;transform:translateY(0)}
+  .tip b{color:var(--accent)}
+  .tip .g{font-family:"Andika",sans-serif;font-weight:700}
+
+  footer{margin-top:26px;font-size:12px;color:var(--ink-soft);max-width:70ch;line-height:1.6}
+  footer b{color:var(--ink-soft);font-weight:700}
+  .disclaimer{border-left:2px solid var(--line-strong);padding-left:14px}
+  a.link{color:var(--accent-ink);text-decoration:none;border-bottom:1px solid var(--line-strong)}
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <div class="brand">
+      <div class="kicker">Science of Reading · decodability tool</div>
+      <h1>Decodable Check</h1>
+      <p class="sub">Paste a passage, tick off the phonics skills your group has been taught, and see exactly which words they can decode — and which ones they can't yet.</p>
+    </div>
+    <button class="theme-btn" id="themeBtn" aria-label="Toggle colour theme">
+      <span id="themeIcon">◑</span><span id="themeLbl">Theme</span>
+    </button>
+  </header>
+
+  <div class="grid">
+    <!-- CONTROLS -->
+    <aside class="panel controls">
+      <h2 class="panel-title">Skills taught</h2>
+      <p class="panel-note">Check what your students already know. Everything built from these is decodable.</p>
+      <div id="skillList"></div>
+      <div class="ctl-row">
+        <button class="mini" id="allBtn">Select all</button>
+        <button class="mini" id="cvcBtn">Reset to CVC</button>
+      </div>
+    </aside>
+
+    <!-- WORKBENCH -->
+    <section class="bench">
+      <div class="panel scorecard">
+        <div class="gauge">
+          <svg viewBox="0 0 120 120" width="132" height="132" aria-hidden="true">
+            <circle cx="60" cy="60" r="52" fill="none" stroke="var(--line)" stroke-width="12"/>
+            <circle id="gaugeArc" cx="60" cy="60" r="52" fill="none" stroke="var(--ok-ink)" stroke-width="12"
+              stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="326.7"
+              transform="rotate(-90 60 60)" style="transition:stroke-dashoffset .5s ease"/>
+          </svg>
+          <div class="pct"><b id="pctNum">0</b><span>decodable</span></div>
+        </div>
+        <div class="readout">
+          <div class="verdict" id="verdict">—</div>
+          <div class="tallies">
+            <div class="tally"><span class="swatch" style="background:var(--ok-bg)"></span><span class="num" id="tOk">0</span><span class="lbl">decodable</span></div>
+            <div class="tally"><span class="swatch" style="background:var(--new-bg)"></span><span class="num" id="tNew">0</span><span class="lbl">not taught yet</span></div>
+            <div class="tally"><span class="swatch" style="background:var(--tricky-bg)"></span><span class="num" id="tTricky">0</span><span class="lbl">tricky / heart words</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="passage-head">
+          <h2>Passage</h2>
+          <div class="tabs" role="tablist">
+            <button class="tab" role="tab" id="tabView" aria-selected="true">Analysis</button>
+            <button class="tab" role="tab" id="tabEdit" aria-selected="false">Edit text</button>
+          </div>
+        </div>
+        <div class="reader" id="reader"></div>
+        <textarea class="editor" id="editor" spellcheck="false" hidden></textarea>
+        <div class="legend">
+          <div class="item"><span class="chip" style="background:var(--ok-bg)"></span>Fully decodable</div>
+          <div class="item"><span class="chip" style="background:var(--new-bg)"></span>Needs an untaught skill</div>
+          <div class="item"><span class="chip" style="background:var(--tricky-bg)"></span>Tricky / heart word</div>
+          <div class="item" style="margin-left:auto;font-style:italic">Hover a word to see why</div>
+        </div>
+      </div>
+
+      <footer>
+        <p class="disclaimer"><b>How it reads words:</b> Decodable Check breaks each word into graphemes (letter–sound spellings), then checks every grapheme against the skills you've ticked. A word turns green only when <em>all</em> of its spellings have been taught. Common irregular words are matched against a built-in heart-word list. It's a fast classroom heuristic, not a substitute for your own professional judgement — always skim the amber words yourself.</p>
+      </footer>
+    </section>
+  </div>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script>
+/* ============================================================
+   Phonics scope & sequence — skills, in teaching order
+   ============================================================ */
+const PHASES = [
+  { num:1, name:"Foundations", skills:[
+    {id:"cvc",     n:"Single letters & CVC", ex:"cat, hop, run, big"},
+    {id:"double",  n:"Double consonants (ff ll ss zz)", ex:"hill, buzz, off"},
+  ]},
+  { num:2, name:"Digraphs & blends", skills:[
+    {id:"digraph", n:"Consonant digraphs", ex:"ship, chin, that, duck, ring"},
+    {id:"blend",   n:"Consonant blends", ex:"stop, frog, hand, lamp"},
+    {id:"endings", n:"Inflectional endings (-s -ing -ed)", ex:"jumps, running, packed"},
+  ]},
+  { num:3, name:"Long vowels", skills:[
+    {id:"magice",  n:"Magic-e (split digraph)", ex:"cake, bike, home, cube"},
+    {id:"team",    n:"Vowel teams", ex:"rain, beach, boat, night"},
+    {id:"diph",    n:"Diphthongs & other vowels", ex:"coin, town, saw, few"},
+  ]},
+  { num:4, name:"Advanced code", skills:[
+    {id:"rctrl",   n:"R-controlled vowels", ex:"star, corn, bird, her"},
+    {id:"adv",     n:"Advanced patterns", ex:"knee, gentle, station"},
+  ]},
+];
+
+/* ordered longest-first grapheme table -> skill id */
+const GRAPHEMES = [
+  ["tch","digraph"],["igh","team"],["air","rctrl"],["are","rctrl"],["ear","rctrl"],["ore","rctrl"],["dge","adv"],
+  ["sh","digraph"],["ch","digraph"],["th","digraph"],["wh","digraph"],["ph","digraph"],["ck","digraph"],["ng","digraph"],["qu","cvc"],
+  ["ai","team"],["ay","team"],["ee","team"],["ea","team"],["oa","team"],["ow","team"],["oe","team"],["ie","team"],["ey","team"],["oo","team"],["ue","team"],["au","diph"],
+  ["oi","diph"],["oy","diph"],["ou","diph"],["aw","diph"],["ew","diph"],
+  ["ar","rctrl"],["or","rctrl"],["er","rctrl"],["ir","rctrl"],["ur","rctrl"],
+  ["ll","double"],["ss","double"],["ff","double"],["zz","double"],
+  ["kn","adv"],["wr","adv"],["mb","adv"],["wa","cvc"],
+];
+const VOWELS = new Set(["a","e","i","o","u"]);
+const CONS  = new Set("bcdfghjklmnpqrstvwxyz".split(""));
+
+/* heart / tricky words (high-frequency irregular) */
+const TRICKY = new Set(("the a I to is was said you are they of we he she me be do go no so " +
+  "my by put one two come some were there their where here what who why could would should " +
+  "have give live love done gone want your our been they're we're I'm don't can't won't " +
+  "does goes only both pull full push many any friend people because school through though " +
+  "eye once upon these those water father mother brother other another over").split(/\s+/));
+
+/* ---------- word analysis ---------- */
+function analyseWord(raw, taught){
+  const word = raw.toLowerCase();
+  if(TRICKY.has(word)) return {cat:"tricky", reason:"On the heart-word list — taught as a whole word."};
+
+  let w = word, ending = "";
+  // strip one inflectional ending
+  const em = w.match(/^(.*?)(ing|ed|es|s)$/);
+  if(em && em[1].length>=2){
+    ending = em[2];
+  }
+  const core = ending ? word.slice(0, word.length-ending.length) : word;
+
+  // magic-e detection: vowel + single cons + silent e at end of core
+  let body = core, magicE=false;
+  const me = core.match(/^(.*[aeiou][bcdfghjklmnpqrstvwxyz])e$/);
+  if(me && !VOWELS.has(core[core.length-2])){ magicE = true; body = core.slice(0,-1); }
+
+  const need = new Set();            // required skills
+  const parts = [];                  // {g, skill}
+  let i=0, prevCons=false, ok=true;
+  while(i < body.length){
+    let matched=null;
+    for(const [g,skill] of GRAPHEMES){
+      if(body.startsWith(g,i)){ matched=[g,skill]; break; }
+    }
+    let g, skill;
+    if(matched){ [g,skill]=matched; }
+    else {
+      g = body[i];
+      if(CONS.has(g)) skill="cvc";
+      else if(VOWELS.has(g)) skill="cvc";
+      else { g=body[i]; skill=null; } // punctuation/digit — ignore
+    }
+    if(skill){
+      // consecutive single consonants => a blend
+      const isSingleCons = g.length===1 && CONS.has(g);
+      if(isSingleCons && prevCons){ need.add("blend"); }
+      prevCons = isSingleCons;
+      if(skill!=="cvc") need.add(skill);
+      parts.push({g, skill: (isSingleCons&&prevCons)?skill:skill});
+    }
+    i += g.length;
+  }
+  if(magicE) need.add("magice");
+  if(ending) need.add("endings");
+
+  // determine decodability
+  const missing = [...need].filter(s=>!taught.has(s));
+  const cat = missing.length ? "new" : "ok";
+  return {cat, need:[...need], missing, magicE, ending, parts};
+}
+
+const SKILLNAME = {};
+PHASES.forEach(p=>p.skills.forEach(s=>SKILLNAME[s.id]=s.n));
+SKILLNAME.blend="Consonant blends";
+
+/* ---------- state ---------- */
+const DEFAULT_TAUGHT = new Set(["cvc","double","digraph","blend","endings"]);
+let taught = new Set(DEFAULT_TAUGHT);
+
+const SAMPLE = `Meg is a red hen. She can run in the mud.\nA big cat sat on the log. The cat had a nap in the sun.\nThen Meg let out a yell! The cat ran off fast.\nMeg is so glad. She will rest in her nest.`;
+let text = SAMPLE;
+
+/* ---------- rendering ---------- */
+const reader = document.getElementById('reader');
+const tip = document.getElementById('tip');
+
+function tokenize(t){
+  // keep words and non-words as tokens
+  return t.match(/[A-Za-z']+|[^A-Za-z']+/g) || [];
+}
+
+function render(){
+  const tokens = tokenize(text);
+  let ok=0,nw=0,tr=0;
+  reader.innerHTML = "";
+  for(const tok of tokens){
+    if(/^[A-Za-z']+$/.test(tok)){
+      const res = analyseWord(tok, taught);
+      const span = document.createElement('span');
+      span.className = "w "+res.cat;
+      span.textContent = tok;
+      span.dataset.info = buildInfo(tok,res);
+      reader.appendChild(span);
+      if(res.cat==="ok")ok++; else if(res.cat==="new")nw++; else tr++;
+    } else {
+      reader.appendChild(document.createTextNode(tok));
+    }
+  }
+  updateScore(ok,nw,tr);
+}
+
+function buildInfo(word,res){
+  if(res.cat==="tricky") return "TRICKY|"+res.reason;
+  if(res.cat==="ok"){
+    const skills=[...new Set(res.need.map(s=>SKILLNAME[s]||s))];
+    return "OK|Decodable using: "+(skills.length?skills.join(", "):"basic CVC")+".";
+  }
+  const miss=res.missing.map(s=>SKILLNAME[s]||s);
+  return "NEW|Needs a skill you haven't ticked: "+miss.join(", ")+".";
+}
+
+function updateScore(ok,nw,tr){
+  document.getElementById('tOk').textContent=ok;
+  document.getElementById('tNew').textContent=nw;
+  document.getElementById('tTricky').textContent=tr;
+  const decodableBase = ok+nw;                // heart words excluded from the %
+  const pct = decodableBase? Math.round(ok/decodableBase*100) : 0;
+  document.getElementById('pctNum').textContent=pct;
+  const C=2*Math.PI*52;
+  document.getElementById('gaugeArc').style.strokeDashoffset = C*(1-pct/100);
+  const arc=document.getElementById('gaugeArc');
+  arc.style.stroke = pct>=90? "var(--ok-ink)" : pct>=70? "var(--new-ink)" : "var(--accent)";
+  let v;
+  if(decodableBase===0) v="Add some words to get started.";
+  else if(pct>=95) v="Fully decodable for this group — ready to hand out.";
+  else if(pct>=85) v="Nearly there. A few words lean on skills you haven't taught yet.";
+  else if(pct>=60) v="Mixed. Several words need code your students don't have.";
+  else v="Too hard right now — most words need untaught skills.";
+  document.getElementById('verdict').textContent=v;
+}
+
+/* tooltip */
+reader.addEventListener('mouseover',e=>{
+  const el=e.target.closest('.w'); if(!el)return;
+  const raw=el.dataset.info; const [tag,msg]=raw.split("|");
+  const label = tag==="OK"?"Decodable":tag==="TRICKY"?"Tricky word":"Not yet";
+  tip.innerHTML="<b>"+label+"</b> · <span class='g'>"+el.textContent+"</span><br>"+msg;
+  const r=el.getBoundingClientRect();
+  tip.classList.add('show');
+  let x=r.left+r.width/2-tip.offsetWidth/2;
+  x=Math.max(8,Math.min(x,innerWidth-tip.offsetWidth-8));
+  let y=r.top-tip.offsetHeight-8; if(y<8)y=r.bottom+8;
+  tip.style.left=x+"px"; tip.style.top=y+"px";
+});
+reader.addEventListener('mouseout',e=>{ if(e.target.closest('.w')) tip.classList.remove('show'); });
+
+/* ---------- controls ---------- */
+const skillList=document.getElementById('skillList');
+PHASES.forEach(p=>{
+  const ph=document.createElement('div'); ph.className="phase";
+  ph.innerHTML=`<div class="phase-head"><span class="phase-num">${p.num}</span><span class="phase-name">${p.name}</span></div>`;
+  p.skills.forEach(s=>{
+    const lab=document.createElement('label'); lab.className="skill";
+    lab.innerHTML=`<input type="checkbox" data-id="${s.id}" ${taught.has(s.id)?'checked':''}>
+      <span><span class="n">${s.n}</span><br><span class="ex">${s.ex}</span></span>`;
+    ph.appendChild(lab);
+  });
+  skillList.appendChild(ph);
+});
+skillList.addEventListener('change',e=>{
+  const id=e.target.dataset.id; if(!id)return;
+  e.target.checked?taught.add(id):taught.delete(id);
+  render();
+});
+function setChecks(set){
+  taught=new Set(set);
+  skillList.querySelectorAll('input').forEach(i=>i.checked=taught.has(i.dataset.id));
+  render();
+}
+document.getElementById('allBtn').onclick=()=>setChecks(new Set(Object.keys(SKILLNAME)));
+document.getElementById('cvcBtn').onclick=()=>setChecks(new Set(["cvc","double"]));
+
+/* ---------- edit / view tabs ---------- */
+const editor=document.getElementById('editor');
+const tabView=document.getElementById('tabView'), tabEdit=document.getElementById('tabEdit');
+function showEdit(on){
+  tabView.setAttribute('aria-selected',(!on).toString());
+  tabEdit.setAttribute('aria-selected',on.toString());
+  reader.hidden=on; editor.hidden=!on;
+  if(on){editor.value=text; editor.focus();}
+}
+tabView.onclick=()=>{ text=editor.value||text; render(); showEdit(false); };
+tabEdit.onclick=()=>showEdit(true);
+editor.addEventListener('input',()=>{ text=editor.value; });
+
+/* ---------- theme toggle ---------- */
+const root=document.documentElement;
+function sysDark(){return matchMedia('(prefers-color-scheme: dark)').matches;}
+let theme = null; // null = follow system
+function applyTheme(){
+  const icon=document.getElementById('themeIcon'), lbl=document.getElementById('themeLbl');
+  if(theme){root.setAttribute('data-theme',theme);}else{root.removeAttribute('data-theme');}
+  const dark = theme? theme==='dark' : sysDark();
+  icon.textContent = dark? "☾" : "☀";
+  lbl.textContent = theme? (theme[0].toUpperCase()+theme.slice(1)) : "Auto";
+}
+document.getElementById('themeBtn').onclick=()=>{
+  const dark = theme? theme==='dark' : sysDark();
+  theme = dark? 'light':'dark';
+  applyTheme();
+};
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ if(!theme)applyTheme(); });
+
+applyTheme();
+render();
+</script>
