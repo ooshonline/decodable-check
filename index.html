@@ -191,6 +191,49 @@
   .fix-none{font-size:12.5px;color:var(--ink-soft);font-style:italic}
   .fixit-empty{padding:20px 20px 24px;font-size:14px;color:var(--ink-soft);line-height:1.5}
   .fixit-empty b{color:var(--ink);font-weight:700}
+
+  .mast-actions{display:flex;gap:10px;flex-wrap:wrap}
+
+  /* ---- printable report header (screen-hidden, shown on print) ---- */
+  .report-head{display:none}
+  .report-head .r-kicker{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-ink);font-weight:700}
+  .report-head h1{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:26px;margin:2px 0 6px;letter-spacing:-.01em}
+  .report-head .r-meta{font-size:12.5px;color:var(--ink-soft);line-height:1.6}
+  .report-head .r-meta b{color:var(--ink);font-weight:700}
+  .report-head .r-skills{margin-top:6px}
+  .report-head .r-chip{display:inline-block;font-size:11.5px;font-weight:600;color:var(--ink);
+    background:var(--paper);border:1px solid var(--line-strong);border-radius:999px;padding:2px 9px;margin:3px 5px 0 0}
+
+  /* ---- print layout ---- */
+  @media print{
+    /* force the light palette so a dark-mode screen still prints on white paper */
+    :root,:root[data-theme="dark"]{
+      --paper:#fff; --card:#fff; --ink:#1a1a1a; --ink-soft:#555; --line:#ccc; --line-strong:#bbb;
+      --accent:#B23A17; --accent-ink:#B23A17;
+      --ok-bg:#CBE7CE; --ok-ink:#2E7D57; --ok-edge:#A9D6B0;
+      --new-bg:#F6E1B8; --new-ink:#9A5B00; --new-edge:#EACB8A;
+      --tricky-bg:#E6DAF3; --tricky-ink:#6A45A6; --tricky-edge:#D3C0EC;
+      --shadow:none;
+    }
+    @page{margin:15mm}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{background:#fff}
+    .wrap{max-width:100%;padding:0}
+    header.mast,.controls,.tabs,.editor,.tip,#printBtn,.theme-btn{display:none!important}
+    .grid{display:block}
+    .bench{gap:14px}
+    .panel{box-shadow:none;border:1px solid var(--line-strong);break-inside:avoid}
+    .report-head{display:block;margin:0 0 4px;padding:0 2px 10px;border-bottom:2px solid var(--line-strong)}
+    .scorecard{padding:16px 18px}
+    .reader{font-size:15px;line-height:1.95;padding:16px 18px 20px}
+    .passage-head{padding:12px 18px}
+    .sub-chip{cursor:default}
+    .sub-chip::after{content:""}
+    footer{margin-top:14px;break-inside:avoid}
+    .legend .item:last-child{display:none}   /* "hover to see why" is meaningless on paper */
+    /* keep colour swatches / gauge honest on paper */
+    .w,.chip,.swatch,.tally,.sub-chip,#gaugeArc{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
 </style>
 
 <div class="wrap">
@@ -200,9 +243,14 @@
       <h1>Decodable Check</h1>
       <p class="sub">Paste a passage, tick off the phonics skills your group has been taught, and see exactly which words they can decode — and which ones they can't yet.</p>
     </div>
-    <button class="theme-btn" id="themeBtn" aria-label="Toggle colour theme">
-      <span id="themeIcon">◑</span><span id="themeLbl">Theme</span>
-    </button>
+    <div class="mast-actions">
+      <button class="theme-btn" id="printBtn" aria-label="Print or save a decodability report">
+        <span aria-hidden="true">⎙</span><span>Print report</span>
+      </button>
+      <button class="theme-btn" id="themeBtn" aria-label="Toggle colour theme">
+        <span id="themeIcon">◑</span><span id="themeLbl">Theme</span>
+      </button>
+    </div>
   </header>
 
   <div class="grid">
@@ -224,6 +272,7 @@
 
     <!-- WORKBENCH -->
     <section class="bench">
+      <div class="report-head" id="reportHead" aria-hidden="true"></div>
       <div class="panel scorecard">
         <div class="gauge">
           <svg viewBox="0 0 120 120" width="132" height="132" aria-hidden="true">
@@ -489,6 +538,7 @@ function render(){
   }
   updateScore(ok,nw,tr);
   buildFixit(amber);
+  updateReportHead();
 }
 
 function buildInfo(word,res){
@@ -668,6 +718,34 @@ document.getElementById('themeBtn').onclick=()=>{
   applyTheme();
 };
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ if(!theme)applyTheme(); });
+
+/* ---------- printable report ---------- */
+const reportHead=document.getElementById('reportHead');
+function updateReportHead(){
+  const preset=PRESETS.find(p=>p.id===presetSel.value);
+  const seqName = preset && preset.id!=="custom" ? preset.name : "Custom selection";
+  const order=[];
+  PHASES.forEach(p=>p.skills.forEach(s=>{ if(taught.has(s.id)) order.push(s.n); }));
+  const date=new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
+  const chips = order.length
+    ? order.map(n=>`<span class="r-chip">${n}</span>`).join("")
+    : `<span class="r-chip">None ticked</span>`;
+  reportHead.innerHTML =
+    `<div class="r-kicker">Science of Reading · decodability report</div>`+
+    `<h1>Decodable Check</h1>`+
+    `<div class="r-meta"><b>Sequence:</b> ${seqName} &nbsp;·&nbsp; <b>Generated:</b> ${date}`+
+    `<div class="r-skills"><b>Skills taught:</b> ${chips}</div></div>`;
+}
+function printReport(){
+  if(!editor.hidden){ text=editor.value; render(); showEdit(false); }  // always print the analysis view
+  updateReportHead();
+  window.print();
+}
+document.getElementById('printBtn').onclick=printReport;
+window.addEventListener('beforeprint',()=>{
+  if(!editor.hidden){ text=editor.value; render(); showEdit(false); }
+  updateReportHead();
+});
 
 applyTheme();
 render();
