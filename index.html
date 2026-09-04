@@ -167,6 +167,30 @@
     border-right:2px solid var(--ink-soft);border-bottom:2px solid var(--ink-soft);
     transform:translateY(-70%) rotate(45deg);pointer-events:none}
   .preset .desc{font-size:11.5px;color:var(--ink-soft);min-height:1.4em;font-style:italic}
+
+  /* ---- fix-it suggestions ---- */
+  .fixit-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+  .fixit-head h2{font-family:"Fraunces",serif;font-weight:600;font-size:16px;margin:0}
+  .fixit-head .count{font-size:12.5px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+  .fixit-body{padding:6px 8px 10px}
+  .fix-row{display:grid;grid-template-columns:minmax(84px,max-content) 1fr;gap:8px 16px;align-items:baseline;
+    padding:12px 10px;border-top:1px dashed var(--line-strong)}
+  .fix-row:first-child{border-top:none}
+  .fix-word{font-family:"Andika",sans-serif;font-weight:700;font-size:17px;color:var(--new-ink);line-height:1.25}
+  .fix-word .miss{display:block;font-family:"Public Sans",sans-serif;font-weight:600;font-size:10.5px;
+    letter-spacing:.02em;color:var(--ink-soft);margin-top:2px}
+  .fix-subs{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .fix-subs .lead{font-size:12.5px;color:var(--ink-soft)}
+  .sub-chip{font:inherit;font-family:"Andika",sans-serif;font-weight:700;font-size:14px;color:var(--ok-ink);
+    background:var(--ok-bg);border:1px solid var(--ok-edge);border-radius:999px;padding:4px 12px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;transition:filter .12s,transform .05s}
+  .sub-chip::after{content:"→";font-family:"Public Sans",sans-serif;font-weight:700;font-size:12px;opacity:.55}
+  .sub-chip:hover{filter:brightness(.95)}
+  .sub-chip:active{transform:translateY(1px)}
+  .sub-chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .fix-none{font-size:12.5px;color:var(--ink-soft);font-style:italic}
+  .fixit-empty{padding:20px 20px 24px;font-size:14px;color:var(--ink-soft);line-height:1.5}
+  .fixit-empty b{color:var(--ink);font-weight:700}
 </style>
 
 <div class="wrap">
@@ -236,6 +260,14 @@
           <div class="item"><span class="chip" style="background:var(--tricky-bg)"></span>Tricky / heart word</div>
           <div class="item" style="margin-left:auto;font-style:italic">Hover a word to see why</div>
         </div>
+      </div>
+
+      <div class="panel" id="fixitPanel">
+        <div class="fixit-head">
+          <h2>Fix-it suggestions</h2>
+          <span class="count" id="fixitCount"></span>
+        </div>
+        <div class="fixit-body" id="fixitBody"></div>
       </div>
 
       <footer>
@@ -349,6 +381,56 @@ const SKILLNAME = {};
 PHASES.forEach(p=>p.skills.forEach(s=>SKILLNAME[s.id]=s.n));
 SKILLNAME.blend="Consonant blends";
 
+/* ---------- fix-it: decodable replacement bank ----------
+   Near-synonym clusters, curated best/simplest classroom word first.
+   For an amber word we surface the cluster members that are decodable
+   under the *current* taught set, so the same bank scales with the preset.
+   Meaning comes from the bank; decodability is judged live by analyseWord. */
+const FIXES = [
+  ["big","great","large","huge","giant","grand","massive","enormous"],
+  ["small","little","tiny","wee","mini"],
+  ["glad","happy","merry","cheerful","joyful","pleased"],
+  ["sad","upset","unhappy","glum"],
+  ["mad","cross","angry"],
+  ["fast","quick","swift","rapid","speedy"],
+  ["yell","call","cry","shout","scream"],
+  ["look","spot","watch","see","peek","gaze","stare"],
+  ["hop","jump","skip","leap","bounce","spring"],
+  ["run","dash","jog","race","sprint","trot"],
+  ["nice","kind","good","sweet","fine","pleasant"],
+  ["pretty","lovely","cute"],
+  ["hot","warm"],
+  ["cold","cool","chilly"],
+  ["still","calm","quiet"],
+  ["loud","noisy"],
+  ["stop","end","finish","halt"],
+  ["begin","start"],
+  ["make","build"],
+  ["fix","mend"],
+  ["get","grab","take"],
+  ["find","spot"],
+  ["lad","boy"],
+  ["pal","mate","friend","buddy","chum"],
+  ["hut","den","home","house"],
+  ["path","road","street","lane"],
+];
+const FIXINDEX = new Map();
+FIXES.forEach(c=>c.forEach(w=>{ if(!FIXINDEX.has(w)) FIXINDEX.set(w,c); }));
+
+function suggestFor(word){
+  const lw = word.toLowerCase();
+  const cluster = FIXINDEX.get(lw);
+  if(!cluster) return [];
+  const out = [];
+  for(const cand of cluster){
+    if(cand===lw) continue;
+    const r = analyseWord(cand, taught);
+    if(r.cat==="ok" || r.cat==="tricky") out.push(cand);
+    if(out.length>=3) break;
+  }
+  return out;
+}
+
 /* ---------- preset scope sequences ----------
    Each preset lists the skill ids a group is assumed to know at that stage.
    'custom' is the fallback state once a teacher hand-edits the checklist. */
@@ -373,7 +455,7 @@ const DEFAULT_PRESET = "uk-early";
 const DEFAULT_TAUGHT = new Set(PRESETS.find(p=>p.id===DEFAULT_PRESET).skills);
 let taught = new Set(DEFAULT_TAUGHT);
 
-const SAMPLE = `Meg is a red hen. She can run in the mud.\nA big cat sat on the log. The cat had a nap in the sun.\nThen Meg let out a yell! The cat ran off fast.\nMeg is so glad. She will rest in her nest.`;
+const SAMPLE = `Meg is a red hen. She can run in the mud.\nA big cat sat on the log. The cat had a nap in the sun.\nThen Meg let out a yell! The cat ran off fast.\nMeg is so glad. She will rest in her nest.\nThe hen can see a big red bug.`;
 let text = SAMPLE;
 
 /* ---------- rendering ---------- */
@@ -388,6 +470,7 @@ function tokenize(t){
 function render(){
   const tokens = tokenize(text);
   let ok=0,nw=0,tr=0;
+  const amber = new Map();          // lower-cased word -> missing skills (first seen)
   reader.innerHTML = "";
   for(const tok of tokens){
     if(/^[A-Za-z']+$/.test(tok)){
@@ -397,12 +480,15 @@ function render(){
       span.textContent = tok;
       span.dataset.info = buildInfo(tok,res);
       reader.appendChild(span);
-      if(res.cat==="ok")ok++; else if(res.cat==="new")nw++; else tr++;
+      if(res.cat==="ok")ok++;
+      else if(res.cat==="new"){ nw++; if(!amber.has(tok.toLowerCase())) amber.set(tok.toLowerCase(), res.missing); }
+      else tr++;
     } else {
       reader.appendChild(document.createTextNode(tok));
     }
   }
   updateScore(ok,nw,tr);
+  buildFixit(amber);
 }
 
 function buildInfo(word,res){
@@ -433,6 +519,59 @@ function updateScore(ok,nw,tr){
   else if(pct>=60) v="Mixed. Several words need code your students don't have.";
   else v="Too hard right now — most words need untaught skills.";
   document.getElementById('verdict').textContent=v;
+}
+
+/* ---------- fix-it panel ---------- */
+const fixitBody = document.getElementById('fixitBody');
+const fixitCount = document.getElementById('fixitCount');
+
+function buildFixit(amber){
+  fixitBody.innerHTML = "";
+  if(amber.size===0){
+    fixitBody.className = "fixit-empty";
+    fixitBody.innerHTML = text.trim()
+      ? "<b>Nothing to fix.</b> Every word is decodable or a heart word for this group — ready to hand out."
+      : "Paste a passage above and any words that need untaught skills will show up here with decodable swaps.";
+    fixitCount.textContent = "";
+    return;
+  }
+  fixitBody.className = "fixit-body";
+  fixitCount.textContent = amber.size===1 ? "1 word to fix" : amber.size+" words to fix";
+  amber.forEach((missing, word)=>{
+    const row = document.createElement('div'); row.className = "fix-row";
+    const miss = missing.map(s=>SKILLNAME[s]||s).join(" + ");
+    const wd = document.createElement('div'); wd.className = "fix-word";
+    wd.innerHTML = `${word}<span class="miss">needs ${miss}</span>`;
+    row.appendChild(wd);
+
+    const subsWrap = document.createElement('div'); subsWrap.className = "fix-subs";
+    const subs = suggestFor(word);
+    if(subs.length){
+      const lead = document.createElement('span'); lead.className="lead"; lead.textContent="Try:";
+      subsWrap.appendChild(lead);
+      subs.forEach(sub=>{
+        const b = document.createElement('button');
+        b.className = "sub-chip"; b.type = "button"; b.textContent = sub;
+        b.title = `Replace every “${word}” with “${sub}”`;
+        b.addEventListener('click', ()=>applySwap(word, sub));
+        subsWrap.appendChild(b);
+      });
+    } else {
+      const none = document.createElement('span'); none.className = "fix-none";
+      none.textContent = "No decodable swap yet — try rephrasing, or keep it as a name.";
+      subsWrap.appendChild(none);
+    }
+    row.appendChild(subsWrap);
+    fixitBody.appendChild(row);
+  });
+}
+
+function applySwap(from, to){
+  const esc = from.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+  const re = new RegExp("\\b"+esc+"\\b","gi");
+  text = text.replace(re, m => /^[A-Z]/.test(m) ? to.charAt(0).toUpperCase()+to.slice(1) : to);
+  if(!editor.hidden) editor.value = text;   // keep the edit box in sync if it's open
+  render();
 }
 
 /* tooltip */
