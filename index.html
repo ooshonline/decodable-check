@@ -194,6 +194,62 @@
 
   .mast-actions{display:flex;gap:10px;flex-wrap:wrap}
 
+  /* ---- class library modal ---- */
+  .modal-overlay{position:fixed;inset:0;z-index:60;background:rgba(24,27,36,.5);
+    display:flex;align-items:flex-start;justify-content:center;padding:6vh 16px 24px;overflow-y:auto;
+    opacity:0;visibility:hidden;transition:opacity .16s ease}
+  .modal-overlay.open{opacity:1;visibility:visible}
+  .modal{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:0 20px 60px rgba(0,0,0,.4);width:min(560px,100%);max-height:88vh;
+    display:flex;flex-direction:column;transform:translateY(10px);transition:transform .16s ease}
+  .modal-overlay.open .modal{transform:none}
+  .modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+    padding:18px 20px 15px;border-bottom:1px solid var(--line)}
+  .modal-head h2{font-family:"Fraunces",serif;font-weight:600;font-size:20px;margin:0}
+  .modal-head p{font-size:12.5px;color:var(--ink-soft);margin:4px 0 0;max-width:46ch}
+  .modal-x{border:1px solid var(--line-strong);background:var(--paper);color:var(--ink-soft);
+    border-radius:8px;width:30px;height:30px;font-size:17px;line-height:1;cursor:pointer;flex:none}
+  .modal-x:hover{color:var(--ink);border-color:var(--ink-soft)}
+  .modal-body{padding:16px 20px 22px;overflow-y:auto}
+
+  .save-form{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 14px 15px}
+  .save-form .fields{display:grid;grid-template-columns:1fr 160px;gap:10px}
+  @media(max-width:480px){.save-form .fields{grid-template-columns:1fr}}
+  .save-form label{display:block;font-size:11px;font-weight:700;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--ink-soft);margin-bottom:4px}
+  .save-form input{width:100%;font:inherit;font-size:14px;color:var(--ink);background:var(--card);
+    border:1px solid var(--line-strong);border-radius:9px;padding:8px 10px}
+  .save-form input:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  .save-form .foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:13px}
+  .save-form .snap{font-size:12px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+  .save-btn{border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:9px;
+    padding:9px 16px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+  .save-btn:hover{filter:brightness(1.06)}
+  .save-btn:disabled{opacity:.5;cursor:not-allowed;filter:none}
+
+  .lib-divider{display:flex;align-items:center;gap:12px;margin:22px 2px 14px;font-size:11px;
+    font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
+  .lib-divider::after{content:"";flex:1;height:1px;background:var(--line-strong)}
+  .lib-class{margin-top:18px}
+  .lib-class:first-child{margin-top:0}
+  .lib-class-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 2px 8px}
+  .lib-class-head .cname{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink)}
+  .lib-class-head .cstat{font-size:11.5px;color:var(--ink-soft);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .lib-item{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;
+    border:1px solid var(--line);border-radius:11px;padding:9px 11px;margin-bottom:8px;background:var(--paper)}
+  .lib-badge{font-family:"Fraunces",serif;font-weight:600;font-size:16px;font-variant-numeric:tabular-nums;
+    min-width:48px;height:42px;display:grid;place-items:center;border-radius:9px;border:1px solid;line-height:1}
+  .lib-badge .pc{font-size:9px;font-weight:600;margin-left:1px}
+  .lib-meta{min-width:0}
+  .lib-title{font-weight:600;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .lib-sub{font-size:11.5px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+  .lib-actions{display:flex;gap:6px;flex:none}
+  .lib-actions button{border:1px solid var(--line-strong);background:var(--card);color:var(--ink-soft);
+    border-radius:8px;padding:6px 10px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+  .lib-actions .load:hover{color:var(--accent-ink);border-color:var(--accent)}
+  .lib-actions .del:hover{color:#fff;background:var(--accent);border-color:var(--accent)}
+  .lib-empty{font-size:13.5px;color:var(--ink-soft);line-height:1.55;font-style:italic;padding:6px 2px}
+
   /* ---- printable report header (screen-hidden, shown on print) ---- */
   .report-head{display:none}
   .report-head .r-kicker{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-ink);font-weight:700}
@@ -219,7 +275,7 @@
     *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
     body{background:#fff}
     .wrap{max-width:100%;padding:0}
-    header.mast,.controls,.tabs,.editor,.tip,#printBtn,.theme-btn{display:none!important}
+    header.mast,.controls,.tabs,.editor,.tip,#printBtn,.theme-btn,.modal-overlay{display:none!important}
     .grid{display:block}
     .bench{gap:14px}
     .panel{box-shadow:none;border:1px solid var(--line-strong);break-inside:avoid}
@@ -244,6 +300,9 @@
       <p class="sub">Paste a passage, tick off the phonics skills your group has been taught, and see exactly which words they can decode — and which ones they can't yet.</p>
     </div>
     <div class="mast-actions">
+      <button class="theme-btn" id="libBtn" aria-label="Save and track passages by class">
+        <span aria-hidden="true">▤</span><span>Library</span>
+      </button>
       <button class="theme-btn" id="printBtn" aria-label="Print or save a decodability report">
         <span aria-hidden="true">⎙</span><span>Print report</span>
       </button>
@@ -327,6 +386,40 @@
 </div>
 
 <div class="tip" id="tip"></div>
+
+<!-- ---- class library modal ---- -->
+<div class="modal-overlay" id="libOverlay" role="dialog" aria-modal="true" aria-labelledby="libTitle" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h2 id="libTitle">Class library</h2>
+        <p>Save this passage under a class name, then track how decodable your texts are for each group over time. Saved in this browser.</p>
+      </div>
+      <button class="modal-x" id="libClose" type="button" aria-label="Close library">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="save-form">
+        <div class="fields">
+          <div>
+            <label for="saveTitle">Passage name</label>
+            <input id="saveTitle" type="text" maxlength="80" placeholder="e.g. Week 3 — Meg the hen" autocomplete="off">
+          </div>
+          <div>
+            <label for="saveClass">Class / group</label>
+            <input id="saveClass" type="text" maxlength="40" placeholder="e.g. Robins" list="classNames" autocomplete="off">
+          </div>
+        </div>
+        <datalist id="classNames"></datalist>
+        <div class="foot">
+          <span class="snap" id="saveSnap"></span>
+          <button class="save-btn" id="saveBtn" type="button">Save current passage</button>
+        </div>
+      </div>
+      <div class="lib-divider">Saved passages</div>
+      <div id="libList"></div>
+    </div>
+  </div>
+</div>
 
 <script>
 /* ============================================================
@@ -746,6 +839,178 @@ window.addEventListener('beforeprint',()=>{
   if(!editor.hidden){ text=editor.value; render(); showEdit(false); }
   updateReportHead();
 });
+
+/* ============================================================
+   Class library — save & track passages per class (localStorage)
+   Each saved passage snapshots its text, the taught-skills set and
+   its decodability score, grouped by class so a teacher can watch
+   each group's texts get more decodable across the year.
+   ============================================================ */
+const LIB_KEY = "decodable-check:library";
+
+function loadLibrary(){
+  try{
+    const raw = localStorage.getItem(LIB_KEY);
+    if(!raw) return [];
+    const data = JSON.parse(raw);
+    return Array.isArray(data.items) ? data.items : [];
+  }catch(e){ return []; }               // private mode / corrupt store -> empty
+}
+function persistLibrary(items){
+  try{ localStorage.setItem(LIB_KEY, JSON.stringify({v:1, items})); return true; }
+  catch(e){ return false; }             // storage unavailable/full -> session-only
+}
+let library = loadLibrary();
+
+function escHtml(s){
+  return String(s).replace(/[&<>"']/g, m => (
+    {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]
+  ));
+}
+
+/* count decodability without touching the DOM — mirrors updateScore's
+   denominator exactly (heart words excluded from the %). */
+function computeStats(t, taughtSet){
+  let ok=0, nw=0, tr=0;
+  for(const tok of tokenize(t)){
+    if(!/^[A-Za-z']+$/.test(tok)) continue;
+    const c = analyseWord(tok, taughtSet).cat;
+    if(c==="ok") ok++; else if(c==="new") nw++; else tr++;
+  }
+  const base = ok+nw;
+  return {ok, nw, tr, pct: base ? Math.round(ok/base*100) : 0};
+}
+
+/* badge colours track the gauge's three tiers */
+function scoreColors(pct){
+  if(pct>=90) return {bg:"var(--ok-bg)",  ink:"var(--ok-ink)",  edge:"var(--ok-edge)"};
+  if(pct>=70) return {bg:"var(--new-bg)", ink:"var(--new-ink)", edge:"var(--new-edge)"};
+  return {bg:"transparent", ink:"var(--accent-ink)", edge:"var(--accent)"};
+}
+
+function suggestTitle(t){
+  const words = (t.trim().match(/[A-Za-z']+/g) || []).slice(0,5).join(" ");
+  if(!words) return "Untitled passage";
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+const libOverlay = document.getElementById('libOverlay');
+const libBtn     = document.getElementById('libBtn');
+const libClose   = document.getElementById('libClose');
+const saveTitle  = document.getElementById('saveTitle');
+const saveClass  = document.getElementById('saveClass');
+const saveBtn    = document.getElementById('saveBtn');
+const saveSnap   = document.getElementById('saveSnap');
+const libList    = document.getElementById('libList');
+const classNames = document.getElementById('classNames');
+let lastClass = "";
+
+function openLibrary(){
+  if(!editor.hidden){ text = editor.value; }   // capture live edits before snapshotting
+  saveTitle.value = suggestTitle(text);
+  saveClass.value = lastClass;
+  const s = computeStats(text, taught);
+  const words = s.ok + s.nw;
+  saveSnap.textContent = text.trim()
+    ? `${s.pct}% decodable · ${words} word${words!==1?'s':''}`
+    : "Nothing to save yet";
+  saveBtn.disabled = !text.trim();
+  renderLibrary();
+  libOverlay.hidden = false;
+  requestAnimationFrame(()=>libOverlay.classList.add('open'));
+  saveTitle.focus(); saveTitle.select();
+}
+function closeLibrary(){
+  libOverlay.classList.remove('open');
+  setTimeout(()=>{ libOverlay.hidden = true; }, 170);
+}
+libBtn.onclick   = openLibrary;
+libClose.onclick = closeLibrary;
+libOverlay.addEventListener('click', e=>{ if(e.target===libOverlay) closeLibrary(); });
+document.addEventListener('keydown', e=>{ if(e.key==="Escape" && !libOverlay.hidden) closeLibrary(); });
+
+saveBtn.onclick = ()=>{
+  if(!text.trim()) return;
+  const s = computeStats(text, taught);
+  const klass = saveClass.value.trim() || "Unfiled";
+  library.unshift({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+    title: saveTitle.value.trim() || suggestTitle(text),
+    klass,
+    text,
+    skills: [...taught],
+    preset: presetSel.value,
+    score: s,
+    savedAt: Date.now(),
+  });
+  const stored = persistLibrary(library);
+  lastClass = klass==="Unfiled" ? "" : klass;
+  renderLibrary();
+  saveBtn.textContent = stored ? "Saved ✓" : "Saved (this session only)";
+  saveBtn.disabled = true;
+  setTimeout(()=>{ saveBtn.textContent = "Save current passage"; saveBtn.disabled = !text.trim(); }, 1500);
+};
+
+function loadItem(item){
+  text = item.text;
+  taught = new Set(item.skills);
+  skillList.querySelectorAll('input').forEach(inp=>{ inp.checked = taught.has(inp.dataset.id); });
+  if(!editor.hidden) editor.value = text;      // keep edit box in sync if open
+  syncPresetFromTaught();
+  render();
+  showEdit(false);                              // always return to the analysis view
+  closeLibrary();
+}
+
+function deleteItem(id){
+  const it = library.find(x=>x.id===id);
+  if(it && !confirm(`Delete “${it.title}”? This can't be undone.`)) return;
+  library = library.filter(x=>x.id!==id);
+  persistLibrary(library);
+  renderLibrary();
+}
+
+function renderLibrary(){
+  // class-name autocomplete
+  const classes = [...new Set(library.map(i=>i.klass))];
+  classNames.innerHTML = classes.map(c=>`<option value="${escHtml(c)}">`).join("");
+
+  if(library.length===0){
+    libList.innerHTML = `<div class="lib-empty">No saved passages yet. Name this one above and hit save — reload it any time, and watch each class's decodability build up over the year.</div>`;
+    return;
+  }
+
+  const groups = new Map();
+  library.forEach(i=>{ if(!groups.has(i.klass)) groups.set(i.klass, []); groups.get(i.klass).push(i); });
+
+  const frag = document.createDocumentFragment();
+  groups.forEach((items, klass)=>{
+    const avg = Math.round(items.reduce((a,i)=>a+i.score.pct, 0) / items.length);
+    const wrap = document.createElement('div'); wrap.className = "lib-class";
+    wrap.innerHTML = `<div class="lib-class-head">
+        <span class="cname">${escHtml(klass)}</span>
+        <span class="cstat">${items.length} passage${items.length!==1?'s':''} · avg ${avg}% decodable</span>
+      </div>`;
+    items.forEach(i=>{
+      const c = scoreColors(i.score.pct);
+      const words = i.score.ok + i.score.nw;
+      const nSkills = i.skills.length;
+      const date = new Date(i.savedAt).toLocaleDateString(undefined, {month:'short', day:'numeric'});
+      const row = document.createElement('div'); row.className = "lib-item";
+      row.innerHTML =
+        `<div class="lib-badge" style="background:${c.bg};color:${c.ink};border-color:${c.edge}">${i.score.pct}<span class="pc">%</span></div>`+
+        `<div class="lib-meta"><div class="lib-title">${escHtml(i.title)}</div>`+
+        `<div class="lib-sub">${date} · ${words} word${words!==1?'s':''} · ${nSkills} skill${nSkills!==1?'s':''} taught</div></div>`+
+        `<div class="lib-actions"><button class="load" type="button">Load</button><button class="del" type="button">Delete</button></div>`;
+      row.querySelector('.load').onclick = ()=>loadItem(i);
+      row.querySelector('.del').onclick  = ()=>deleteItem(i.id);
+      wrap.appendChild(row);
+    });
+    frag.appendChild(wrap);
+  });
+  libList.innerHTML = "";
+  libList.appendChild(frag);
+}
 
 applyTheme();
 render();
