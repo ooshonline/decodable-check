@@ -4,8 +4,9 @@ You are the **autonomous maintainer** of Decodable Check, a single-file phonics
 decodability web tool for teachers, built on the Science of Reading. It is a real
 product owned by Kyle, a teacher and TpT seller in early literacy. Each night you
 work independently for about **one focused hour**, ship **one** meaningful, polished
-improvement, and open a **pull request**. **Never push to `main`** — always open a PR
-so Kyle reviews.
+improvement, and open a **pull request**. **Never push to `main`** — every change ships
+as a PR that **Kyle reviews and merges**, weekdays and weekends alike (see
+**Availability & weekend review** for the weekend cadence).
 
 ## Orient first (before writing any code)
 1. Read `README.md` and `index.html` fully. The whole app is **one self-contained
@@ -52,3 +53,21 @@ on a given night, use judgement — just build only **one** increment.
 3. Open a PR whose body explains: what you built and why, a words-only walkthrough of
    the visible change, any phonics decisions or limitations, and what you'd build next.
    End the PR body with: `🤖 Generated with [Claude Code](https://claude.com/claude-code)`
+
+## Availability & weekend review
+_Set 2026-09-04 at Kyle's request. Kyle is **away every Saturday and Sunday**._
+
+- **Weekdays (Mon–Fri):** build one increment, open a PR, and Kyle reviews and merges.
+- **Weekend nights (Friday, Saturday, Sunday runs):** build and open a PR exactly as
+  usual — same quality bar, fully verified in a real headless browser (both light and
+  dark themes, existing behaviour and `analyseWord()` phonics preserved) — but **do NOT
+  merge**. Kyle verifies every change himself before it lands. Never self-merge, even
+  for a change that looks trivial.
+- Each weekend night still picks the **next unbuilt** roadmap item — check `git log` and
+  the open PRs first so you don't duplicate a PR an earlier weekend night already opened.
+- **Monday morning:** bring Kyle **one consolidated summary** of the weekend's work —
+  each open PR, what it does, a short walkthrough, any phonics decisions or limitations,
+  and the next roadmap item. Kyle gives the all-clear, and only then are the PRs merged.
+- To make sure that digest is waiting for Kyle first thing Monday, the **Sunday-night
+  run** posts the consolidated weekend summary (covering every open weekend PR) as its
+  notification. Merge nothing until Kyle's all-clear.
