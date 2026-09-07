@@ -54,6 +54,7 @@
   }
 
   *{box-sizing:border-box}
+  [hidden]{display:none!important}   /* author display rules must not override the hidden attribute */
   body{
     background:var(--paper);
     color:var(--ink);
@@ -100,6 +101,28 @@
   .mini{flex:1;border:1px solid var(--line-strong);background:var(--paper);color:var(--ink-soft);
     border-radius:9px;padding:8px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
   .mini:hover{color:var(--ink);border-color:var(--ink-soft)}
+
+  /* known words (names & class-taught words) — sidebar manager */
+  .known-sec{border-top:1px dashed var(--line-strong);margin-top:16px;padding-top:14px}
+  .known-sec .kh{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .known-sec .kh-title{font-family:"Fraunces",serif;font-weight:600;font-size:15px}
+  .known-sec .kh-count{font-size:11.5px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+  .known-sec .kh-note{font-size:11.5px;color:var(--ink-soft);margin:3px 0 10px;line-height:1.45}
+  .known-add{display:flex;gap:6px}
+  .known-add input{flex:1;min-width:0;font:inherit;font-size:13px;color:var(--ink);background:var(--paper);
+    border:1px solid var(--line-strong);border-radius:9px;padding:7px 10px}
+  .known-add input:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  .known-addbtn{border:1px solid var(--line-strong);background:var(--paper);color:var(--ink-soft);
+    border-radius:9px;padding:7px 13px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+  .known-addbtn:hover{color:var(--ink);border-color:var(--ink-soft)}
+  .known-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .known-chip{display:inline-flex;align-items:center;gap:5px;font-family:"Andika",sans-serif;font-weight:700;
+    font-size:13px;color:var(--ink);background:var(--paper);border:1px solid var(--line-strong);
+    border-radius:999px;padding:3px 4px 3px 11px}
+  .known-chip button{border:none;background:none;color:var(--ink-soft);cursor:pointer;font-size:15px;
+    line-height:1;padding:0 3px;border-radius:999px}
+  .known-chip button:hover{color:var(--accent-ink)}
+  .known-empty{font-size:11.5px;color:var(--ink-soft);font-style:italic;margin-top:2px}
 
   /* ---- workbench ---- */
   .bench{display:flex;flex-direction:column;gap:22px}
@@ -148,6 +171,7 @@
   .w.ok{background:var(--ok-bg);box-shadow:inset 0 -2px 0 var(--ok-edge)}
   .w.new{background:var(--new-bg);box-shadow:inset 0 -2px 0 var(--new-edge)}
   .w.tricky{background:var(--tricky-bg);box-shadow:inset 0 -2px 0 var(--tricky-edge);border-bottom:2px solid transparent}
+  .w.known{background:var(--line);box-shadow:inset 0 -2px 0 var(--line-strong)}
   .w:hover{filter:brightness(.96)}
 
   .legend{display:flex;gap:16px;flex-wrap:wrap;padding:12px 24px 20px;font-size:12.5px;color:var(--ink-soft)}
@@ -212,6 +236,11 @@
   .sub-chip:active{transform:translateY(1px)}
   .sub-chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   .fix-none{font-size:12.5px;color:var(--ink-soft);font-style:italic}
+  .fix-known-btn{font:inherit;font-size:12px;font-weight:600;color:var(--ink-soft);background:none;
+    border:1px dashed var(--line-strong);border-radius:999px;padding:4px 12px;cursor:pointer;white-space:nowrap;
+    transition:color .12s,border-color .12s}
+  .fix-known-btn:hover{color:var(--accent-ink);border-color:var(--accent)}
+  .fix-known-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   .fixit-empty{padding:20px 20px 24px;font-size:14px;color:var(--ink-soft);line-height:1.5}
   .fixit-empty b{color:var(--ink);font-weight:700}
 
@@ -353,6 +382,18 @@
         <button class="mini" id="allBtn">Select all</button>
         <button class="mini" id="cvcBtn">Reset to CVC</button>
       </div>
+      <div class="known-sec">
+        <div class="kh">
+          <span class="kh-title">Known words</span>
+          <span class="kh-count" id="knownCount"></span>
+        </div>
+        <p class="kh-note">Names and words this group already knows — counted as known, not “not taught yet”.</p>
+        <form class="known-add" id="knownForm">
+          <input id="knownInput" type="text" maxlength="60" placeholder="Add a name or word…" autocomplete="off" spellcheck="false" aria-label="Add a known word or name">
+          <button class="known-addbtn" type="submit">Add</button>
+        </form>
+        <div class="known-chips" id="knownChips"></div>
+      </div>
     </aside>
 
     <!-- WORKBENCH -->
@@ -374,6 +415,7 @@
             <div class="tally"><span class="swatch" style="background:var(--ok-bg)"></span><span class="num" id="tOk">0</span><span class="lbl">decodable</span></div>
             <div class="tally"><span class="swatch" style="background:var(--new-bg)"></span><span class="num" id="tNew">0</span><span class="lbl">not taught yet</span></div>
             <div class="tally"><span class="swatch" style="background:var(--tricky-bg)"></span><span class="num" id="tTricky">0</span><span class="lbl">tricky / heart words</span></div>
+            <div class="tally" id="tKnownWrap" hidden><span class="swatch" style="background:var(--line)"></span><span class="num" id="tKnown">0</span><span class="lbl">known / names</span></div>
           </div>
           <div class="teachnext" id="teachNext" hidden>
             <span class="tn-label">Teach next</span>
@@ -396,6 +438,7 @@
           <div class="item"><span class="chip" style="background:var(--ok-bg)"></span>Fully decodable</div>
           <div class="item"><span class="chip" style="background:var(--new-bg)"></span>Needs an untaught skill</div>
           <div class="item"><span class="chip" style="background:var(--tricky-bg)"></span>Tricky / heart word</div>
+          <div class="item" id="knownLegend" hidden><span class="chip" style="background:var(--line)"></span>Known / name</div>
           <div class="item" style="margin-left:auto;font-style:italic">Hover a word to see why</div>
         </div>
       </div>
@@ -500,6 +543,7 @@ const TRICKY = new Set(("the a I to is was said you are they of we he she me be 
 /* ---------- word analysis ---------- */
 function analyseWord(raw, taught){
   const word = raw.toLowerCase();
+  if(known.has(word)) return {cat:"known", reason:"Marked as known for this group — a name or a word you've taught."};
   if(TRICKY.has(word)) return {cat:"tricky", reason:"On the heart-word list — taught as a whole word."};
 
   let w = word, ending = "";
@@ -628,6 +672,25 @@ const DEFAULT_PRESET = "uk-early";
 const DEFAULT_TAUGHT = new Set(PRESETS.find(p=>p.id===DEFAULT_PRESET).skills);
 let taught = new Set(DEFAULT_TAUGHT);
 
+/* ---------- known words (names & class-taught words) ----------
+   Words a group already reads on sight — proper nouns and program-specific
+   heart words beyond the built-in TRICKY list. Like heart words, they're
+   excluded from the decodability % (the SoR-correct denominator) instead of
+   counting as "not taught yet". Stored per browser and carried in share links. */
+const KNOWN_KEY = "decodable-check:known";
+function loadKnown(){
+  try{
+    const raw = localStorage.getItem(KNOWN_KEY);
+    if(!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr.filter(x=>typeof x==="string") : []);
+  }catch(e){ return new Set(); }        // private mode / corrupt store -> empty
+}
+function persistKnown(){
+  try{ localStorage.setItem(KNOWN_KEY, JSON.stringify([...known])); }catch(e){}
+}
+let known = loadKnown();
+
 const SAMPLE = `Meg is a red hen. She can run in the mud.\nA big cat sat on the log. The cat had a nap in the sun.\nThen Meg let out a yell! The cat ran off fast.\nMeg is so glad. She will rest in her nest.\nThe hen can see a big red bug.`;
 let text = SAMPLE;
 
@@ -642,7 +705,7 @@ function tokenize(t){
 
 function render(){
   const tokens = tokenize(text);
-  let ok=0,nw=0,tr=0;
+  let ok=0,nw=0,tr=0,kn=0;
   const amber = new Map();          // lower-cased word -> missing skills (first seen)
   reader.innerHTML = "";
   for(const tok of tokens){
@@ -655,18 +718,20 @@ function render(){
       reader.appendChild(span);
       if(res.cat==="ok")ok++;
       else if(res.cat==="new"){ nw++; if(!amber.has(tok.toLowerCase())) amber.set(tok.toLowerCase(), res.missing); }
+      else if(res.cat==="known") kn++;
       else tr++;
     } else {
       reader.appendChild(document.createTextNode(tok));
     }
   }
-  updateScore(ok,nw,tr);
+  updateScore(ok,nw,tr,kn);
   buildFixit(amber);
   buildTeachNext(amber);
   updateReportHead();
 }
 
 function buildInfo(word,res){
+  if(res.cat==="known") return "KNOWN|"+res.reason;
   if(res.cat==="tricky") return "TRICKY|"+res.reason;
   if(res.cat==="ok"){
     const skills=[...new Set(res.need.map(s=>SKILLNAME[s]||s))];
@@ -676,11 +741,14 @@ function buildInfo(word,res){
   return "NEW|Needs a skill you haven't ticked: "+miss.join(", ")+".";
 }
 
-function updateScore(ok,nw,tr){
+function updateScore(ok,nw,tr,kn){
   document.getElementById('tOk').textContent=ok;
   document.getElementById('tNew').textContent=nw;
   document.getElementById('tTricky').textContent=tr;
-  const decodableBase = ok+nw;                // heart words excluded from the %
+  document.getElementById('tKnown').textContent=kn;
+  document.getElementById('tKnownWrap').hidden = kn===0;   // only surface the tally in use
+  document.getElementById('knownLegend').hidden = kn===0;
+  const decodableBase = ok+nw;                // heart & known words excluded from the %
   const pct = decodableBase? Math.round(ok/decodableBase*100) : 0;
   document.getElementById('pctNum').textContent=pct;
   const C=2*Math.PI*52;
@@ -733,9 +801,15 @@ function buildFixit(amber){
       });
     } else {
       const none = document.createElement('span'); none.className = "fix-none";
-      none.textContent = "No decodable swap yet — try rephrasing, or keep it as a name.";
+      none.textContent = "No decodable swap yet — try rephrasing, or mark it as known.";
       subsWrap.appendChild(none);
     }
+    // let a teacher set a name / already-known word aside instead of swapping it
+    const knownBtn = document.createElement('button');
+    knownBtn.className = "fix-known-btn"; knownBtn.type = "button"; knownBtn.textContent = "✓ mark known";
+    knownBtn.title = `Treat “${word}” as known (a name or a word this group already reads) — it stops counting against the score.`;
+    knownBtn.addEventListener('click', ()=>addKnown(word));
+    subsWrap.appendChild(knownBtn);
     row.appendChild(subsWrap);
     fixitBody.appendChild(row);
   });
@@ -799,7 +873,7 @@ function applySwap(from, to){
 reader.addEventListener('mouseover',e=>{
   const el=e.target.closest('.w'); if(!el)return;
   const raw=el.dataset.info; const [tag,msg]=raw.split("|");
-  const label = tag==="OK"?"Decodable":tag==="TRICKY"?"Tricky word":"Not yet";
+  const label = tag==="OK"?"Decodable":tag==="TRICKY"?"Tricky word":tag==="KNOWN"?"Known word":"Not yet";
   tip.innerHTML="<b>"+label+"</b> · <span class='g'>"+el.textContent+"</span><br>"+msg;
   const r=el.getBoundingClientRect();
   tip.classList.add('show');
@@ -837,6 +911,46 @@ function setChecks(set){
 }
 document.getElementById('allBtn').onclick=()=>setChecks(new Set(Object.keys(SKILLNAME)));
 document.getElementById('cvcBtn').onclick=()=>setChecks(new Set(["cvc","double"]));
+
+/* ---------- known-words manager ---------- */
+const knownForm  = document.getElementById('knownForm');
+const knownInput = document.getElementById('knownInput');
+const knownChips = document.getElementById('knownChips');
+const knownCount = document.getElementById('knownCount');
+
+function addKnown(str){
+  const words = (String(str).toLowerCase().match(/[a-z']+/g) || []);
+  let added=false;
+  words.forEach(w=>{ if(w && !known.has(w)){ known.add(w); added=true; } });
+  if(added){ persistKnown(); renderKnown(); render(); }
+  return added;
+}
+function removeKnown(w){
+  if(known.delete(w)){ persistKnown(); renderKnown(); render(); }
+}
+function renderKnown(){
+  knownChips.innerHTML="";
+  const arr=[...known].sort();
+  knownCount.textContent = arr.length ? String(arr.length) : "";
+  if(!arr.length){
+    knownChips.innerHTML = `<div class="known-empty">None yet — add names, or hit “mark known” on a word below.</div>`;
+    return;
+  }
+  arr.forEach(w=>{
+    const chip=document.createElement('span'); chip.className="known-chip";
+    const label=document.createElement('span'); label.textContent=w; chip.appendChild(label);
+    const x=document.createElement('button'); x.type="button"; x.textContent="×";
+    x.setAttribute('aria-label',`Remove ${w} from known words`);
+    x.onclick=()=>removeKnown(w);
+    chip.appendChild(x);
+    knownChips.appendChild(chip);
+  });
+}
+knownForm.addEventListener('submit',e=>{
+  e.preventDefault();
+  addKnown(knownInput.value);
+  knownInput.value=""; knownInput.focus();
+});
 
 /* ---------- preset selector wiring ---------- */
 const presetSel=document.getElementById('presetSel');
@@ -901,11 +1015,15 @@ function updateReportHead(){
   const chips = order.length
     ? order.map(n=>`<span class="r-chip">${n}</span>`).join("")
     : `<span class="r-chip">None ticked</span>`;
+  const knownArr=[...known].sort();
+  const knownLine = knownArr.length
+    ? `<div class="r-skills"><b>Known words:</b> ${knownArr.map(w=>`<span class="r-chip">${escHtml(w)}</span>`).join("")}</div>`
+    : "";
   reportHead.innerHTML =
     `<div class="r-kicker">Science of Reading · decodability report</div>`+
     `<h1>Decodable Check</h1>`+
     `<div class="r-meta"><b>Sequence:</b> ${seqName} &nbsp;·&nbsp; <b>Generated:</b> ${date}`+
-    `<div class="r-skills"><b>Skills taught:</b> ${chips}</div></div>`;
+    `<div class="r-skills"><b>Skills taught:</b> ${chips}</div>${knownLine}</div>`;
 }
 function printReport(){
   if(!editor.hidden){ text=editor.value; render(); showEdit(false); }  // always print the analysis view
@@ -935,7 +1053,7 @@ function showToast(msg, warn){
 }
 
 function encodeState(){
-  const payload=JSON.stringify({v:1, t:text, s:[...taught]});
+  const payload=JSON.stringify({v:1, t:text, s:[...taught], k:[...known]});
   // UTF-8 safe base64, then make it URL-safe
   return btoa(unescape(encodeURIComponent(payload)))
     .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
@@ -986,6 +1104,10 @@ document.getElementById('shareBtn').onclick=copyShareLink;
   const valid=new Set(Object.keys(SKILLNAME));
   text=o.t;
   taught=new Set(o.s.filter(id=>valid.has(id)));
+  if(Array.isArray(o.k)){
+    known=new Set(o.k.filter(x=>typeof x==="string" && /^[a-z']+$/.test(x)));
+    persistKnown();                 // adopt the shared set so it sticks in this browser
+  }
   skillList.querySelectorAll('input').forEach(i=>i.checked=taught.has(i.dataset.id));
   syncPresetFromTaught();
 })();
@@ -1025,7 +1147,7 @@ function computeStats(t, taughtSet){
   for(const tok of tokenize(t)){
     if(!/^[A-Za-z']+$/.test(tok)) continue;
     const c = analyseWord(tok, taughtSet).cat;
-    if(c==="ok") ok++; else if(c==="new") nw++; else tr++;
+    if(c==="ok") ok++; else if(c==="new") nw++; else if(c==="known"){/* excluded, like heart words */} else tr++;
   }
   const base = ok+nw;
   return {ok, nw, tr, pct: base ? Math.round(ok/base*100) : 0};
@@ -1163,5 +1285,6 @@ function renderLibrary(){
 }
 
 applyTheme();
+renderKnown();
 render();
 </script>
