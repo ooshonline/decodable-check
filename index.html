@@ -149,6 +149,16 @@
   .tip b{color:var(--accent)}
   .tip .g{font-family:"Andika",sans-serif;font-weight:700}
 
+  /* share-link toast */
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(10px);z-index:60;
+    background:var(--ink);color:var(--paper);font-size:13px;font-weight:600;line-height:1.35;
+    padding:11px 18px;border-radius:14px;box-shadow:0 10px 34px rgba(0,0,0,.3);
+    display:flex;align-items:center;gap:10px;max-width:min(92vw,430px);
+    opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s ease}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast .tk{color:var(--accent);font-size:15px;flex:none}
+  .toast.warn .tk{color:var(--new-ink)}
+
   footer{margin-top:26px;font-size:12px;color:var(--ink-soft);max-width:70ch;line-height:1.6}
   footer b{color:var(--ink-soft);font-weight:700}
   .disclaimer{border-left:2px solid var(--line-strong);padding-left:14px}
@@ -244,6 +254,9 @@
       <p class="sub">Paste a passage, tick off the phonics skills your group has been taught, and see exactly which words they can decode — and which ones they can't yet.</p>
     </div>
     <div class="mast-actions">
+      <button class="theme-btn" id="shareBtn" aria-label="Copy a shareable link to this check">
+        <span aria-hidden="true">🔗</span><span>Copy link</span>
+      </button>
       <button class="theme-btn" id="printBtn" aria-label="Print or save a decodability report">
         <span aria-hidden="true">⎙</span><span>Print report</span>
       </button>
@@ -327,6 +340,7 @@
 </div>
 
 <div class="tip" id="tip"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 /* ============================================================
@@ -746,6 +760,78 @@ window.addEventListener('beforeprint',()=>{
   if(!editor.hidden){ text=editor.value; render(); showEdit(false); }
   updateReportHead();
 });
+
+/* ---------- shareable link ----------
+   Encodes the passage + taught skills into a URL-safe hash so a teacher can
+   send a colleague the exact same check. Self-contained: no server, no
+   shortener — the whole state travels in the link. */
+const toast=document.getElementById('toast');
+let toastTimer=null;
+function showToast(msg, warn){
+  clearTimeout(toastTimer);
+  toast.className = "toast"+(warn?" warn":"");
+  toast.innerHTML = `<span class="tk" aria-hidden="true">${warn?"⚠":"✓"}</span><span>${msg}</span>`;
+  // force reflow so re-triggering restarts the transition
+  void toast.offsetWidth;
+  toast.classList.add('show');
+  toastTimer=setTimeout(()=>toast.classList.remove('show'), 3600);
+}
+
+function encodeState(){
+  const payload=JSON.stringify({v:1, t:text, s:[...taught]});
+  // UTF-8 safe base64, then make it URL-safe
+  return btoa(unescape(encodeURIComponent(payload)))
+    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function decodeState(str){
+  try{
+    let b=str.replace(/-/g,'+').replace(/_/g,'/');
+    while(b.length%4) b+='=';
+    const o=JSON.parse(decodeURIComponent(escape(atob(b))));
+    if(o && typeof o.t==="string" && Array.isArray(o.s)) return o;
+  }catch(e){/* malformed or truncated link — ignore, keep defaults */}
+  return null;
+}
+function shareURL(){
+  return location.origin+location.pathname+"#p="+encodeState();
+}
+
+function copyShareLink(){
+  const url=shareURL();
+  // keep the address bar in sync so the link is copyable even if the API fails
+  try{ history.replaceState(null,"","#p="+encodeState()); }catch(e){}
+  const ok=()=>showToast("Link copied — opens this exact passage and skill set.");
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(ok).catch(()=>fallbackCopy(url,ok));
+  } else {
+    fallbackCopy(url,ok);
+  }
+}
+function fallbackCopy(url,ok){
+  try{
+    const ta=document.createElement('textarea');
+    ta.value=url; ta.style.position='fixed'; ta.style.opacity='0'; ta.style.top='0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    const done=document.execCommand('copy');
+    document.body.removeChild(ta);
+    if(done){ ok(); return; }
+  }catch(e){/* fall through */}
+  showToast("Couldn't auto-copy — the link is now in your address bar to copy.", true);
+}
+document.getElementById('shareBtn').onclick=copyShareLink;
+
+/* restore state from a shared link, if present, before the first render */
+(function restoreFromHash(){
+  const m=location.hash.match(/[#&]p=([^&]+)/);
+  if(!m) return;
+  const o=decodeState(m[1]);
+  if(!o) return;
+  const valid=new Set(Object.keys(SKILLNAME));
+  text=o.t;
+  taught=new Set(o.s.filter(id=>valid.has(id)));
+  skillList.querySelectorAll('input').forEach(i=>i.checked=taught.has(i.dataset.id));
+  syncPresetFromTaught();
+})();
 
 applyTheme();
 render();
