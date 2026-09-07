@@ -119,6 +119,19 @@
   .tally .num{font-weight:700;font-variant-numeric:tabular-nums;font-size:15px}
   .tally .lbl{font-size:12px;color:var(--ink-soft)}
 
+  /* teach-next: which untaught skill unlocks the most amber words */
+  .teachnext{display:flex;align-items:baseline;gap:10px 12px;flex-wrap:wrap}
+  .tn-label{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-soft);flex:none}
+  .tn-chips{display:flex;gap:8px;flex-wrap:wrap}
+  .tn-chip{font:inherit;font-size:13px;font-weight:600;color:var(--ink);background:var(--paper);
+    border:1px solid var(--line-strong);border-radius:999px;padding:4px 5px 4px 12px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:8px;transition:border-color .12s,color .12s,transform .05s}
+  .tn-chip:hover{border-color:var(--accent);color:var(--accent-ink)}
+  .tn-chip:active{transform:translateY(1px)}
+  .tn-chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .tn-chip .tn-n{font-variant-numeric:tabular-nums;font-weight:700;font-size:12px;color:var(--ok-ink);
+    background:var(--ok-bg);border:1px solid var(--ok-edge);border-radius:999px;padding:1px 8px;line-height:1.45}
+
   /* passage */
   .passage-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
   .passage-head h2{font-family:"Fraunces",serif;font-weight:600;font-size:16px;margin:0}
@@ -285,7 +298,7 @@
     *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
     body{background:#fff}
     .wrap{max-width:100%;padding:0}
-    header.mast,.controls,.tabs,.editor,.tip,#printBtn,.theme-btn,.modal-overlay{display:none!important}
+    header.mast,.controls,.tabs,.editor,.tip,#printBtn,.theme-btn,.modal-overlay,.teachnext{display:none!important}
     .grid{display:block}
     .bench{gap:14px}
     .panel{box-shadow:none;border:1px solid var(--line-strong);break-inside:avoid}
@@ -361,6 +374,10 @@
             <div class="tally"><span class="swatch" style="background:var(--ok-bg)"></span><span class="num" id="tOk">0</span><span class="lbl">decodable</span></div>
             <div class="tally"><span class="swatch" style="background:var(--new-bg)"></span><span class="num" id="tNew">0</span><span class="lbl">not taught yet</span></div>
             <div class="tally"><span class="swatch" style="background:var(--tricky-bg)"></span><span class="num" id="tTricky">0</span><span class="lbl">tricky / heart words</span></div>
+          </div>
+          <div class="teachnext" id="teachNext" hidden>
+            <span class="tn-label">Teach next</span>
+            <div class="tn-chips" id="tnChips"></div>
           </div>
         </div>
       </div>
@@ -645,6 +662,7 @@ function render(){
   }
   updateScore(ok,nw,tr);
   buildFixit(amber);
+  buildTeachNext(amber);
   updateReportHead();
 }
 
@@ -721,6 +739,52 @@ function buildFixit(amber){
     row.appendChild(subsWrap);
     fixitBody.appendChild(row);
   });
+}
+
+/* ---------- teach-next: highest-leverage skill to teach ----------
+   For every skill the group hasn't been taught, count how many of the
+   currently-amber word *types* would become fully decodable if that one
+   skill were added. A word is unlocked by skill S only when S is its
+   *sole* missing skill, so each "+N" is an honest "teach this → N more
+   words turn green" — the planning counterpart to Fix-it's word swaps.
+   Meaning-free and engine-driven: it reuses analyseWord's missing sets. */
+const ALL_SKILL_IDS = [];
+PHASES.forEach(p=>p.skills.forEach(s=>ALL_SKILL_IDS.push(s.id)));
+
+const teachNextEl = document.getElementById('teachNext');
+const tnChips = document.getElementById('tnChips');
+
+function buildTeachNext(amber){
+  tnChips.innerHTML = "";
+  if(amber.size===0){ teachNextEl.hidden = true; return; }
+  const gains = [];
+  ALL_SKILL_IDS.forEach(skill=>{
+    if(taught.has(skill)) return;
+    let n = 0;
+    amber.forEach(missing=>{ if(missing.length===1 && missing[0]===skill) n++; });
+    if(n>0) gains.push({skill, n});
+  });
+  if(!gains.length){ teachNextEl.hidden = true; return; }
+  // most words unlocked first; ties fall back to teaching order
+  gains.sort((a,b)=> b.n-a.n || ALL_SKILL_IDS.indexOf(a.skill)-ALL_SKILL_IDS.indexOf(b.skill));
+  gains.slice(0,4).forEach(g=>{
+    const name = SKILLNAME[g.skill] || g.skill;
+    const b = document.createElement('button');
+    b.type = "button"; b.className = "tn-chip";
+    b.innerHTML = `${name}<span class="tn-n">+${g.n}</span>`;
+    b.title = `Teach “${name}” and ${g.n} more ${g.n===1?'word':'words'} become decodable for this group.`;
+    b.addEventListener('click', ()=>teachSkill(g.skill));
+    tnChips.appendChild(b);
+  });
+  teachNextEl.hidden = false;
+}
+
+function teachSkill(id){
+  if(taught.has(id)) return;
+  taught.add(id);
+  skillList.querySelectorAll('input').forEach(i=>{ if(i.dataset.id===id) i.checked=true; });
+  syncPresetFromTaught();
+  render();
 }
 
 function applySwap(from, to){
