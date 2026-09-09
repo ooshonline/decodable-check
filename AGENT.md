@@ -22,19 +22,53 @@ as a PR that **Kyle reviews and merges**, weekdays and weekends alike (see
    nights already built or proposed. **Do not repeat** work already done or already
    sitting in an open PR. Pick the next unbuilt increment.
 
-## Roadmap — build the highest-priority item not yet done
-1. **Preset scope sequences** — a dropdown to switch the taught-skills preset between
-   common programs (UK Letters & Sounds phases, UFLI Foundations, a generic SoR
-   sequence). Encode each as data; keep the manual checklist working.
-2. **Fix-it mode** — for each amber (not-yet-decodable) word, suggest a decodable
-   replacement that fits the taught skills, so the tool helps *rewrite* texts, not
-   just check them.
-3. **Export & share** — a printable decodability report and/or a shareable link.
-4. **Save & track** passages per class (localStorage first).
-5. **Tie-in** with Kyle's Ribbit Reading App and Wordlist Wonders.
+## Shipped so far (don't rebuild these)
+The original roadmap 1–4 is **done**, plus two extras. On `main`:
+1. **Preset scope sequences** — program presets (UK phases, UFLI, SoR) as data.
+2. **Fix-it mode** — decodable swap suggestions for each amber word.
+3. **Export & share** — printable report **and** shareable links.
+4. **Save & track** — per-class library in localStorage, now with **JSON export/import**
+   (backup + move between devices).
+5. **Teach next** — the highest-leverage untaught skill to unlock the most amber words.
+6. **Known words** — mark names / class-taught words so they don't count as "not taught yet".
 
-Prefer the top unbuilt item, but if a lower item is clearly more valuable or lower-risk
-on a given night, use judgement — just build only **one** increment.
+## Roadmap — the next phase (build the highest-priority item not yet done)
+The feature loop (check → rewrite → plan → track → share → back up) is closed. The
+priority now shifts from **adding surface** to **hardening the core and deepening what
+exists**. `analyseWord()` is the whole product's credibility — a mis-score hands a
+teacher a text they shouldn't use — so engine trustworthiness comes first.
+
+1. **Engine test corpus (do this first).** Build an in-repo test set — a few hundred
+   real words tagged decodable / needs-skill / heart-word, plus the sample passage's
+   expected verdicts — runnable in Node against the real `analyseWord()`. This is the
+   safety net that lets every later engine change prove accuracy instead of eyeballing it.
+   Can live as a `<script type="test">` block or a sibling `test/` file that imports the
+   engine; keep the app itself one self-contained `index.html`.
+2. **Engine hardening.** With the corpus in place, tighten known weak spots: syllable-
+   boundary blends, soft c/g, `-le` endings (`gentle`, `little`), schwa, and magic-e vs.
+   vowel-team overlaps. The `adv` bucket is currently a catch-all — split it where it
+   pays off. Every change must keep the corpus green.
+3. **Inflection-aware fix-it.** Let swaps handle `-s/-es/-ing/-ed` (`looked`, `running`)
+   with **correct** spelling (double-consonant, drop-e, y→ies). Only after the corpus
+   exists — a wrong generated spelling in a phonics tool is the worst kind of bug, so
+   verify every generated form against `analyseWord()` before offering it.
+4. **Shortest path to 100%.** Extend Teach-next from the single best skill to a greedy
+   multi-skill mini-plan ("teach these 2 and the whole text works").
+5. **Backup-everything export.** Fold the *Known words* list (and any other per-group
+   state) into the library export so it's a true full backup, not passages only.
+6. **Tie-in with Kyle's Ribbit Reading App & Wordlist Wonders** — the one item that's a
+   product/positioning decision, not just engineering. **Do NOT build on autopilot.**
+   Open questions for Kyle first: what the tie-in *does* (send decodable words into
+   Ribbit? a soft "from the maker of…" cross-link? something deeper?), and whether it's
+   meant to drive people *to* the paid products or add value *for* existing owners.
+
+Prefer the top unbuilt item, but use judgement — if a lower item is clearly more
+valuable or lower-risk on a given night, take it. Build only **one** increment.
+
+**Restraint over volume.** The core roadmap is basically done, so a night spent
+hardening, testing, or polishing is worth more than bolting on a marginal panel. It is
+always a valid night's work to improve the engine, add tests, or fix a rough edge
+rather than ship a new feature. Don't add surface for the sake of shipping something.
 
 ## Quality bar
 - Match the existing design system exactly: **Fraunces** (display), **Public Sans**
