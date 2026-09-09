@@ -1400,4 +1400,23 @@ function renderLibrary(){
 applyTheme();
 renderKnown();
 render();
+
+/* ============================================================
+   Test hook — inert in the browser, used by the Node engine
+   test corpus (see test/). Browsers have no `module` global, so
+   this block is skipped entirely and has zero runtime effect;
+   the test loader supplies a `module` object to capture the real
+   engine (analyseWord / computeStats / tokenize) instead of a
+   copy, so the corpus can never drift from the shipped code.
+   ============================================================ */
+if (typeof module === "object" && module && module.exports) {
+  module.exports = {
+    analyseWord, tokenize, computeStats,
+    PHASES, GRAPHEMES, VOWELS, CONS, TRICKY, PRESETS, SKILLNAME,
+    getKnown: () => known,
+    setKnown: (s) => { known = s instanceof Set ? s : new Set(s); },
+    getTaught: () => taught,
+    setTaught: (s) => { taught = s instanceof Set ? s : new Set(s); },
+  };
+}
 </script>
