@@ -187,7 +187,7 @@
   .tip .g{font-family:"Andika",sans-serif;font-weight:700}
 
   /* share-link toast */
-  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(10px);z-index:60;
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(10px);z-index:70;
     background:var(--ink);color:var(--paper);font-size:13px;font-weight:600;line-height:1.35;
     padding:11px 18px;border-radius:14px;box-shadow:0 10px 34px rgba(0,0,0,.3);
     display:flex;align-items:center;gap:10px;max-width:min(92vw,430px);
@@ -279,9 +279,16 @@
   .save-btn:hover{filter:brightness(1.06)}
   .save-btn:disabled{opacity:.5;cursor:not-allowed;filter:none}
 
-  .lib-divider{display:flex;align-items:center;gap:12px;margin:22px 2px 14px;font-size:11px;
-    font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft)}
-  .lib-divider::after{content:"";flex:1;height:1px;background:var(--line-strong)}
+  .lib-tools{display:flex;align-items:center;gap:10px;margin:22px 2px 14px}
+  .lib-tools .lt-title{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--ink-soft);white-space:nowrap}
+  .lib-tools .lt-rule{flex:1;height:1px;background:var(--line-strong)}
+  .lt-btn{border:1px solid var(--line-strong);background:var(--paper);color:var(--ink-soft);border-radius:8px;
+    padding:5px 12px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;
+    display:inline-flex;align-items:center;gap:6px}
+  .lt-btn:hover:not(:disabled){color:var(--ink);border-color:var(--ink-soft)}
+  .lt-btn:disabled{opacity:.45;cursor:not-allowed}
+  .lt-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   .lib-class{margin-top:18px}
   .lib-class:first-child{margin-top:0}
   .lib-class-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 2px 8px}
@@ -489,7 +496,17 @@
           <button class="save-btn" id="saveBtn" type="button">Save current passage</button>
         </div>
       </div>
-      <div class="lib-divider">Saved passages</div>
+      <div class="lib-tools">
+        <span class="lt-title">Saved passages</span>
+        <span class="lt-rule"></span>
+        <button class="lt-btn" id="libExport" type="button" aria-label="Export your library as a backup file">
+          <span aria-hidden="true">↧</span><span>Export</span>
+        </button>
+        <button class="lt-btn" id="libImport" type="button" aria-label="Import a library backup file">
+          <span aria-hidden="true">↥</span><span>Import</span>
+        </button>
+        <input type="file" id="libFile" accept="application/json,.json" hidden>
+      </div>
       <div id="libList"></div>
     </div>
   </div>
@@ -1175,6 +1192,9 @@ const saveBtn    = document.getElementById('saveBtn');
 const saveSnap   = document.getElementById('saveSnap');
 const libList    = document.getElementById('libList');
 const classNames = document.getElementById('classNames');
+const libExport  = document.getElementById('libExport');
+const libImport  = document.getElementById('libImport');
+const libFile    = document.getElementById('libFile');
 let lastClass = "";
 
 function openLibrary(){
@@ -1242,10 +1262,103 @@ function deleteItem(id){
   renderLibrary();
 }
 
+/* ---------- library backup: export / import ----------
+   localStorage is per-browser, so a year's library is one cleared cache away
+   from gone and can't move between a school and home machine. Export writes
+   the whole library to a portable JSON file; Import reads one back, validates
+   every entry against the engine, recomputes each score so it always matches
+   analyseWord, and merges by id (so re-importing the same file is a no-op).
+   No server, no dependency — the data travels in the file, like share links. */
+function exportLibrary(){
+  if(!library.length){ showToast("Nothing to export yet — save a passage first.", true); return; }
+  const payload = JSON.stringify(
+    {app:"decodable-check", type:"library", v:1, exportedAt:new Date().toISOString(), items:library}, null, 2);
+  try{
+    const blob = new Blob([payload], {type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `decodable-check-library-${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+    const n = library.length;
+    showToast(`Exported ${n} passage${n!==1?'s':''} — keep the file safe or open it on another device.`);
+  }catch(e){
+    showToast("Couldn't create the backup file in this browser.", true);
+  }
+}
+
+/* validate & normalise one incoming entry; returns null if unusable */
+function sanitizeLibItem(raw){
+  if(!raw || typeof raw!=="object" || typeof raw.text!=="string" || !raw.text.trim()) return null;
+  const valid = new Set(Object.keys(SKILLNAME));
+  const skills = Array.isArray(raw.skills) ? raw.skills.filter(s=>valid.has(s)) : [];
+  const title = (typeof raw.title==="string" && raw.title.trim()) ? raw.title.trim().slice(0,80) : suggestTitle(raw.text);
+  const klass = (typeof raw.klass==="string" && raw.klass.trim()) ? raw.klass.trim().slice(0,40) : "Unfiled";
+  const savedAt = Number.isFinite(raw.savedAt) ? raw.savedAt : Date.now();
+  const preset = typeof raw.preset==="string" ? raw.preset : "custom";
+  const id = (typeof raw.id==="string" && raw.id) ? raw.id
+    : (Date.now().toString(36) + Math.random().toString(36).slice(2,6));
+  // recompute the score from text + skills so an imported entry can never
+  // disagree with the engine, even if the file was hand-edited or stale
+  const score = computeStats(raw.text, new Set(skills));
+  return {id, title, klass, text:raw.text, skills, preset, score, savedAt};
+}
+
+function importLibraryData(parsed){
+  const rawItems = Array.isArray(parsed) ? parsed
+    : (parsed && Array.isArray(parsed.items)) ? parsed.items : null;
+  if(!rawItems) return {ok:false};
+  const existing = new Set(library.map(i=>i.id));
+  const incoming = [];
+  let added=0, skipped=0;
+  rawItems.forEach(r=>{
+    const it = sanitizeLibItem(r);
+    if(!it || existing.has(it.id)){ skipped++; return; }
+    existing.add(it.id);
+    incoming.push(it); added++;
+  });
+  if(added){
+    library = incoming.concat(library);
+    library.sort((a,b)=> b.savedAt - a.savedAt);   // keep newest-first across the merge
+    persistLibrary(library);
+    renderLibrary();
+  }
+  return {ok:true, added, skipped};
+}
+
+libExport.onclick = exportLibrary;
+libImport.onclick = ()=> libFile.click();
+libFile.onchange = ()=>{
+  const file = libFile.files && libFile.files[0];
+  if(!file) return;
+  const fr = new FileReader();
+  fr.onload = ()=>{
+    let parsed=null;
+    try{ parsed = JSON.parse(fr.result); }catch(e){ parsed=null; }
+    if(parsed===null){ showToast("Couldn't read that file — it isn't valid JSON.", true); }
+    else {
+      const res = importLibraryData(parsed);
+      if(!res.ok){ showToast("That file isn't a Decodable Check library.", true); }
+      else if(res.added===0){
+        showToast(res.skipped
+          ? `Already up to date — ${res.skipped} passage${res.skipped!==1?'s':''} already in your library.`
+          : "No passages found in that file.", true);
+      } else {
+        showToast(`Imported ${res.added} passage${res.added!==1?'s':''}${res.skipped?` · ${res.skipped} skipped`:''}.`);
+      }
+    }
+    libFile.value = "";      // let the same file be re-selected later
+  };
+  fr.onerror = ()=>{ showToast("Couldn't read that file.", true); libFile.value=""; };
+  fr.readAsText(file);
+};
+
 function renderLibrary(){
   // class-name autocomplete
   const classes = [...new Set(library.map(i=>i.klass))];
   classNames.innerHTML = classes.map(c=>`<option value="${escHtml(c)}">`).join("");
+  libExport.disabled = library.length===0;      // nothing to back up yet
 
   if(library.length===0){
     libList.innerHTML = `<div class="lib-empty">No saved passages yet. Name this one above and hit save — reload it any time, and watch each class's decodability build up over the year.</div>`;
