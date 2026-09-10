@@ -12,6 +12,24 @@ spelling has been taught.
 ## Run it
 Open `index.html` in any browser. No build step, no dependencies.
 
+## Test the engine
+`analyseWord()` is the whole tool's credibility — a mis-score hands a teacher a
+text they shouldn't use — so it has a regression corpus:
+
+```sh
+npm test        # or: node test/engine.test.js
+```
+
+The corpus runs the **real** engine straight out of `index.html` (no copy to
+drift — a browser-inert test hook exposes it to Node) against ~350 hand-authored,
+phonics-verified cases: decodable words and their exact grapheme→skill
+decomposition, "needs an untaught skill" scenarios per program preset, heart and
+known words, and the sample passage's headline % (92% on UK Reception, 100% with
+everything taught). Known engine weak spots (soft c/g, `-le` endings,
+syllable-boundary blends…) are locked as documented **hardening targets** — see
+`test/corpus.js`. The app stays one self-contained `index.html`; the tests live
+in `test/` and use only Node's built-ins.
+
 ## Architecture (single file, data-driven)
 - `PHASES` — scope-and-sequence skills in teaching order (the checklist).
 - `GRAPHEMES` — ordered longest-first grapheme → skill map.
@@ -30,8 +48,9 @@ Open `index.html` in any browser. No build step, no dependencies.
 
 ## Roadmap
 The feature loop is closed; the focus now is the engine that everything rests on.
-1. Engine test corpus — prove decodability accuracy, not eyeball it
+1. ~~Engine test corpus — prove decodability accuracy, not eyeball it~~ ✅ `test/`
 2. Engine hardening — syllable blends, soft c/g, `-le` endings, schwa
+   (the corpus already lists these as locked, documented targets)
 3. Inflection-aware fix-it — correct `-s/-ing/-ed` swap spellings
 4. Shortest path to 100% — multi-skill teach-next mini-plan
 5. Backup-everything export (include the Known words list)
