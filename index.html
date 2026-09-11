@@ -563,11 +563,33 @@ function analyseWord(raw, taught){
   if(known.has(word)) return {cat:"known", reason:"Marked as known for this group — a name or a word you've taught."};
   if(TRICKY.has(word)) return {cat:"tricky", reason:"On the heart-word list — taught as a whole word."};
 
-  let w = word, ending = "";
-  // strip one inflectional ending
-  const em = w.match(/^(.*?)(ing|ed|es|s)$/);
-  if(em && em[1].length>=2){
-    ending = em[2];
+  // Strip at most one inflectional ending — but only when the suffix is a
+  // genuine inflection, not root letters that merely look like one. A greedy
+  // strip mis-read bus/his/miss/class (root -s), thing/bring/string (i+ng),
+  // sled/shed/bled (e+d) and notes/rides (magic-e + s) as inflected forms.
+  let ending = "";
+  const hasVowel = s => /[aeiou]/.test(s);
+  if(/ing$/.test(word)){
+    const base = word.slice(0, -3);
+    // jumping->jump (base carries its own vowel); thing/bring/string -> i+ng
+    if(base.length >= 2 && hasVowel(base)) ending = "ing";
+  } else if(/ed$/.test(word)){
+    const base = word.slice(0, -2);
+    // jumped->jump; sled/shed/bled -> e+d (no vowel left in the base)
+    if(base.length >= 2 && hasVowel(base)) ending = "ed";
+  } else if(/s$/.test(word)){
+    const beforeS = word[word.length - 2];
+    if(/es$/.test(word)){
+      const base = word.slice(0, -2);
+      if(base.length >= 2 && /(s|x|z|ch|sh)$/.test(base)){
+        ending = "es";                                  // boxes, wishes, glasses, buses (sibilant + es)
+      } else if(/[aeiou][bcdfghjklmnpqrstvwxyz]e$/.test(word.slice(0, -1))){
+        ending = "s";                                   // notes|s, rides|s (magic-e + plural s)
+      }                                                 // sees/goes/toes: leave whole (root vowel team)
+    } else if(word.length - 1 >= 2 && CONS.has(beforeS) && !"sxz".includes(beforeS)){
+      ending = "s";                                     // jumps, hands, cats (consonant + s)
+    }
+    // vowel + s (bus, his, gas) and ss/xs/zs (miss, class) are NOT inflections
   }
   const core = ending ? word.slice(0, word.length-ending.length) : word;
 

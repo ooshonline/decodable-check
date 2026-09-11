@@ -78,6 +78,25 @@ const DECODABLE = [
   ["jumps", ["blend", "endings"]], ["jumped", ["blend", "endings"]],
   ["hands", ["blend", "endings"]], ["packed", ["digraph", "endings"]],
   ["kicking", ["digraph", "endings"]], ["wished", ["digraph", "endings"]],
+  ["cats", ["endings"]], ["dogs", ["endings"]], ["kids", ["endings"]],
+  ["boxes", ["endings"]], ["wishes", ["digraph", "endings"]],
+  ["buses", ["endings"]], ["notes", ["magice", "endings"]],
+  ["rides", ["magice", "endings"]], ["makes", ["magice", "endings"]],
+
+  // --- NON-inflections: root letters that look like a suffix but aren't.
+  //     These lock the "don't over-strip" fix (was mis-read as inflected).
+  //     final -s that is root, not a plural / 3rd-person marker:
+  ["bus", []], ["his", []], ["gas", []], ["yes", []], ["plus", ["blend"]],
+  ["this", ["digraph"]], ["miss", ["double"]], ["class", ["blend", "double"]],
+  ["less", ["double"]], ["boss", ["double"]], ["kiss", ["double"]],
+  ["glass", ["blend", "double"]], ["cross", ["blend", "double"]],
+  //     final -ing that is really i + ng (a digraph), not verb + ing:
+  ["thing", ["digraph"]], ["king", ["digraph"]], ["bring", ["blend", "digraph"]],
+  ["string", ["blend", "digraph"]], ["swing", ["blend", "digraph"]],
+  ["wring", ["adv", "digraph"]],
+  //     final -ed that is really e + d, not verb + ed:
+  ["sled", ["blend"]], ["shed", ["digraph"]], ["bled", ["blend"]],
+  ["fled", ["blend"]], ["bred", ["blend"]],
 
   // --- magic-e / split digraph ---
   ["cake", ["magice"]], ["bike", ["magice"]], ["home", ["magice"]],
@@ -284,13 +303,12 @@ const KNOWN_LIMITATIONS = [
   { word: "rabbit", now: ["blend"], want: "rab+bit; bb is a double, not a blend", note: "medial double consonant" },
   { word: "kitten", now: ["blend"], want: "kit+ten; tt is a double, not a blend", note: "medial double consonant" },
 
-  // final s / es / ed stripped as an inflection when it isn't one
-  { word: "miss", now: ["endings"], want: "double-s (double), not a plural", note: "final 's' wrongly stripped" },
-  { word: "class", now: ["blend", "endings"], want: "cl blend + double-s; not a plural", note: "final 's' wrongly stripped" },
-  { word: "bus", now: ["endings"], want: "plain CVC; 's' is not an inflection", note: "final 's' wrongly stripped" },
-  { word: "his", now: ["endings"], want: "heart-ish CVC; 's' is not an inflection", note: "final 's' wrongly stripped" },
-  { word: "hundred", now: ["blend", "endings"], want: "hun+dred; '-red' is not an -ed inflection", note: "final 'ed' wrongly stripped" },
-  { word: "tennis", now: ["blend", "endings"], want: "ten+nis; 's' is not an inflection", note: "final 's' wrongly stripped" },
+  // final s / es / ed stripped as an inflection when it isn't one.
+  // FIXED for the clear cases (bus, his, miss, class, this, thing, sled …) —
+  // see the DECODABLE "NON-inflections" block, now hard-asserted. Two harder
+  // residues remain, each blocked by a *different* engine gap:
+  { word: "hundred", now: ["blend", "endings"], want: "hun+dred; '-red' is not an -ed inflection", note: "base 'hundr' still has a vowel, so the -ed guard can't reject it — needs a coda/syllable check" },
+  { word: "tennis", now: ["blend"], want: "ten+nis; 'nn' is a double, not a blend", note: "the false -s strip is fixed; the medial 'nn' is still read as a blend (medial-double gap)" },
 
   // greedy 'wa' grapheme (for want/was) eats w+a before a vowel team
   { word: "wait", now: [], want: "w + ai(team) + t", note: "'wa' grapheme consumes w+a before the 'ai' team" },
