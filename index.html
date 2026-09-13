@@ -519,7 +519,7 @@
 const PHASES = [
   { num:1, name:"Foundations", skills:[
     {id:"cvc",     n:"Single letters & CVC", ex:"cat, hop, run, big"},
-    {id:"double",  n:"Double consonants (ff ll ss zz)", ex:"hill, buzz, off"},
+    {id:"double",  n:"Double consonants", ex:"hill, buzz, off, rabbit"},
   ]},
   { num:2, name:"Digraphs & blends", skills:[
     {id:"digraph", n:"Consonant digraphs", ex:"ship, chin, that, duck, ring"},
@@ -610,6 +610,15 @@ function analyseWord(raw, taught){
     if(matched){ [g,skill]=matched; }
     else {
       g = body[i];
+      // Doubled consonant = ONE sound, never a blend. "rabbit" is rab·bit, not
+      // r-a-b-b-it; the doubled letter marks the short vowel and is read once.
+      // The greedy table above already catches the floss doubles (ll ss ff zz);
+      // this consumes the medial doubles (rabbit, kitten, happy, dinner, button,
+      // sudden…) that otherwise fell through to the single-letter path and were
+      // wrongly flagged as a b+b "blend". Bucketed as `double`, the same skill a
+      // teacher ticks for hill/buzz/off. 'c' is excluded — 'cc' before e/i is
+      // genuinely two sounds (accent, success = /ks/), so it's left to soft-c.
+      if(g!=="c" && CONS.has(g) && body[i+1]===g){ g=g+g; skill="double"; }
       // Soft c: a 'c' before e, i or y says /s/ (city, cent, ice, race) — that's
       // advanced code, not the basic /k/ a beginner decodes. The rule is reliable
       // in English, so we model it. Soft g is deliberately NOT modelled: its
@@ -618,7 +627,7 @@ function analyseWord(raw, taught){
       // tool is worse than a known gap — see test/corpus.js KNOWN_LIMITATIONS.
       // core[i+1] sees the trigger even when it's a magic-e 'e' that body-
       // stripping removed (ice -> body "ic", but core still "ice").
-      if(g==="c" && /[eiy]/.test(core[i+1]||"")) skill="adv";
+      else if(g==="c" && /[eiy]/.test(core[i+1]||"")) skill="adv";
       else if(CONS.has(g)) skill="cvc";
       else if(VOWELS.has(g)) skill="cvc";
       else { g=body[i]; skill=null; } // punctuation/digit — ignore

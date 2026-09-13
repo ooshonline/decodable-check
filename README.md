@@ -49,7 +49,8 @@ in `test/` and use only Node's built-ins.
 ## Roadmap
 The feature loop is closed; the focus now is the engine that everything rests on.
 1. ~~Engine test corpus — prove decodability accuracy, not eyeball it~~ ✅ `test/`
-2. Engine hardening — soft c ✅; still to do: soft g, `-le` endings, syllable
+2. Engine hardening — soft c ✅, doubled consonants ✅ (rabbit/kitten/little are
+   `double`, not a false blend); still to do: soft g, `-le` endings, syllable
    blends, schwa (the corpus lists the rest as locked, documented targets)
 3. Inflection-aware fix-it — correct `-s/-ing/-ed` swap spellings
 4. Shortest path to 100% — multi-skill teach-next mini-plan
