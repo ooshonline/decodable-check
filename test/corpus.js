@@ -151,6 +151,23 @@ const DECODABLE = [
   ["knee", ["adv", "team"]], ["thumb", ["adv", "digraph"]],
   ["bridge", ["adv", "blend"]], ["crumb", ["adv", "blend"]],
   ["wreck", ["adv", "digraph"]],
+
+  // --- soft c (c = /s/ before e, i, y) — advanced code, not the basic /k/.
+  //     A beginner can't decode these with hard c; each needs the soft-c rule
+  //     (bucketed as `adv`). Reliable in English, so hard-asserted. (Soft g is a
+  //     documented limitation — its hard-g exceptions defeat a by-rule model.)
+  ["cinema", ["adv"]],                                    // c=/s/, all single letters
+  ["cent", ["adv", "blend"]],                             // c=/s/ + nt blend
+  ["cell", ["adv", "double"]],                            // c=/s/ + ll double
+  ["dance", ["adv", "blend"]],                            // c=/s/, n+c a /ns/ blend
+  ["pencil", ["adv", "blend"]],                           // c=/s/, n+c blend
+  ["circus", ["adv", "rctrl"]],                           // 1st c soft, 2nd c hard (before u)
+  ["ice", ["adv", "magice"]],                             // soft c + magic-e long i
+  ["race", ["adv", "magice"]], ["face", ["adv", "magice"]],
+  ["nice", ["adv", "magice"]], ["mice", ["adv", "magice"]],
+  ["rice", ["adv", "magice"]], ["dice", ["adv", "magice"]],
+  ["space", ["adv", "blend", "magice"]],                  // sp blend + soft c + magic-e
+  ["place", ["adv", "blend", "magice"]],
 ];
 
 /* ---------------------------------------------------------------
@@ -178,6 +195,12 @@ const NEEDS_SKILL = [
   ["ship", "cvc", ["digraph"]],
   ["stop", "cvc", ["blend"]],
   ["jumps", "cvc", ["blend", "endings"]],
+  // Soft c blocked by advanced code (uk-early has no `adv`; blend/double it does)
+  ["cent", "uk-early", ["adv"]],
+  ["cell", "uk-early", ["adv"]],
+  ["cinema", "uk-early", ["adv"]],
+  ["ice", "uk-early", ["adv", "magice"]],   // soft c AND magic-e both untaught
+  ["face", "uk-early", ["adv", "magice"]],
 ];
 
 /* A "cvc" convenience preset (cvc + double) used by NEEDS_SKILL and
@@ -276,14 +299,20 @@ const PASSAGE = {
    is visible progress, not a red build.
    --------------------------------------------------------------- */
 const KNOWN_LIMITATIONS = [
-  // soft c / soft g not modelled (c=/s/, g=/j/ before e/i/y) — treated as hard
-  { word: "city", now: ["blend"], want: "advanced (soft c) — not plain CVC", note: "c=/s/, y=/i/ unmodelled" },
-  { word: "cent", now: ["blend"], want: "advanced (soft c)", note: "c=/s/ unmodelled" },
-  { word: "ice", now: ["magice"], want: "advanced (soft c)", note: "c=/s/ unmodelled" },
-  { word: "race", now: ["magice"], want: "advanced (soft c)", note: "c=/s/ unmodelled" },
-  { word: "gem", now: [], want: "advanced (soft g)", note: "g=/j/ unmodelled — scored as basic CVC" },
-  { word: "page", now: ["magice"], want: "advanced (soft g)", note: "g=/j/ unmodelled" },
-  { word: "giant", now: ["blend"], want: "advanced (soft g)", note: "g=/j/ unmodelled; no true blend" },
+  // Soft c (c=/s/ before e/i/y) is now MODELLED as advanced code — see the
+  // "soft c" block in DECODABLE, hard-asserted (cent, ice, race, face, cell,
+  // space…). One residue remains, and it's a *different* engine gap:
+  { word: "city", now: ["adv", "blend"], want: "advanced (soft c); the 'blend' is spurious",
+    note: "soft c now fixed (adv). The stray 'blend' is the final-y gap: 'ty' is t + y=/i/ (a vowel), not a t+y consonant blend — 'y' lives in CONS. Same cause as icy/mercy/fancy." },
+  // Soft g (g=/j/ before e/i/y) is DELIBERATELY NOT modelled. Unlike soft c, a
+  // by-rule guess is unsafe: hard-g-before-e/i/y is extremely common (get, girl,
+  // gift, give, begin, finger, anger, longer, tiger, eager, together, forget,
+  // target…), so a naive rule would mis-mark ordinary words as advanced code —
+  // and a wrong mark in a phonics tool is worse than a known gap. Reliable soft-g
+  // detection needs a lexicon/morphology, out of scope for the by-rule engine.
+  { word: "gem", now: [], want: "advanced (soft g)", note: "g=/j/ unmodelled — see soft-g note above; scored as basic CVC" },
+  { word: "page", now: ["magice"], want: "advanced (soft g)", note: "g=/j/ unmodelled — see soft-g note above" },
+  { word: "giant", now: ["blend"], want: "advanced (soft g)", note: "g=/j/ unmodelled — see soft-g note above; no true blend" },
 
   // -le syllable (consonant + syllabic /əl/) read as consonant + vowel 'e'
   { word: "little", now: ["blend"], want: "-le ending (adv); tt is a double, not a blend", note: "final -le mis-read" },
