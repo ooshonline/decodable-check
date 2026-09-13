@@ -610,7 +610,16 @@ function analyseWord(raw, taught){
     if(matched){ [g,skill]=matched; }
     else {
       g = body[i];
-      if(CONS.has(g)) skill="cvc";
+      // Soft c: a 'c' before e, i or y says /s/ (city, cent, ice, race) — that's
+      // advanced code, not the basic /k/ a beginner decodes. The rule is reliable
+      // in English, so we model it. Soft g is deliberately NOT modelled: its
+      // hard-g exceptions are too common (get, girl, gift, finger, tiger,
+      // together…) for a by-rule guess to be safe, and a wrong mark in a phonics
+      // tool is worse than a known gap — see test/corpus.js KNOWN_LIMITATIONS.
+      // core[i+1] sees the trigger even when it's a magic-e 'e' that body-
+      // stripping removed (ice -> body "ic", but core still "ice").
+      if(g==="c" && /[eiy]/.test(core[i+1]||"")) skill="adv";
+      else if(CONS.has(g)) skill="cvc";
       else if(VOWELS.has(g)) skill="cvc";
       else { g=body[i]; skill=null; } // punctuation/digit — ignore
     }
@@ -702,7 +711,7 @@ const PRESETS = [
     skills:["cvc","double","digraph","blend","endings","magice","team","diph"]},
   {id:"ufli-g1", name:"UFLI - through Grade 1", desc:"Broad first-grade code, up to and including r-controlled vowels.",
     skills:["cvc","double","digraph","blend","endings","magice","team","diph","rctrl"]},
-  {id:"all", name:"Everything (advanced code)", desc:"All skills, including advanced patterns (kn-, -tion, soft c/g).",
+  {id:"all", name:"Everything (advanced code)", desc:"All skills, including advanced patterns (kn-, -tion, soft c).",
     skills:["cvc","double","digraph","blend","endings","magice","team","diph","rctrl","adv"]},
 ];
 
