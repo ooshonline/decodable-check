@@ -168,6 +168,31 @@ const DECODABLE = [
   ["rice", ["adv", "magice"]], ["dice", ["adv", "magice"]],
   ["space", ["adv", "blend", "magice"]],                  // sp blend + soft c + magic-e
   ["place", ["adv", "blend", "magice"]],
+
+  // --- doubled consonants = ONE sound, never a blend (roadmap #2 hardening).
+  //     A doubled letter (bb tt nn pp dd gg mm rr…) marks the short vowel and is
+  //     read once, so it needs the `double` skill, not `blend`. The greedy table
+  //     already handled the floss finals (ll ss ff zz -> hill, buzz, off); this
+  //     locks the MEDIAL doubles that used to be mis-read as a b+b "blend".
+  ["rabbit", ["double"]], ["kitten", ["double"]], ["tennis", ["double"]],
+  ["happen", ["double"]], ["mitten", ["double"]], ["button", ["double"]],
+  ["sudden", ["double"]], ["hidden", ["double"]], ["ribbon", ["double"]],
+  ["kennel", ["double"]], ["puppet", ["double"]], ["common", ["double"]],
+  ["cannot", ["double"]], ["rotten", ["double"]], ["cotton", ["double"]],
+  ["pollen", ["double"]], ["mammal", ["double"]], ["tunnel", ["double"]],
+  ["lesson", ["double"]], ["attic", ["double"]],
+  // final non-floss doubles (dd gg bb nn) — outside the ll/ss/ff/zz table,
+  // now covered by the general doubled-consonant rule.
+  ["add", ["double"]], ["odd", ["double"]], ["egg", ["double"]],
+  ["inn", ["double"]], ["ebb", ["double"]],
+  // doubles compose with the other skills around them:
+  ["rubbish", ["digraph", "double"]],                     // bb double + sh digraph
+  ["mammoth", ["digraph", "double"]],                     // mm double + th digraph
+  ["traffic", ["blend", "double"]],                       // tr blend + ff double
+  ["blossom", ["blend", "double"]],                       // bl blend + ss double
+  ["attack", ["digraph", "double"]],                      // tt double + ck digraph
+  ["dinner", ["double", "rctrl"]],                        // nn double + er r-controlled
+  ["summer", ["double", "rctrl"]],                        // mm double + er r-controlled
 ];
 
 /* ---------------------------------------------------------------
@@ -218,6 +243,10 @@ const DECODABLE_UNDER = [
   ["off", "uk-early"], ["fast", "uk-early"],
   ["cat", "cvc"], ["hen", "cvc"], ["sun", "cvc"], ["bell", "cvc"],
   ["cake", "uk-y1"], ["rain", "uk-y1"], ["star", "uk-y1"], ["her", "uk-y1"],
+  // medial doubles are decodable as soon as the `double` skill is taught —
+  // every cvc group in the presets already includes it (rabbit, not r-a-b-b-it).
+  ["rabbit", "cvc"], ["kitten", "cvc"], ["happen", "cvc"],
+  ["rabbit", "uk-early"], ["button", "sor-k"], ["tennis", "uk-early"],
 ];
 
 /* ---------------------------------------------------------------
@@ -314,13 +343,18 @@ const KNOWN_LIMITATIONS = [
   { word: "page", now: ["magice"], want: "advanced (soft g)", note: "g=/j/ unmodelled — see soft-g note above" },
   { word: "giant", now: ["blend"], want: "advanced (soft g)", note: "g=/j/ unmodelled — see soft-g note above; no true blend" },
 
-  // -le syllable (consonant + syllabic /əl/) read as consonant + vowel 'e'
-  { word: "little", now: ["blend"], want: "-le ending (adv); tt is a double, not a blend", note: "final -le mis-read" },
-  { word: "gentle", now: ["blend"], want: "-le ending + soft g", note: "final -le mis-read" },
-  { word: "table", now: ["blend"], want: "-le ending; open-syllable long a", note: "final -le mis-read" },
-  { word: "apple", now: ["blend"], want: "-le ending; pp double", note: "final -le mis-read" },
-  { word: "candle", now: ["blend"], want: "-le ending", note: "nd is a blend but final -le is mis-read" },
-  { word: "bottle", now: ["blend"], want: "-le ending; tt double", note: "final -le mis-read" },
+  // -le syllable (consonant + syllabic /əl/) — the final consonant+le should be
+  // one `adv` unit ("lit·tle"); the engine reads it as a basic consonant + vowel
+  // 'e'. Where the -le follows two DIFFERENT consonants (gentle, candle, table)
+  // that pair also mis-reads as a blend; where it follows a DOUBLE (little,
+  // apple, bottle) the double is now scored correctly and only the -le understate
+  // remains. Both are the same open target: model the consonant-le syllable.
+  { word: "little", now: ["double"], want: "-le ending (adv); tt double now correct", note: "medial double fixed; final -le still read as basic l + e" },
+  { word: "gentle", now: ["blend"], want: "-le ending + soft g", note: "final -le mis-read (t+l reads as a blend)" },
+  { word: "table", now: ["blend"], want: "-le ending; open-syllable long a", note: "final -le mis-read (b+l reads as a blend)" },
+  { word: "apple", now: ["double"], want: "-le ending (adv); pp double now correct", note: "medial double fixed; final -le still read as basic l + e" },
+  { word: "candle", now: ["blend"], want: "-le ending", note: "nd is a real blend but final -le is mis-read" },
+  { word: "bottle", now: ["double"], want: "-le ending (adv); tt double now correct", note: "medial double fixed; final -le still read as basic l + e" },
 
   // syllable-boundary consonants flagged as a single-syllable blend
   { word: "sunset", now: ["blend"], want: "two CVC syllables (sun+set) — no blend", note: "n|s spans a syllable boundary" },
@@ -328,16 +362,15 @@ const KNOWN_LIMITATIONS = [
   { word: "basket", now: ["blend"], want: "bas+ket — 'sk' split across syllables", note: "syllable-boundary blend" },
   { word: "picnic", now: ["blend"], want: "pic+nic — no blend", note: "c|n spans a syllable boundary" },
 
-  // doubled medial consonant treated as a blend
-  { word: "rabbit", now: ["blend"], want: "rab+bit; bb is a double, not a blend", note: "medial double consonant" },
-  { word: "kitten", now: ["blend"], want: "kit+ten; tt is a double, not a blend", note: "medial double consonant" },
+  // Doubled medial consonants (rabbit, kitten, tennis, happen, button…) are now
+  // scored as `double`, not a spurious blend — promoted to the DECODABLE corpus
+  // (see the "doubled consonants" block there). Left this note as a signpost.
 
   // final s / es / ed stripped as an inflection when it isn't one.
   // FIXED for the clear cases (bus, his, miss, class, this, thing, sled …) —
   // see the DECODABLE "NON-inflections" block, now hard-asserted. Two harder
   // residues remain, each blocked by a *different* engine gap:
   { word: "hundred", now: ["blend", "endings"], want: "hun+dred; '-red' is not an -ed inflection", note: "base 'hundr' still has a vowel, so the -ed guard can't reject it — needs a coda/syllable check" },
-  { word: "tennis", now: ["blend"], want: "ten+nis; 'nn' is a double, not a blend", note: "the false -s strip is fixed; the medial 'nn' is still read as a blend (medial-double gap)" },
 
   // greedy 'wa' grapheme (for want/was) eats w+a before a vowel team
   { word: "wait", now: [], want: "w + ai(team) + t", note: "'wa' grapheme consumes w+a before the 'ai' team" },
