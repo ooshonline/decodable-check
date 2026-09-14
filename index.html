@@ -610,6 +610,19 @@ function analyseWord(raw, taught){
     if(matched){ [g,skill]=matched; }
     else {
       g = body[i];
+      // Final y = a VOWEL, never a consonant. At the end of a word 'y' spells a
+      // long vowel — /ī/ in one-syllable words (cry, fly, sky, try) and /ē/ in
+      // multisyllabic ones (happy, city, funny, baby). English has no word
+      // ending in a consonant /y/, so this is exceptionless. Modelling it stops
+      // the old spurious blend where the final consonant chained into the y
+      // (city read t+y as /ty/, happy p+y as /py/, fancy → n+c+y…), and it is
+      // honest about the code required: a beginner taught only CVC cannot decode
+      // the /ē/ of a final y. Bucketed as `team` (a long-vowel spelling taught
+      // with the vowel teams — the grapheme table already files ay/ey/ie there).
+      // Only a BARE final y reaches here: start-of-word y (yes, you) is not at
+      // the end, and a vowel-team y (day, boy, key) is consumed by ay/oy/ey
+      // earlier, so neither is touched.
+      if(g==="y" && i===body.length-1 && body.length>1){ skill="team"; }
       // Doubled consonant = ONE sound, never a blend. "rabbit" is rab·bit, not
       // r-a-b-b-it; the doubled letter marks the short vowel and is read once.
       // The greedy table above already catches the floss doubles (ll ss ff zz);
@@ -618,7 +631,7 @@ function analyseWord(raw, taught){
       // wrongly flagged as a b+b "blend". Bucketed as `double`, the same skill a
       // teacher ticks for hill/buzz/off. 'c' is excluded — 'cc' before e/i is
       // genuinely two sounds (accent, success = /ks/), so it's left to soft-c.
-      if(g!=="c" && CONS.has(g) && body[i+1]===g){ g=g+g; skill="double"; }
+      else if(g!=="c" && CONS.has(g) && body[i+1]===g){ g=g+g; skill="double"; }
       // Soft c: a 'c' before e, i or y says /s/ (city, cent, ice, race) — that's
       // advanced code, not the basic /k/ a beginner decodes. The rule is reliable
       // in English, so we model it. Soft g is deliberately NOT modelled: its
@@ -633,8 +646,9 @@ function analyseWord(raw, taught){
       else { g=body[i]; skill=null; } // punctuation/digit — ignore
     }
     if(skill){
-      // consecutive single consonants => a blend
-      const isSingleCons = g.length===1 && CONS.has(g);
+      // consecutive single consonants => a blend. Vowel-y (skilled `team`
+      // above) sits in CONS but is read as a vowel here, so it never chains.
+      const isSingleCons = g.length===1 && CONS.has(g) && !(g==="y" && skill==="team");
       if(isSingleCons && prevCons){ need.add("blend"); }
       prevCons = isSingleCons;
       if(skill!=="cvc") need.add(skill);

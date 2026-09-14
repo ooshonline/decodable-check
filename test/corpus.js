@@ -193,6 +193,34 @@ const DECODABLE = [
   ["attack", ["digraph", "double"]],                      // tt double + ck digraph
   ["dinner", ["double", "rctrl"]],                        // nn double + er r-controlled
   ["summer", ["double", "rctrl"]],                        // mm double + er r-controlled
+
+  // --- final y = a VOWEL, never a consonant (roadmap #2 hardening).
+  //     At the end of a word 'y' spells a long vowel: /ī/ in one-syllable words
+  //     (cry, fly, sky) and /ē/ in multisyllabic ones (happy, city, funny).
+  //     English has no word ending in a consonant /y/, so the rule is
+  //     exceptionless. Before this fix the final y sat in CONS and chained into
+  //     a spurious blend with the letter before it (city read 't+y' as a /ty/
+  //     blend, happy 'p+y', fancy 'n+c+y'…). Now bucketed as `team` — a
+  //     long-vowel spelling taught with the vowel teams — so the blend is gone
+  //     AND the tool is honest that a CVC-only reader can't yet decode final y.
+  //     Vowel-team y (day, boy, key) is consumed by ay/oy/ey earlier and
+  //     start-of-word y (yes, yak) is a consonant, so neither is affected.
+  ["cry", ["blend", "team"]], ["fly", ["blend", "team"]], ["sky", ["blend", "team"]],
+  ["try", ["blend", "team"]], ["dry", ["blend", "team"]], ["spy", ["blend", "team"]],
+  ["sly", ["blend", "team"]], ["fry", ["blend", "team"]],
+  ["shy", ["digraph", "team"]],                            // sh digraph + y=/ī/
+  ["happy", ["double", "team"]], ["funny", ["double", "team"]],
+  ["silly", ["double", "team"]], ["puppy", ["double", "team"]],
+  ["sunny", ["double", "team"]], ["penny", ["double", "team"]],
+  ["jelly", ["double", "team"]], ["bunny", ["double", "team"]],
+  ["muddy", ["double", "team"]], ["foggy", ["double", "team"]],
+  ["baby", ["team"]], ["lady", ["team"]], ["pony", ["team"]],  // single medial cons, no blend
+  ["very", ["rctrl", "team"]], ["every", ["rctrl", "team"]],   // er r-controlled + y
+  // soft c + final y (both advanced/long-vowel code) — the city residue, fixed:
+  ["city", ["adv", "team"]], ["icy", ["adv", "team"]],
+  ["fancy", ["adv", "blend", "team"]],                    // soft c + n+c /ns/ blend + y
+  ["spicy", ["adv", "blend", "team"]],                    // sp blend + soft c + y
+  ["mercy", ["adv", "rctrl", "team"]],                   // er r-controlled + soft c + y
 ];
 
 /* ---------------------------------------------------------------
@@ -226,6 +254,12 @@ const NEEDS_SKILL = [
   ["cinema", "uk-early", ["adv"]],
   ["ice", "uk-early", ["adv", "magice"]],   // soft c AND magic-e both untaught
   ["face", "uk-early", ["adv", "magice"]],
+  // Final y = a long vowel, so a CVC/blends group hasn't been taught it yet.
+  ["happy", "uk-early", ["team"]],          // double taught, y=/ē/ (team) is not
+  ["funny", "uk-early", ["team"]],
+  ["cry", "uk-early", ["team"]],            // fl/cr blend taught, y=/ī/ (team) is not
+  ["city", "uk-early", ["adv", "team"]],    // soft c AND y-vowel both untaught
+  ["city", "uk-y1", ["adv"]],               // y-vowel now taught; only soft c blocks it
 ];
 
 /* A "cvc" convenience preset (cvc + double) used by NEEDS_SKILL and
@@ -247,6 +281,8 @@ const DECODABLE_UNDER = [
   // every cvc group in the presets already includes it (rabbit, not r-a-b-b-it).
   ["rabbit", "cvc"], ["kitten", "cvc"], ["happen", "cvc"],
   ["rabbit", "uk-early"], ["button", "sor-k"], ["tennis", "uk-early"],
+  // final-y words become decodable once "y as a vowel" (team) is taught (uk-y1)
+  ["happy", "uk-y1"], ["funny", "uk-y1"], ["cry", "uk-y1"], ["baby", "uk-y1"],
 ];
 
 /* ---------------------------------------------------------------
@@ -328,11 +364,22 @@ const PASSAGE = {
    is visible progress, not a red build.
    --------------------------------------------------------------- */
 const KNOWN_LIMITATIONS = [
-  // Soft c (c=/s/ before e/i/y) is now MODELLED as advanced code — see the
-  // "soft c" block in DECODABLE, hard-asserted (cent, ice, race, face, cell,
-  // space…). One residue remains, and it's a *different* engine gap:
-  { word: "city", now: ["adv", "blend"], want: "advanced (soft c); the 'blend' is spurious",
-    note: "soft c now fixed (adv). The stray 'blend' is the final-y gap: 'ty' is t + y=/i/ (a vowel), not a t+y consonant blend — 'y' lives in CONS. Same cause as icy/mercy/fancy." },
+  // Soft c (c=/s/ before e/i/y) is MODELLED as advanced code — see the "soft c"
+  // block in DECODABLE (cent, ice, race, cell, space…). FINAL y as a vowel is
+  // now modelled too — see the "final y = a VOWEL" block in DECODABLE (city,
+  // happy, cry, fancy…), so city is fixed (adv+team) and promoted there.
+  // The remaining y gap is MEDIAL y — a vowel inside a word (gym, myth, type,
+  // system, crystal). It still sits in CONS, so a consonant beside it reads as a
+  // spurious blend (myth = th digraph + a false m|y blend; type/gym a false y+
+  // cons blend). Unlike final y this can't be resolved by position alone: medial
+  // y is /ĭ/ (gym), /ī/ (type), or part of a team, and telling those apart needs
+  // syllable/vowel-slot analysis. Locked to current behaviour until then.
+  { word: "gym", now: ["blend"], want: "y=/ĭ/ vowel, no blend (advanced spelling)",
+    note: "medial y still in CONS: g+y reads as a spurious blend" },
+  { word: "myth", now: ["blend", "digraph"], want: "m + y=/ĭ/ + th(digraph); no blend",
+    note: "medial y still in CONS: m+y reads as a spurious blend" },
+  { word: "type", now: ["blend"], want: "t + y=/ī/ split-digraph (long vowel); no blend",
+    note: "medial y still in CONS: t+y reads as a spurious blend; y-e long vowel also unmodelled" },
   // Soft g (g=/j/ before e/i/y) is DELIBERATELY NOT modelled. Unlike soft c, a
   // by-rule guess is unsafe: hard-g-before-e/i/y is extremely common (get, girl,
   // gift, give, begin, finger, anger, longer, tiger, eager, together, forget,
