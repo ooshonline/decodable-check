@@ -221,6 +221,36 @@ const DECODABLE = [
   ["fancy", ["adv", "blend", "team"]],                    // soft c + n+c /ns/ blend + y
   ["spicy", ["adv", "blend", "team"]],                    // sp blend + soft c + y
   ["mercy", ["adv", "rctrl", "team"]],                   // er r-controlled + soft c + y
+
+  // --- consonant-le syllable (-le) = advanced code (roadmap #2 hardening).
+  //     A word ending <consonant>+le carries a final syllabic /əl/: lit·tle,
+  //     gen·tle, ta·ble. Modelled as `adv` (PHASES lists "gentle" as its
+  //     example). The consonant right before -le joins that syllable, so the
+  //     cross-boundary blend the engine used to read is gone (gentle was a false
+  //     n+t/t+l blend, table a false b+l, purple a false p+l). When that
+  //     consonant is DOUBLED (little, apple, middle) the split falls BETWEEN the
+  //     pair, so the double still scores AND the -le adds `adv`. Vowel-before-le
+  //     (pale, role, while) is magic-e and y-before-le (style) is the y-vowel
+  //     gap — neither is consonant-le, so both are untouched (locked below/above).
+  //     doubled consonant + -le (split between the double; double still counts):
+  ["little", ["adv", "double"]], ["apple", ["adv", "double"]],
+  ["bottle", ["adv", "double"]], ["middle", ["adv", "double"]],
+  ["giggle", ["adv", "double"]], ["puddle", ["adv", "double"]],
+  ["kettle", ["adv", "double"]], ["cattle", ["adv", "double"]],
+  ["pebble", ["adv", "double"]], ["paddle", ["adv", "double"]],
+  ["nibble", ["adv", "double"]], ["dazzle", ["adv", "double"]],
+  //     single consonant + -le (the consonant joins the -le syllable; no blend):
+  ["gentle", ["adv"]], ["candle", ["adv"]], ["handle", ["adv"]],
+  ["bundle", ["adv"]], ["table", ["adv"]], ["cable", ["adv"]],
+  ["bugle", ["adv"]], ["title", ["adv"]], ["simple", ["adv"]],
+  ["sample", ["adv"]], ["uncle", ["adv"]], ["ankle", ["adv"]],
+  ["tumble", ["adv"]],
+  //     -le composes with the code around it:
+  ["purple", ["adv", "rctrl"]], ["turtle", ["adv", "rctrl"]],   // ur/tle
+  ["marble", ["adv", "rctrl"]], ["circle", ["adv", "rctrl"]],   // soft-c 'cir' + -le
+  ["twinkle", ["adv", "blend"]], ["sprinkle", ["adv", "blend"]],// tw/spr blend + -le
+  ["stumble", ["adv", "blend"]], ["cradle", ["adv", "blend"]],
+  ["sparkle", ["adv", "blend", "rctrl"]],                       // sp blend + ar + -le
 ];
 
 /* ---------------------------------------------------------------
@@ -260,6 +290,16 @@ const NEEDS_SKILL = [
   ["cry", "uk-early", ["team"]],            // fl/cr blend taught, y=/ī/ (team) is not
   ["city", "uk-early", ["adv", "team"]],    // soft c AND y-vowel both untaught
   ["city", "uk-y1", ["adv"]],               // y-vowel now taught; only soft c blocks it
+  // Consonant-le (-le) is advanced code — a group without `adv` can't decode it
+  // yet, even when the rest of the word is basic (the old false blend is gone).
+  ["little", "uk-early", ["adv"]],          // double taught; only the -le blocks it
+  ["gentle", "uk-early", ["adv"]],
+  ["table", "uk-early", ["adv"]],
+  ["purple", "uk-early", ["adv", "rctrl"]], // -le AND r-controlled both untaught
+  // Under uk-y1 (all long-vowel code but NOT advanced) only the -le blocks it.
+  ["little", "uk-y1", ["adv"]],
+  ["gentle", "uk-y1", ["adv"]],
+  ["turtle", "uk-y1", ["adv"]],             // ur taught; only the -le blocks it
 ];
 
 /* A "cvc" convenience preset (cvc + double) used by NEEDS_SKILL and
@@ -283,6 +323,8 @@ const DECODABLE_UNDER = [
   ["rabbit", "uk-early"], ["button", "sor-k"], ["tennis", "uk-early"],
   // final-y words become decodable once "y as a vowel" (team) is taught (uk-y1)
   ["happy", "uk-y1"], ["funny", "uk-y1"], ["cry", "uk-y1"], ["baby", "uk-y1"],
+  // consonant-le words decode once advanced code is taught (the `all` preset)
+  ["little", "all"], ["gentle", "all"], ["table", "all"], ["purple", "all"],
 ];
 
 /* ---------------------------------------------------------------
@@ -390,18 +432,15 @@ const KNOWN_LIMITATIONS = [
   { word: "page", now: ["magice"], want: "advanced (soft g)", note: "g=/j/ unmodelled — see soft-g note above" },
   { word: "giant", now: ["blend"], want: "advanced (soft g)", note: "g=/j/ unmodelled — see soft-g note above; no true blend" },
 
-  // -le syllable (consonant + syllabic /əl/) — the final consonant+le should be
-  // one `adv` unit ("lit·tle"); the engine reads it as a basic consonant + vowel
-  // 'e'. Where the -le follows two DIFFERENT consonants (gentle, candle, table)
-  // that pair also mis-reads as a blend; where it follows a DOUBLE (little,
-  // apple, bottle) the double is now scored correctly and only the -le understate
-  // remains. Both are the same open target: model the consonant-le syllable.
-  { word: "little", now: ["double"], want: "-le ending (adv); tt double now correct", note: "medial double fixed; final -le still read as basic l + e" },
-  { word: "gentle", now: ["blend"], want: "-le ending + soft g", note: "final -le mis-read (t+l reads as a blend)" },
-  { word: "table", now: ["blend"], want: "-le ending; open-syllable long a", note: "final -le mis-read (b+l reads as a blend)" },
-  { word: "apple", now: ["double"], want: "-le ending (adv); pp double now correct", note: "medial double fixed; final -le still read as basic l + e" },
-  { word: "candle", now: ["blend"], want: "-le ending", note: "nd is a real blend but final -le is mis-read" },
-  { word: "bottle", now: ["double"], want: "-le ending (adv); tt double now correct", note: "medial double fixed; final -le still read as basic l + e" },
+  // Consonant-le syllable (little, apple, gentle, table, purple, uncle…) is now
+  // modelled as advanced code (`adv`) — see the "consonant-le syllable" block in
+  // DECODABLE. The consonant before -le joins that syllable, so the old false
+  // cross-boundary blend (gentle n+t/t+l, table b+l) is gone, and where the -le
+  // follows a double (little, apple) the double still scores. Promoted out of
+  // KNOWN_LIMITATIONS. One residue stays unmodelled but does NOT change any skill
+  // verdict: the OPEN-SYLLABLE long vowel of ta·ble / bu·gle / ti·tle (long a/u/i)
+  // is scored as a short cvc vowel — a vowel-length nuance PHASES has no skill for
+  // (open syllables aren't a taught skill), not a wrong decodability call.
 
   // syllable-boundary consonants flagged as a single-syllable blend
   { word: "sunset", now: ["blend"], want: "two CVC syllables (sun+set) — no blend", note: "n|s spans a syllable boundary" },
