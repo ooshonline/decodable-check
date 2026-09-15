@@ -591,7 +591,27 @@ function analyseWord(raw, taught){
     }
     // vowel + s (bus, his, gas) and ss/xs/zs (miss, class) are NOT inflections
   }
-  const core = ending ? word.slice(0, word.length-ending.length) : word;
+  let core = ending ? word.slice(0, word.length-ending.length) : word;
+
+  // Consonant-le syllable (-le): little, table, gentle, candle, purple, uncle.
+  // A word ending <consonant>+le carries a final syllabic /əl/ ("lit·tle",
+  // "gen·tle", "ta·ble") — advanced code (PHASES already lists "gentle" as an
+  // `adv` example). The consonant right before -le belongs to that syllable, so
+  // peeling it also removes the false blend the old engine read across the
+  // syllable boundary (gen|tle scored n+t / t+l as a blend, ta|ble scored b+l,
+  // pur|ple scored p+l…). When that consonant is DOUBLED (lit·tle, ap·ple,
+  // mid·dle) the syllable split falls BETWEEN the pair, so we peel only "le" and
+  // the double still scores as `double`. A vowel before -le (pale, role, while)
+  // is magic-e, and 'y' before -le (style) is the y-vowel/magic-e pattern — both
+  // excluded, so only a true consonant-le reaches here.
+  let consLe=false, leChunk="";
+  if(core.length>=3 && /[bcdfghjklmnpqrstvwxz]le$/.test(core)){
+    consLe=true;
+    const c1=core[core.length-3], c0=core[core.length-4];
+    const peel=(c0===c1)?2:3;              // double -> keep it; else the cons joins -le
+    leChunk=core.slice(core.length-peel);
+    core=core.slice(0, core.length-peel);
+  }
 
   // magic-e detection: vowel + single cons + silent e at end of core
   let body = core, magicE=false;
@@ -656,6 +676,7 @@ function analyseWord(raw, taught){
     }
     i += g.length;
   }
+  if(consLe){ need.add("adv"); parts.push({g:leChunk, skill:"adv"}); }
   if(magicE) need.add("magice");
   if(ending) need.add("endings");
 
