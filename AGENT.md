@@ -61,6 +61,22 @@ teacher a text they shouldn't use — so engine trustworthiness comes first.
    Open questions for Kyle first: what the tie-in *does* (send decodable words into
    Ribbit? a soft "from the maker of…" cross-link? something deeper?), and whether it's
    meant to drive people *to* the paid products or add value *for* existing owners.
+7. **Passage maker (Kyle's idea, 2026-09-15).** The inverse of the whole tool: instead of
+   *"is this passage decodable for my group?"*, generate a passage that **is** decodable
+   from preselected parameters. Likely parameters: the taught skill set / preset, an
+   optional skill or two to **feature** (practise `sh`, magic-e…), length (sentences or
+   word count), which heart words are allowed, and any *known* words (names) to weave in.
+   Every generated word must be **provably** decodable: build it from a curated word bank
+   (the Fix-it clusters are a start) assembled into simple sentence frames, and run each
+   candidate word through `analyseWord()` against the taught set **before** it goes in —
+   never trust a template blindly. This is a phonics tool, so a single non-decodable word
+   in a "decodable" passage is the worst kind of bug. **Constraints:** keep it one
+   self-contained `index.html`, **no network / no LLM** — generation is word-bank +
+   sentence-frame + live engine-verification, which also *guarantees* decodability offline.
+   Closes the loop end to end: check → rewrite → plan → track → share → back up → **create**.
+   Bigger than a one-night increment — scope it in stages (e.g. a minimal generator first,
+   then themes/length controls, then polish). Confirm the parameter list with Kyle before
+   building the UI.
 
 Prefer the top unbuilt item, but use judgement — if a lower item is clearly more
 valuable or lower-risk on a given night, take it. Build only **one** increment.
