@@ -107,6 +107,12 @@ rather than ship a new feature. Don't add surface for the sake of shipping somet
 ## Availability & weekend review
 _Set 2026-09-04 at Kyle's request. Kyle is **away every Saturday and Sunday**._
 
+**Check-in cadence (set 2026-09-17 at Kyle's request).** Do **not** babysit an open
+PR with hourly (or similar) self check-ins or notifications. Check in **at most once
+per day, at 09:30 Japan time (JST, UTC+9 → 00:30 UTC)**, and only notify Kyle when
+there's something he'd act on. A merged/closed PR needs no check-in at all. This caps
+the ping rate; it doesn't change the weekend "don't merge" rule below.
+
 - **Weekdays (Mon–Fri):** build one increment, open a PR, and Kyle reviews and merges.
 - **Weekend nights (Friday, Saturday, Sunday runs):** build and open a PR exactly as
   usual — same quality bar, fully verified in a real headless browser (both light and
