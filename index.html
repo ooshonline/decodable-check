@@ -499,10 +499,10 @@
       <div class="lib-tools">
         <span class="lt-title">Saved passages</span>
         <span class="lt-rule"></span>
-        <button class="lt-btn" id="libExport" type="button" aria-label="Export your library as a backup file">
+        <button class="lt-btn" id="libExport" type="button" aria-label="Export your passages and known words as a backup file">
           <span aria-hidden="true">↧</span><span>Export</span>
         </button>
-        <button class="lt-btn" id="libImport" type="button" aria-label="Import a library backup file">
+        <button class="lt-btn" id="libImport" type="button" aria-label="Import a backup file — restores passages and known words">
           <span aria-hidden="true">↥</span><span>Import</span>
         </button>
         <input type="file" id="libFile" accept="application/json,.json" hidden>
@@ -768,7 +768,8 @@ let taught = new Set(DEFAULT_TAUGHT);
    Words a group already reads on sight — proper nouns and program-specific
    heart words beyond the built-in TRICKY list. Like heart words, they're
    excluded from the decodability % (the SoR-correct denominator) instead of
-   counting as "not taught yet". Stored per browser and carried in share links. */
+   counting as "not taught yet". Stored per browser, carried in share links, and
+   included in library backup files (see the export/import block below). */
 const KNOWN_KEY = "decodable-check:known";
 function loadKnown(){
   try{
@@ -1338,16 +1339,22 @@ function deleteItem(id){
 }
 
 /* ---------- library backup: export / import ----------
-   localStorage is per-browser, so a year's library is one cleared cache away
+   localStorage is per-browser, so a year's work is one cleared cache away
    from gone and can't move between a school and home machine. Export writes
-   the whole library to a portable JSON file; Import reads one back, validates
-   every entry against the engine, recomputes each score so it always matches
-   analyseWord, and merges by id (so re-importing the same file is a no-op).
-   No server, no dependency — the data travels in the file, like share links. */
+   the whole library AND the Known-words list (names & class-taught words) to a
+   portable JSON file, so it's a true full backup, not passages only. Import
+   reads one back: it validates every passage against the engine, recomputes
+   each score so it always matches analyseWord, merges passages by id (so
+   re-importing the same file is a no-op), and merges the known words additively
+   (an import never wipes the list already on this device). No server, no
+   dependency — the data travels in the file, like share links. */
 function exportLibrary(){
-  if(!library.length){ showToast("Nothing to export yet — save a passage first.", true); return; }
+  if(!library.length && !known.size){
+    showToast("Nothing to export yet — save a passage or add a known word first.", true); return;
+  }
   const payload = JSON.stringify(
-    {app:"decodable-check", type:"library", v:1, exportedAt:new Date().toISOString(), items:library}, null, 2);
+    {app:"decodable-check", type:"library", v:1, exportedAt:new Date().toISOString(),
+     items:library, known:[...known].sort()}, null, 2);
   try{
     const blob = new Blob([payload], {type:"application/json"});
     const url = URL.createObjectURL(blob);
@@ -1356,8 +1363,11 @@ function exportLibrary(){
     a.download = `decodable-check-library-${new Date().toISOString().slice(0,10)}.json`;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(url), 1000);
-    const n = library.length;
-    showToast(`Exported ${n} passage${n!==1?'s':''} — keep the file safe or open it on another device.`);
+    const n = library.length, k = known.size;
+    const parts = [];
+    if(n) parts.push(`${n} passage${n!==1?'s':''}`);
+    if(k) parts.push(`${k} known word${k!==1?'s':''}`);
+    showToast(`Exported ${parts.join(' & ')} — keep the file safe or open it on another device.`);
   }catch(e){
     showToast("Couldn't create the backup file in this browser.", true);
   }
@@ -1381,25 +1391,48 @@ function sanitizeLibItem(raw){
 }
 
 function importLibraryData(parsed){
-  const rawItems = Array.isArray(parsed) ? parsed
+  const isArr = Array.isArray(parsed);
+  const rawItems = isArr ? parsed
     : (parsed && Array.isArray(parsed.items)) ? parsed.items : null;
-  if(!rawItems) return {ok:false};
-  const existing = new Set(library.map(i=>i.id));
-  const incoming = [];
+  const rawKnown = (!isArr && parsed && Array.isArray(parsed.known)) ? parsed.known : null;
+  // a legacy backup is a bare array of passages; a current one is an object
+  // carrying items and/or a known list. Reject only if it has neither.
+  if(rawItems===null && rawKnown===null) return {ok:false};
+
+  // passages — sanitised, re-scored and merged by id
   let added=0, skipped=0;
-  rawItems.forEach(r=>{
-    const it = sanitizeLibItem(r);
-    if(!it || existing.has(it.id)){ skipped++; return; }
-    existing.add(it.id);
-    incoming.push(it); added++;
-  });
-  if(added){
-    library = incoming.concat(library);
-    library.sort((a,b)=> b.savedAt - a.savedAt);   // keep newest-first across the merge
-    persistLibrary(library);
-    renderLibrary();
+  if(rawItems){
+    const existing = new Set(library.map(i=>i.id));
+    const incoming = [];
+    rawItems.forEach(r=>{
+      const it = sanitizeLibItem(r);
+      if(!it || existing.has(it.id)){ skipped++; return; }
+      existing.add(it.id);
+      incoming.push(it); added++;
+    });
+    if(added){
+      library = incoming.concat(library);
+      library.sort((a,b)=> b.savedAt - a.savedAt);   // keep newest-first across the merge
+      persistLibrary(library);
+      renderLibrary();
+    }
   }
-  return {ok:true, added, skipped};
+
+  // known words (names & class-taught words) — normalised the same way the
+  // Add box does, then merged additively so an import only ever ADDS to the
+  // list on this device, never clears a word the teacher set here.
+  let knownAdded=0;
+  if(rawKnown){
+    rawKnown.forEach(entry=>{
+      if(typeof entry!=="string") return;
+      (entry.toLowerCase().match(/[a-z']+/g) || []).forEach(w=>{
+        if(w && !known.has(w)){ known.add(w); knownAdded++; }
+      });
+    });
+    if(knownAdded){ persistKnown(); renderKnown(); render(); }
+  }
+
+  return {ok:true, added, skipped, knownAdded};
 }
 
 libExport.onclick = exportLibrary;
@@ -1415,12 +1448,15 @@ libFile.onchange = ()=>{
     else {
       const res = importLibraryData(parsed);
       if(!res.ok){ showToast("That file isn't a Decodable Check library.", true); }
-      else if(res.added===0){
+      else if(res.added===0 && res.knownAdded===0){
         showToast(res.skipped
           ? `Already up to date — ${res.skipped} passage${res.skipped!==1?'s':''} already in your library.`
-          : "No passages found in that file.", true);
+          : "Nothing new to import from that file.", true);
       } else {
-        showToast(`Imported ${res.added} passage${res.added!==1?'s':''}${res.skipped?` · ${res.skipped} skipped`:''}.`);
+        const parts=[];
+        if(res.added) parts.push(`${res.added} passage${res.added!==1?'s':''}`);
+        if(res.knownAdded) parts.push(`${res.knownAdded} known word${res.knownAdded!==1?'s':''}`);
+        showToast(`Imported ${parts.join(' · ')}${res.skipped?` · ${res.skipped} passage${res.skipped!==1?'s':''} skipped`:''}.`);
       }
     }
     libFile.value = "";      // let the same file be re-selected later
@@ -1433,7 +1469,7 @@ function renderLibrary(){
   // class-name autocomplete
   const classes = [...new Set(library.map(i=>i.klass))];
   classNames.innerHTML = classes.map(c=>`<option value="${escHtml(c)}">`).join("");
-  libExport.disabled = library.length===0;      // nothing to back up yet
+  libExport.disabled = library.length===0 && known.size===0;   // nothing to back up yet
 
   if(library.length===0){
     libList.innerHTML = `<div class="lib-empty">No saved passages yet. Name this one above and hit save — reload it any time, and watch each class's decodability build up over the year.</div>`;
