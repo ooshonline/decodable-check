@@ -154,6 +154,11 @@
   .tn-chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   .tn-chip .tn-n{font-variant-numeric:tabular-nums;font-weight:700;font-size:12px;color:var(--ok-ink);
     background:var(--ok-bg);border:1px solid var(--ok-edge);border-radius:999px;padding:1px 8px;line-height:1.45}
+  /* shortest-path plan: one button that teaches the whole minimal skill set */
+  .teachplan{margin-top:-2px}
+  .tn-chip.tn-plan{border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+  .tn-chip.tn-plan:hover{background:var(--paper)}
+  .tn-chip.tn-plan .tn-n{color:var(--accent-ink);background:transparent;border-color:var(--accent)}
 
   /* passage */
   .passage-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
@@ -427,6 +432,10 @@
           <div class="teachnext" id="teachNext" hidden>
             <span class="tn-label">Teach next</span>
             <div class="tn-chips" id="tnChips"></div>
+          </div>
+          <div class="teachnext teachplan" id="teachPlan" hidden>
+            <span class="tn-label">Shortest path to 100%</span>
+            <div class="tn-chips"><button class="tn-chip tn-plan" id="tnPlanBtn" type="button"></button></div>
           </div>
         </div>
       </div>
@@ -820,6 +829,7 @@ function render(){
   updateScore(ok,nw,tr,kn);
   buildFixit(amber);
   buildTeachNext(amber);
+  buildTeachPlan(amber);
   updateReportHead();
 }
 
@@ -952,6 +962,64 @@ function teachSkill(id){
   skillList.querySelectorAll('input').forEach(i=>{ if(i.dataset.id===id) i.checked=true; });
   syncPresetFromTaught();
   render();
+}
+function teachSkills(ids){
+  let changed=false;
+  ids.forEach(id=>{ if(!taught.has(id)){ taught.add(id); changed=true; } });
+  if(!changed) return;
+  skillList.querySelectorAll('input').forEach(i=>{ if(ids.includes(i.dataset.id)) i.checked=true; });
+  syncPresetFromTaught();
+  render();
+}
+
+/* ---------- shortest path to 100%: greedy multi-skill mini-plan ----------
+   Teach-next answers "which ONE skill unlocks the most words". But when
+   every amber word needs two or more untaught skills, no single skill
+   unlocks anything on its own, so that row stays empty — and even when it
+   isn't, a teacher still wants the whole path, not just the first step.
+   computePlan returns the ordered set of skills that, taught together, turn
+   EVERY amber word green (reaching 100% of the decodable base). It's greedy:
+   at each step it adds the untaught skill that fully unlocks the most
+   still-locked words (ties broken by teaching order), accumulating skills
+   until multi-skill words fall into place. Pure and engine-driven — it reads
+   only analyseWord's per-word `missing` sets, invents no words, and changes
+   no score; teaching the plan is just ticking the skills it names.
+   `missingList` is an array of each amber word's missing-skill array. */
+function computePlan(missingList, taughtSet, order){
+  const sets = missingList.map(m=>new Set(m));
+  const chosen = new Set();
+  const plan = [];
+  const isUnlocked = set => [...set].every(x=>chosen.has(x));
+  while(!sets.every(isUnlocked)){
+    const locked = sets.filter(set=>!isUnlocked(set));
+    // untaught, not-yet-chosen skills that still block a locked word,
+    // walked in teaching order so ties resolve to what's taught first
+    const cands = order.filter(s=>!chosen.has(s) && !taughtSet.has(s) && locked.some(set=>set.has(s)));
+    if(!cands.length) break;                       // safety: nothing left to add
+    let best=cands[0], bestGain=-1;
+    for(const s of cands){
+      const trial=new Set(chosen); trial.add(s);
+      const gain=locked.filter(set=>[...set].every(x=>trial.has(x))).length;
+      if(gain>bestGain){ best=s; bestGain=gain; } // first (earliest-taught) max wins
+    }
+    chosen.add(best); plan.push(best);
+  }
+  return plan;
+}
+
+const teachPlanEl = document.getElementById('teachPlan');
+const tnPlanBtn = document.getElementById('tnPlanBtn');
+function buildTeachPlan(amber){
+  if(amber.size===0){ teachPlanEl.hidden = true; return; }
+  const plan = computePlan([...amber.values()], taught, ALL_SKILL_IDS);
+  // a single-skill plan is already the top Teach-next chip — no second row for it
+  if(plan.length < 2){ teachPlanEl.hidden = true; return; }
+  const names = plan.map(s=>SKILLNAME[s]||s);
+  const n = amber.size;
+  tnPlanBtn.innerHTML = `${names.join(" + ")}<span class="tn-n">→ 100%</span>`;
+  tnPlanBtn.title = `Teach ${names.join(" + ")} and all ${n} remaining ${n===1?'word':'words'} become decodable for this group — the whole text works.`;
+  tnPlanBtn.onclick = ()=>teachSkills(plan);
+  teachPlanEl.hidden = false;
 }
 
 function applySwap(from, to){
@@ -1522,8 +1590,8 @@ render();
    ============================================================ */
 if (typeof module === "object" && module && module.exports) {
   module.exports = {
-    analyseWord, tokenize, computeStats,
-    PHASES, GRAPHEMES, VOWELS, CONS, TRICKY, PRESETS, SKILLNAME,
+    analyseWord, tokenize, computeStats, computePlan,
+    PHASES, GRAPHEMES, VOWELS, CONS, TRICKY, PRESETS, SKILLNAME, ALL_SKILL_IDS,
     getKnown: () => known,
     setKnown: (s) => { known = s instanceof Set ? s : new Set(s); },
     getTaught: () => taught,

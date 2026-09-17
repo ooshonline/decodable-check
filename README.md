@@ -53,8 +53,10 @@ The feature loop is closed; the focus now is the engine that everything rests on
    (little/gentle/table read as the `-le` syllable, not a false blend); still to
    do: soft g, syllable blends, medial y (the corpus lists these as locked targets)
 3. Inflection-aware fix-it — correct `-s/-ing/-ed` swap spellings
-4. Shortest path to 100% — multi-skill teach-next mini-plan
-5. Backup-everything export (include the Known words list)
+4. ~~Shortest path to 100% — multi-skill teach-next mini-plan~~ ✅ (a greedy plan
+   names the whole minimal skill set — "teach these 2 and the text works")
+5. ~~Backup-everything export (include the Known words list)~~ ✅ (library export
+   carries the Known words list too)
 6. Tie-in with Ribbit Reading App & Wordlist Wonders (pending scope)
 
 Built and maintained autonomously by Claude Code. 🐸

@@ -16,7 +16,7 @@ const { loadEngine } = require("./load-engine.js");
 const C = require("./corpus.js");
 
 const engine = loadEngine();
-const { analyseWord, computeStats, PRESETS } = engine;
+const { analyseWord, computeStats, computePlan, tokenize, PRESETS, ALL_SKILL_IDS } = engine;
 
 /* --- tiny assert harness --- */
 let pass = 0;
@@ -141,6 +141,48 @@ for (const lim of C.KNOWN_LIMITATIONS) {
         `\n      want: ${lim.want}`
     );
   }
+}
+
+/* ============================================================
+   8. SHORTEST-PATH PLANS — greedy multi-skill mini-plan (roadmap #4).
+   computePlan returns the ordered skill set that turns every amber word
+   green; the runner checks the exact order AND that the plan unlocks all.
+   ============================================================ */
+freshKnown();
+const noneTaught = new Set();
+for (const c of C.PLANS) {
+  const got = computePlan(c.missing, noneTaught, ALL_SKILL_IDS);
+  const orderedMatch = got.length === c.plan.length && got.every((s, i) => s === c.plan[i]);
+  check(
+    `PLAN       ${JSON.stringify(c.missing)}`,
+    orderedMatch,
+    `expected plan [${c.plan.join(", ")}] · got [${got.join(", ")}]`
+  );
+  // property: teaching the whole plan unlocks every listed word (100%)
+  const planSet = new Set(got);
+  const unlocksAll = c.missing.every((m) => m.every((s) => planSet.has(s)));
+  check(`PLAN 100%  ${JSON.stringify(c.missing)}`, unlocksAll, `plan [${got.join(", ")}] leaves a word blocked`);
+}
+
+/* engine-grounded: derive the sample passage's amber words with the REAL
+   analyseWord, plan them, and confirm teaching the plan makes the whole
+   passage 100% decodable — nothing invented, no disagreement with the score. */
+{
+  const base = taughtFor("uk-early");
+  const missing = [];
+  const seen = new Set();
+  for (const tok of tokenize(C.PASSAGE.text)) {
+    if (!/^[A-Za-z']+$/.test(tok)) continue;
+    const r = analyseWord(tok, base);
+    if (r.cat === "new" && !seen.has(tok.toLowerCase())) {
+      seen.add(tok.toLowerCase());
+      missing.push(r.missing);
+    }
+  }
+  const plan = computePlan(missing, base, ALL_SKILL_IDS);
+  check(`PLAN passage order`, plan.join(",") === "team,diph,rctrl", `expected team,diph,rctrl · got ${plan.join(",")}`);
+  const s = computeStats(C.PASSAGE.text, new Set([...base, ...plan]));
+  check(`PLAN passage ->100%`, s.pct === 100 && s.nw === 0, `expected 100% nw=0 · got ${s.pct}% nw=${s.nw}`);
 }
 
 /* ============================================================

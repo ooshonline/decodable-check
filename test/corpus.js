@@ -466,6 +466,30 @@ const KNOWN_LIMITATIONS = [
   { word: "I", now: [], want: "heart word (the pronoun I)", note: "TRICKY holds 'I'; analyseWord lowercases to 'i' and misses it" },
 ];
 
+/* ---------------------------------------------------------------
+   8. SHORTEST-PATH PLANS — computePlan's greedy multi-skill mini-plan
+   ("teach these 2 and the whole text works", roadmap #4). Each case
+   gives the amber words' missing-skill lists (already taught-independent,
+   exactly what analyseWord hands the UI) and the ORDERED plan computePlan
+   must return: the untaught skill that unlocks the most still-locked words
+   first, ties broken by teaching order, accumulated until every word is
+   green. The runner also asserts the key property directly — teaching the
+   whole plan unlocks every listed word (100%). Missing lists only ever hold
+   untaught skills, so no case plants a taught skill inside one.
+   --------------------------------------------------------------- */
+const PLANS = [
+  // two words, one distinct single skill each -> teach both, in teaching order
+  { missing: [["team"], ["diph"]], plan: ["team", "diph"] },
+  // one word needing two skills: neither unlocks alone, so the plan is both
+  { missing: [["magice", "team"]], plan: ["magice", "team"] },
+  // quick win first: {team} greens a word now, then {team,magice} needs magice too
+  { missing: [["team"], ["team", "magice"]], plan: ["team", "magice"] },
+  // leverage beats teaching order: the skill shared by more words leads
+  { missing: [["diph"], ["diph"], ["team"]], plan: ["diph", "team"] },
+  // three distinct singles -> all three, teaching order (magice < team < rctrl)
+  { missing: [["rctrl"], ["magice"], ["team"]], plan: ["magice", "team", "rctrl"] },
+];
+
 module.exports = {
   ALL,
   CVC_PRESET,
@@ -476,4 +500,5 @@ module.exports = {
   KNOWN,
   PASSAGE,
   KNOWN_LIMITATIONS,
+  PLANS,
 };
