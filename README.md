@@ -25,10 +25,10 @@ drift — a browser-inert test hook exposes it to Node) against ~350 hand-author
 phonics-verified cases: decodable words and their exact grapheme→skill
 decomposition, "needs an untaught skill" scenarios per program preset, heart and
 known words, and the sample passage's headline % (92% on UK Reception, 100% with
-everything taught). Remaining engine weak spots (soft **g**, syllable-boundary
-blends, medial **y**…) are locked as documented **hardening targets** — see
-`test/corpus.js`. The app stays one self-contained `index.html`; the tests live
-in `test/` and use only Node's built-ins.
+everything taught). Remaining engine weak spots (**onset** soft g, syllable-
+boundary blends, medial **y**…) are locked as documented **hardening targets** —
+see `test/corpus.js`. The app stays one self-contained `index.html`; the tests
+live in `test/` and use only Node's built-ins.
 
 ## Architecture (single file, data-driven)
 - `PHASES` — scope-and-sequence skills in teaching order (the checklist).
@@ -50,8 +50,10 @@ in `test/` and use only Node's built-ins.
 The feature loop is closed; the focus now is the engine that everything rests on.
 1. ~~Engine test corpus — prove decodability accuracy, not eyeball it~~ ✅ `test/`
 2. Engine hardening — soft c ✅, doubled consonants ✅, final y ✅, `-le` endings ✅
-   (little/gentle/table read as the `-le` syllable, not a false blend); still to
-   do: soft g, syllable blends, medial y (the corpus lists these as locked targets)
+   (little/gentle/table read as the `-le` syllable, not a false blend), word-final
+   soft g ✅ (page/large/change/orange read the `-ge` /j/ as advanced code — the
+   exceptionless position; `-gue`/`-g` stay hard); still to do: onset soft g
+   (gem/giant), syllable blends, medial y (the corpus lists these as locked targets)
 3. Inflection-aware fix-it — correct `-s/-ing/-ed` swap spellings
 4. ~~Shortest path to 100% — multi-skill teach-next mini-plan~~ ✅ (a greedy plan
    names the whole minimal skill set — "teach these 2 and the text works")
