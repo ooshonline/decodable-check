@@ -16,7 +16,8 @@ const { loadEngine } = require("./load-engine.js");
 const C = require("./corpus.js");
 
 const engine = loadEngine();
-const { analyseWord, computeStats, computePlan, tokenize, PRESETS, ALL_SKILL_IDS } = engine;
+const { analyseWord, computeStats, computePlan, tokenize, PRESETS, ALL_SKILL_IDS,
+        inflect, detectInflection, suggestFor } = engine;
 
 /* --- tiny assert harness --- */
 let pass = 0;
@@ -184,6 +185,63 @@ for (const c of C.PLANS) {
   const s = computeStats(C.PASSAGE.text, new Set([...base, ...plan]));
   check(`PLAN passage ->100%`, s.pct === 100 && s.nw === 0, `expected 100% nw=0 · got ${s.pct}% nw=${s.nw}`);
 }
+
+/* ============================================================
+   9. INFLECTION SPELLING — inflect() spells regular endings correctly,
+   returns null where no reliable rule applies (roadmap #3). Exact strings.
+   ============================================================ */
+freshKnown();
+for (const [base, ending, want] of C.INFLECT) {
+  const got = inflect(base, ending);
+  check(
+    `INFLECT    "${base}" + -${ending}`,
+    got === want,
+    `expected ${JSON.stringify(want)} · got ${JSON.stringify(got)}`
+  );
+}
+
+/* ============================================================
+   10. INFLECTION DETECT — recover {base, ending} for a bank inflection,
+   null for a non-inflection. Guards suggestFor's base recovery.
+   ============================================================ */
+freshKnown();
+for (const [word, base, ending] of C.INFLECTION_DETECT) {
+  const inf = detectInflection(word);
+  const ok = base === null ? inf === null : inf && inf.base === base && inf.ending === ending;
+  check(
+    `DETECT     "${word}"`,
+    ok,
+    `expected ${base === null ? "null" : base + " -" + ending} · got ${inf ? inf.base + " -" + inf.ending : "null"}`
+  );
+}
+
+/* ============================================================
+   11. FIX-IT SUGGESTIONS — inflection-aware swaps (roadmap #3).
+   Exact ordered list AND the safety property: every offered form is
+   decodable for that preset (suggestFor never offers an amber swap).
+   ============================================================ */
+freshKnown();
+for (const c of C.SUGGEST) {
+  const taughtSet = taughtFor(c.preset);
+  engine.setTaught(taughtSet);
+  const got = suggestFor(c.word);
+  const exact = got.length === c.want.length && got.every((s, i) => s === c.want[i]);
+  check(
+    `SUGGEST    "${c.word}" @ ${c.preset}`,
+    exact,
+    `expected [${c.want.join(", ")}] · got [${got.join(", ")}]`
+  );
+  // property: nothing offered that the group can't actually decode
+  for (const form of got) {
+    const r = analyseWord(form, taughtSet);
+    check(
+      `SUGGEST ok "${form}" (for "${c.word}" @ ${c.preset})`,
+      r.cat === "ok" || r.cat === "tricky",
+      `offered "${form}" but it is ${r.cat} for ${c.preset}`
+    );
+  }
+}
+engine.setTaught(taughtFor("uk-early"));
 
 /* ============================================================
    report
