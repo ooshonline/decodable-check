@@ -118,6 +118,10 @@ const DECODABLE = [
   ["sail", ["team"]], ["goat", ["team"]], ["soap", ["team"]],
   ["moon", ["team"]], ["boot", ["team"]], ["leaf", ["team"]],
   ["beak", ["team"]],
+  //     "wa" + "ai": the /wŏ/ "wa" grapheme must yield to the "ai" team, or
+  //     wait/wail read as a false all-CVC "green" that hides the team skill.
+  ["wait", ["team"]], ["wail", ["team"]], ["waif", ["team"]],
+  ["waist", ["blend", "team"]],
   ["beach", ["digraph", "team"]], ["sheep", ["digraph", "team"]],
   ["tree", ["blend", "team"]], ["play", ["blend", "team"]],
   ["green", ["blend", "team"]],
@@ -287,6 +291,7 @@ const DECODABLE = [
 const NEEDS_SKILL = [
   // UK Reception (cvc double digraph blend endings) — no long-vowel code
   ["rain", "uk-early", ["team"]],
+  ["wait", "uk-early", ["team"]],   // was a false green (wa|i|t); now w + ai + t
   ["see", "uk-early", ["team"]],
   ["cake", "uk-early", ["magice"]],
   ["shine", "uk-early", ["magice"]],
@@ -502,8 +507,14 @@ const KNOWN_LIMITATIONS = [
   // residues remain, each blocked by a *different* engine gap:
   { word: "hundred", now: ["blend", "endings"], want: "hun+dred; '-red' is not an -ed inflection", note: "base 'hundr' still has a vowel, so the -ed guard can't reject it — needs a coda/syllable check" },
 
-  // greedy 'wa' grapheme (for want/was) eats w+a before a vowel team
-  { word: "wait", now: [], want: "w + ai(team) + t", note: "'wa' grapheme consumes w+a before the 'ai' team" },
+  // greedy 'wa' grapheme (for want/was) eats w+a before a vowel team — FIXED.
+  // The segmenter now drops the "wa" match when it's followed by 'i', so the
+  // "ai" team is read (wait -> w + ai + t, waist -> w + ai + s+t). Promoted to
+  // the DECODABLE corpus (wait/wail/waif/waist) and asserted as a NEEDS_SKILL
+  // false-green regression (wait @ uk-early now needs `team`). Left this
+  // signpost so the fix is legible. "ay" (way, sway) is untouched — it already
+  // scored `team` via the final-y rule — and "wa"+consonant (wash, swan, want)
+  // keeps its current scoring.
 
   // the pronoun "I" lowercases to "i", which isn't in the TRICKY set
   // (that stores capital "I"), so it scores as a decodable single vowel

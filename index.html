@@ -659,6 +659,17 @@ function analyseWord(raw, taught){
     // (mirroring soft c: fancy's n+c is a blend too). Words without the silent e
     // (sing, bang) never set softGe, so their "ng" digraph is untouched.
     if(matched && matched[0]==="ng" && softGe && i+2===body.length) matched=null;
+    // The "wa" grapheme (want/was/wash → the /wŏ/ where w flattens a to /ŏ/)
+    // must YIELD to the "ai" vowel team. Greedy longest-first matches "wa" at
+    // the w and swallows w+a before the following 'i' can pair into "ai", so
+    // "wait" segmented wa|i|t — all basic CVC, a FALSE green that hid the
+    // vowel-team skill (a group without "ai" would be told wait is decodable).
+    // When a "wa" match is immediately followed by 'i', drop it so 'w' scores
+    // alone and "ai" is read as the team: wait -> w + ai + t (needs `team`),
+    // waist -> w + ai + s+t (team + blend). Only the "ai" collision needs this:
+    // "ay" (way, sway) already resolves to the same `team` via the final-y rule,
+    // and "wa" + consonant (wash, swan, swap, want) keeps its current scoring.
+    if(matched && matched[0]==="wa" && body[i+2]==="i") matched=null;
     let g, skill;
     if(matched){ [g,skill]=matched; }
     else {
