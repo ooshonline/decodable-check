@@ -319,6 +319,18 @@ const NEEDS_SKILL = [
   ["funny", "uk-early", ["team"]],
   ["cry", "uk-early", ["team"]],            // fl/cr blend taught, y=/ī/ (team) is not
   ["city", "uk-early", ["adv", "team"]],    // soft c AND y-vowel both untaught
+  // Silent-e / y hidden by an inflection: these were FALSE greens (read as
+  // short CVC once -ing/-ed/-es was stripped). Endings are taught at
+  // Reception, the long-vowel code underneath them is not.
+  ["making", "uk-early", ["magice"]],
+  ["hoped", "uk-early", ["magice"]],
+  ["liked", "uk-early", ["magice"]],
+  ["racing", "uk-early", ["adv", "magice"]],
+  ["raging", "uk-early", ["adv", "magice"]],
+  ["noses", "uk-early", ["magice"]],
+  ["cried", "uk-early", ["team"]],
+  ["crying", "uk-early", ["team"]],
+  ["giggled", "uk-early", ["adv"]],
   ["city", "uk-y1", ["adv"]],               // y-vowel now taught; only soft c blocks it
   // Soft g at word-final "-ge" is advanced code, so a group without `adv` can't
   // decode it yet. Under uk-y1 (all long-vowel code taught, but NOT advanced)
@@ -368,6 +380,9 @@ const DECODABLE_UNDER = [
   ["little", "all"], ["gentle", "all"], ["table", "all"], ["purple", "all"],
   // word-final soft-g "-ge" words decode once advanced code is taught
   ["page", "all"], ["huge", "all"], ["large", "all"], ["charge", "all"],
+  // drop-e / y->i inflections decode once magic-e + teams are taught (uk-y1)
+  ["making", "uk-y1"], ["hoped", "uk-y1"], ["gazed", "uk-y1"], ["noses", "uk-y1"],
+  ["cried", "uk-y1"], ["crying", "uk-y1"],
   ["change", "all"], ["orange", "all"], ["sponge", "all"],
 ];
 
@@ -605,10 +620,13 @@ const INFLECT = [
    --------------------------------------------------------------- */
 const SUGGEST = [
   // -ed swaps: base needs an untaught skill, cluster-mates' -ed forms don't
-  { word: "looked",  preset: "uk-early", want: ["spotted", "watched", "gazed"] },
+  // (gazed/cried used to be offered here — FALSE greens: the engine read the
+  // drop-e / y->i forms as short CVC. They now need magic-e / y-as-a-vowel, so
+  // a Reception group is no longer offered swaps it can't decode.)
+  { word: "looked",  preset: "uk-early", want: ["spotted", "watched"] },
   { word: "leaped",  preset: "uk-early", want: ["hopped", "jumped", "skipped"] },
-  { word: "watched", preset: "uk-early", want: ["spotted", "gazed"] },
-  { word: "yelled",  preset: "uk-early", want: ["called", "cried"] },
+  { word: "watched", preset: "uk-early", want: ["spotted"] },
+  { word: "yelled",  preset: "uk-early", want: ["called"] },
   // -s swaps (3rd-person / plural), sibilant + ies handled by the generator
   { word: "cries",   preset: "uk-early", want: ["yells", "calls"] },
   // scales with the taught set: teach vowel teams and peek->peeked qualifies
@@ -631,6 +649,65 @@ const INFLECTION_DETECT = [
   ["spring", null, null], ["boy", null, null], ["great", null, null],
 ];
 
+/* ---------------------------------------------------------------
+   12. SILENT-E INFLECTIONS — [inflected form, base]. The form must need
+   exactly the base's skills plus `endings`: -ed/-ing drop a silent e
+   (make -> making, race -> racing, rage -> raging), -ed turns y to i
+   (cry -> cried), and -s after a silent-e base must strip only the s
+   (nose -> noses, dance -> dances, table -> tables). Before this, the
+   engine read making/hoped/racing/noses/cried as short CVC — FALSE
+   greens for any group not yet taught magic-e / soft c / y-as-a-vowel.
+   --------------------------------------------------------------- */
+const SILENT_E = [
+  // magic-e + -ing / -ed (one syllable, undoubled final consonant)
+  ["making", "make"], ["baked", "bake"], ["taking", "take"], ["named", "name"],
+  ["hoped", "hope"], ["hoping", "hope"], ["liked", "like"], ["riding", "ride"],
+  ["smiling", "smile"], ["shaking", "shake"], ["skated", "skate"], ["waved", "wave"],
+  ["saving", "save"], ["using", "use"], ["used", "use"], ["hated", "hate"],
+  ["poked", "poke"], ["joking", "joke"], ["timed", "time"], ["quaking", "quake"],
+  ["gazed", "gaze"], ["gazing", "gaze"], ["staring", "stare"], ["boring", "bore"],
+  // soft c / soft g hidden by the dropped e
+  ["racing", "race"], ["raced", "race"], ["iced", "ice"], ["raging", "rage"],
+  ["paged", "page"], ["dancing", "dance"], ["danced", "dance"], ["forced", "force"],
+  ["charging", "charge"], ["judging", "judge"], ["judged", "judge"],
+  // consonant-le + -ed
+  ["giggled", "giggle"], ["tickled", "tickle"], ["bubbled", "bubble"],
+  ["wobbled", "wobble"], ["tumbled", "tumble"],
+  // consonant + y -> ied
+  ["cried", "cry"], ["tried", "try"], ["dried", "dry"], ["spied", "spy"],
+  ["carried", "carry"], ["hurried", "hurry"],
+  // consonant + y keeps its y before -ing (crying, flying) — the base has no
+  // a/e/i/o/u, so the -ing guard now counts that final y as the vowel
+  ["crying", "cry"], ["trying", "try"], ["flying", "fly"], ["frying", "fry"],
+  // -s after a silent-e base strips only the s (not a sibilant "-es")
+  ["noses", "nose"], ["roses", "rose"], ["sizes", "size"], ["prizes", "prize"],
+  ["uses", "use"], ["closes", "close"], ["gazes", "gaze"],
+  ["dances", "dance"], ["fences", "fence"], ["changes", "change"],
+  ["tables", "table"], ["bubbles", "bubble"], ["apples", "apple"],
+  ["candles", "candle"],
+];
+
+/* Look-alikes that must NOT gain a silent e: [word, exact need].
+   Short-vowel bases double (hopped) or never double (x/w: boxed, snowed),
+   multi-syllable bases (opened, visited) are ambiguous, -ng can't be
+   told apart (hang/sing vs change), -ling is a noun suffix (duckling),
+   heart-word bases keep their reading (coming, having), and buses/gases/
+   during are listed exceptions. */
+const NOT_SILENT_E = [
+  ["hopped", ["double", "endings"]], ["hopping", ["double", "endings"]],
+  ["jumping", ["blend", "endings"]], ["picked", ["digraph", "endings"]],
+  ["boxed", ["endings"]], ["fixing", ["endings"]],
+  ["snowed", ["blend", "team", "endings"]], ["played", ["blend", "team", "endings"]],
+  ["opened", ["endings"]], ["visited", ["endings"]],
+  ["hanging", ["digraph", "endings"]], ["singing", ["digraph", "endings"]],
+  ["duckling", ["digraph", "endings"]], ["dumpling", ["blend", "endings"]],
+  ["coming", ["endings"]], ["having", ["endings"]], ["giving", ["endings"]],
+  ["living", ["endings"]],
+  ["buses", ["endings"]], ["gases", ["endings"]], ["boxes", ["endings"]],
+  ["wishes", ["digraph", "endings"]], ["kisses", ["double", "endings"]],
+  ["during", ["rctrl", "endings"]],
+];
+
 module.exports = {
   ALL,
   CVC_PRESET,
@@ -645,4 +722,6 @@ module.exports = {
   INFLECT,
   SUGGEST,
   INFLECTION_DETECT,
+  SILENT_E,
+  NOT_SILENT_E,
 };
