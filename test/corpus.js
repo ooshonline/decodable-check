@@ -376,6 +376,12 @@ const HEART = [
   "one", "two", "come", "some", "were", "there", "where", "what",
   "who", "why", "could", "would", "should", "have", "give", "love",
   "people", "because", "friend", "school", "water", "eye", "once", "many",
+  // The two most common first-person words — both irregular whole words, both
+  // stored capitalised in TRICKY and asserted here in their real (capital) form
+  // to prove the case-insensitive lookup fires. "I" is a single letter naming a
+  // long vowel /aɪ/ (not the short /ɪ/ a lone `i` grapheme would predict); "I'm"
+  // is a contraction. Regressing either back to `ok` (decodable) is a build fail.
+  "I", "I'm",
 ];
 
 /* ---------------------------------------------------------------
@@ -505,9 +511,10 @@ const KNOWN_LIMITATIONS = [
   // greedy 'wa' grapheme (for want/was) eats w+a before a vowel team
   { word: "wait", now: [], want: "w + ai(team) + t", note: "'wa' grapheme consumes w+a before the 'ai' team" },
 
-  // the pronoun "I" lowercases to "i", which isn't in the TRICKY set
-  // (that stores capital "I"), so it scores as a decodable single vowel
-  { word: "I", now: [], want: "heart word (the pronoun I)", note: "TRICKY holds 'I'; analyseWord lowercases to 'i' and misses it" },
+  // FIXED: the pronoun "I" and the contraction "I'm" were stored capitalised in
+  // TRICKY, but analyseWord lowercases each token before the lookup, so they
+  // never matched and scored as decodable. TRICKY is now lowercased on
+  // construction, so both fire; promoted to the HEART corpus (asserted `tricky`).
 ];
 
 /* ---------------------------------------------------------------

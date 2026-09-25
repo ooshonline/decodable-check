@@ -559,12 +559,18 @@ const GRAPHEMES = [
 const VOWELS = new Set(["a","e","i","o","u"]);
 const CONS  = new Set("bcdfghjklmnpqrstvwxyz".split(""));
 
-/* heart / tricky words (high-frequency irregular) */
+/* Heart / tricky words (high-frequency irregular), matched as whole words.
+   analyseWord lowercases every token before the lookup, so the set is stored
+   lowercased too (via .toLowerCase() below). Without that a capitalised entry —
+   the pronoun "I" and the contraction "I'm", the two most common first-person
+   words — never matched its lowercased token, so it silently scored as
+   decodable ("I" as a bare short-vowel grapheme) instead of a heart word. */
 const TRICKY = new Set(("the a I to is was said you are they of we he she me be do go no so " +
   "my by put one two come some were there their where here what who why could would should " +
   "have give live love done gone want your our been they're we're I'm don't can't won't " +
   "does goes only both pull full push many any friend people because school through though " +
-  "eye once upon these those water father mother brother other another over").split(/\s+/));
+  "eye once upon these those water father mother brother other another over")
+  .toLowerCase().split(/\s+/));
 
 /* ---------- word analysis ---------- */
 function analyseWord(raw, taught){
