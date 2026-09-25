@@ -381,6 +381,12 @@ const HEART = [
   "one", "two", "come", "some", "were", "there", "where", "what",
   "who", "why", "could", "would", "should", "have", "give", "love",
   "people", "because", "friend", "school", "water", "eye", "once", "many",
+  // The two most common first-person words — both irregular whole words, both
+  // stored capitalised in TRICKY and asserted here in their real (capital) form
+  // to prove the case-insensitive lookup fires. "I" is a single letter naming a
+  // long vowel /aɪ/ (not the short /ɪ/ a lone `i` grapheme would predict); "I'm"
+  // is a contraction. Regressing either back to `ok` (decodable) is a build fail.
+  "I", "I'm",
 ];
 
 /* ---------------------------------------------------------------
@@ -516,9 +522,10 @@ const KNOWN_LIMITATIONS = [
   // scored `team` via the final-y rule — and "wa"+consonant (wash, swan, want)
   // keeps its current scoring.
 
-  // the pronoun "I" lowercases to "i", which isn't in the TRICKY set
-  // (that stores capital "I"), so it scores as a decodable single vowel
-  { word: "I", now: [], want: "heart word (the pronoun I)", note: "TRICKY holds 'I'; analyseWord lowercases to 'i' and misses it" },
+  // FIXED: the pronoun "I" and the contraction "I'm" were stored capitalised in
+  // TRICKY, but analyseWord lowercases each token before the lookup, so they
+  // never matched and scored as decodable. TRICKY is now lowercased on
+  // construction, so both fire; promoted to the HEART corpus (asserted `tricky`).
 ];
 
 /* ---------------------------------------------------------------
@@ -545,6 +552,85 @@ const PLANS = [
   { missing: [["rctrl"], ["magice"], ["team"]], plan: ["magice", "team", "rctrl"] },
 ];
 
+/* ---------------------------------------------------------------
+   9. INFLECTION SPELLING — the correct-spelling generator (roadmap #3).
+   `inflect(base, ending)` must spell every regular English inflection the
+   way English spells it, and return null wherever no reliable rule applies
+   (irregular past tense, ambiguous multi-syllable doubling). A wrong
+   generated spelling in a phonics tool is the worst kind of bug, so these
+   are hard, exact-string assertions — the safety net that proves accuracy
+   instead of eyeballing it. `null` is asserted as literally null.
+   ending is one of "s" | "ing" | "ed".
+   --------------------------------------------------------------- */
+const INFLECT = [
+  // plain add
+  ["look", "s", "looks"], ["look", "ing", "looking"], ["look", "ed", "looked"],
+  ["yell", "ed", "yelled"], ["yell", "s", "yells"], ["call", "s", "calls"],
+  ["end", "ed", "ended"], ["end", "ing", "ending"], ["mend", "ed", "mended"],
+  ["halt", "ed", "halted"], ["sprint", "ed", "sprinted"], ["sprint", "ing", "sprinting"],
+  ["shout", "ed", "shouted"], ["scream", "ed", "screamed"], ["peek", "ed", "peeked"],
+  // double the final consonant (single stressed CVC)
+  ["hop", "ed", "hopped"], ["hop", "ing", "hopping"], ["hop", "s", "hops"],
+  ["stop", "ed", "stopped"], ["stop", "ing", "stopping"], ["spot", "ed", "spotted"],
+  ["skip", "ed", "skipped"], ["jog", "ed", "jogged"], ["trot", "ed", "trotted"],
+  ["grab", "ed", "grabbed"], ["get", "ing", "getting"],
+  // drop the silent e
+  ["race", "ing", "racing"], ["race", "ed", "raced"], ["race", "s", "races"],
+  ["gaze", "ing", "gazing"], ["gaze", "ed", "gazed"], ["bounce", "ed", "bounced"],
+  ["stare", "ing", "staring"], ["stare", "ed", "stared"],
+  // consonant + y -> ies / ied  (vowel + y just adds s / ed)
+  ["cry", "s", "cries"], ["cry", "ed", "cried"], ["cry", "ing", "crying"],
+  ["play", "s", "plays"], ["play", "ed", "played"], ["boy", "s", "boys"],
+  // sibilant -> es
+  ["watch", "s", "watches"], ["fix", "s", "fixes"], ["fix", "ed", "fixed"],
+  ["dash", "s", "dashes"], ["dash", "ed", "dashed"], ["finish", "s", "finishes"],
+  // -ing / -s stay regular even for irregular-past verbs
+  ["run", "ing", "running"], ["run", "s", "runs"], ["see", "ing", "seeing"],
+  ["make", "ing", "making"], ["make", "s", "makes"], ["take", "ing", "taking"],
+  ["find", "ing", "finding"], ["build", "ing", "building"], ["spring", "ing", "springing"],
+  // irregular past tense -> null (never *seed / *runned / *maked / *finded / *getted)
+  ["see", "ed", null], ["run", "ed", null], ["make", "ed", null], ["take", "ed", null],
+  ["find", "ed", null], ["build", "ed", null], ["get", "ed", null], ["spring", "ed", null],
+  // multi-syllable CVC — doubling hangs on stress we can't read -> null (never *begining)
+  ["begin", "ed", null], ["begin", "ing", null], ["begin", "s", "begins"],
+];
+
+/* ---------------------------------------------------------------
+   10. FIX-IT SUGGESTIONS — inflection-aware swaps (roadmap #3).
+   suggestFor(word) returns up to three decodable swaps. For an inflected
+   amber word every swap carries the SAME ending, correctly spelled, and must
+   still be decodable for the group — so the returned list scales with both the
+   ending and the taught set. Exact-order arrays (cluster order, capped at 3);
+   the runner also asserts every returned form is decodable under the preset.
+   --------------------------------------------------------------- */
+const SUGGEST = [
+  // -ed swaps: base needs an untaught skill, cluster-mates' -ed forms don't
+  { word: "looked",  preset: "uk-early", want: ["spotted", "watched", "gazed"] },
+  { word: "leaped",  preset: "uk-early", want: ["hopped", "jumped", "skipped"] },
+  { word: "watched", preset: "uk-early", want: ["spotted", "gazed"] },
+  { word: "yelled",  preset: "uk-early", want: ["called", "cried"] },
+  // -s swaps (3rd-person / plural), sibilant + ies handled by the generator
+  { word: "cries",   preset: "uk-early", want: ["yells", "calls"] },
+  // scales with the taught set: teach vowel teams and peek->peeked qualifies
+  { word: "looked",  preset: "uk-y1",    want: ["spotted", "watched", "peeked"] },
+  // base-word suggestions (ending "") — unchanged behaviour, no regression
+  { word: "great",   preset: "uk-early", want: ["big", "giant", "grand"] },
+  { word: "big",     preset: "uk-early", want: ["giant", "grand"] },
+  // not in the bank (and not a bank inflection) -> no suggestions
+  { word: "computer", preset: "uk-early", want: [] },
+  { word: "elephant", preset: "uk-early", want: [] },
+];
+
+/* detectInflection round-trips: [word, base|null, ending] (null base = not a
+   bank inflection). Guards the base-recovery that feeds suggestFor. */
+const INFLECTION_DETECT = [
+  ["looked", "look", "ed"], ["running", "run", "ing"], ["cries", "cry", "s"],
+  ["watches", "watch", "s"], ["hopped", "hop", "ed"], ["raced", "race", "ed"],
+  ["spotted", "spot", "ed"], ["leaped", "leap", "ed"], ["fixes", "fix", "s"],
+  ["yells", "yell", "s"], ["gazing", "gaze", "ing"],
+  ["spring", null, null], ["boy", null, null], ["great", null, null],
+];
+
 module.exports = {
   ALL,
   CVC_PRESET,
@@ -556,4 +642,7 @@ module.exports = {
   PASSAGE,
   KNOWN_LIMITATIONS,
   PLANS,
+  INFLECT,
+  SUGGEST,
+  INFLECTION_DETECT,
 };
