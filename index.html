@@ -909,6 +909,29 @@ let known = loadKnown();
 const SAMPLE = `Meg is a red hen. She can run in the mud.\nA big cat sat on the log. The cat had a nap in the sun.\nThen Meg let out a yell! The cat ran off fast.\nMeg is so glad. She will rest in her nest.\nThe hen can see a big red bug.`;
 let text = SAMPLE;
 
+/* ---------- working-session persistence ----------
+   Keep a teacher's in-progress work between visits. The passage text and the
+   taught-skills selection are saved to localStorage on every render (and while
+   typing) and restored on load, so a reload — or coming back tomorrow — reopens
+   exactly where they left off instead of resetting to the sample. A shared link
+   still wins: opening one adopts its passage/skills over the saved session. The
+   Known-words list and the theme keep their own stores. */
+const SESSION_KEY = "decodable-check:session";
+function persistSession(){
+  try{ localStorage.setItem(SESSION_KEY, JSON.stringify({v:1, t:text, s:[...taught]})); }catch(e){}
+}
+function loadSession(){
+  try{
+    const raw = localStorage.getItem(SESSION_KEY);
+    if(!raw) return null;
+    const o = JSON.parse(raw);
+    if(o && typeof o.t==="string" && Array.isArray(o.s)) return o;
+  }catch(e){}                            // private mode / corrupt store -> no restore
+  return null;
+}
+let _persistTimer = null;
+function schedulePersist(){ clearTimeout(_persistTimer); _persistTimer = setTimeout(persistSession, 400); }
+
 /* ---------- rendering ---------- */
 const reader = document.getElementById('reader');
 const tip = document.getElementById('tip');
@@ -944,6 +967,7 @@ function render(){
   buildTeachNext(amber);
   buildTeachPlan(amber);
   updateReportHead();
+  persistSession();                 // remember this passage + skill set for next visit
 }
 
 function buildInfo(word,res){
@@ -1258,12 +1282,20 @@ function showEdit(on){
 }
 tabView.onclick=()=>{ text=editor.value||text; render(); showEdit(false); };
 tabEdit.onclick=()=>showEdit(true);
-editor.addEventListener('input',()=>{ text=editor.value; });
+editor.addEventListener('input',()=>{ text=editor.value; schedulePersist(); });
 
 /* ---------- theme toggle ---------- */
 const root=document.documentElement;
 function sysDark(){return matchMedia('(prefers-color-scheme: dark)').matches;}
-let theme = null; // null = follow system
+const THEME_KEY = "decodable-check:theme";
+function loadTheme(){
+  try{ const v=localStorage.getItem(THEME_KEY); return (v==="light"||v==="dark") ? v : null; }
+  catch(e){ return null; }
+}
+function persistTheme(){
+  try{ if(theme) localStorage.setItem(THEME_KEY, theme); else localStorage.removeItem(THEME_KEY); }catch(e){}
+}
+let theme = loadTheme(); // saved 'light'/'dark', or null = follow the system setting
 function applyTheme(){
   const icon=document.getElementById('themeIcon'), lbl=document.getElementById('themeLbl');
   if(theme){root.setAttribute('data-theme',theme);}else{root.removeAttribute('data-theme');}
@@ -1274,6 +1306,7 @@ function applyTheme(){
 document.getElementById('themeBtn').onclick=()=>{
   const dark = theme? theme==='dark' : sysDark();
   theme = dark? 'light':'dark';
+  persistTheme();               // remember the choice across reloads
   applyTheme();
 };
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ if(!theme)applyTheme(); });
@@ -1369,12 +1402,13 @@ function fallbackCopy(url,ok){
 }
 document.getElementById('shareBtn').onclick=copyShareLink;
 
-/* restore state from a shared link, if present, before the first render */
-(function restoreFromHash(){
+/* restore state before the first render. A shared link wins; otherwise reopen
+   the last working session saved on this device. */
+function restoreFromHash(){
   const m=location.hash.match(/[#&]p=([^&]+)/);
-  if(!m) return;
+  if(!m) return false;
   const o=decodeState(m[1]);
-  if(!o) return;
+  if(!o) return false;
   const valid=new Set(Object.keys(SKILLNAME));
   text=o.t;
   taught=new Set(o.s.filter(id=>valid.has(id)));
@@ -1382,6 +1416,18 @@ document.getElementById('shareBtn').onclick=copyShareLink;
     known=new Set(o.k.filter(x=>typeof x==="string" && /^[a-z']+$/.test(x)));
     persistKnown();                 // adopt the shared set so it sticks in this browser
   }
+  return true;
+}
+function restoreFromSession(){
+  const o=loadSession();
+  if(!o) return false;
+  const valid=new Set(Object.keys(SKILLNAME));
+  text=o.t;
+  taught=new Set(o.s.filter(id=>valid.has(id)));
+  return true;
+}
+(function restoreState(){
+  if(!restoreFromHash()) restoreFromSession();   // hash takes precedence over the saved session
   skillList.querySelectorAll('input').forEach(i=>i.checked=taught.has(i.dataset.id));
   syncPresetFromTaught();
 })();
