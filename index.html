@@ -627,6 +627,23 @@ function analyseWord(raw, taught){
   const me = core.match(/^(.*[aeiou][bcdfghjklmnpqrstvwxyz])e$/);
   if(me && !VOWELS.has(core[core.length-2])){ magicE = true; body = core.slice(0,-1); }
 
+  // Final soft g: a word-final "ge" spells /j/ (age, page, cage, huge, large,
+  // charge, change, orange, sponge). Unlike ONSET soft g (gem, giant, magic —
+  // which shares its slot with common hard-g words like get/girl/gift and stays
+  // unmodelled), word-final "-ge" is EXCEPTIONLESS in English: the silent e is
+  // what forces the soft sound. Hard final /g/ is spelled "-gue" (vague, league,
+  // rogue) or a bare "-g" (bag, flag, frog), and every hard g-before-e/i/y (get,
+  // girl, tiger, finger, begin) sits mid-word — none end in "-ge", so none are
+  // touched. "-dge" (badge, bridge) is already its own `adv` grapheme, so it is
+  // excluded here. Modelled as `adv`, matching soft c and -dge. The word-final g
+  // is flagged so the segmenter scores it `adv`: a magic-e -ge (page, cage) keeps
+  // its long vowel (magicE already dropped the silent e), while a non-magic-e -ge
+  // (large, charge, change) drops the now-silent e here so it isn't misread as a
+  // vowel. The "-nge" case (change, hinge) is handled in the segmenter, where the
+  // greedy "ng" digraph must yield to n + soft g.
+  const softGe = core.length>=3 && /ge$/.test(core) && !/dge$/.test(core);
+  if(softGe && !magicE){ body = core.slice(0,-1); }
+
   const need = new Set();            // required skills
   const parts = [];                  // {g, skill}
   let i=0, prevCons=false, ok=true;
@@ -635,6 +652,13 @@ function analyseWord(raw, taught){
     for(const [g,skill] of GRAPHEMES){
       if(body.startsWith(g,i)){ matched=[g,skill]; break; }
     }
+    // Word-final "-nge" is soft g (/nj/: change, range, hinge, sponge, plunge),
+    // not the /ŋ/ "ng" digraph (sing, ring, long). When soft-ge is in play and
+    // the greedy "ng" match sits at the very end of body, drop it so 'n' and the
+    // final soft 'g' are scored separately — n+g reads as a blend, the g as `adv`
+    // (mirroring soft c: fancy's n+c is a blend too). Words without the silent e
+    // (sing, bang) never set softGe, so their "ng" digraph is untouched.
+    if(matched && matched[0]==="ng" && softGe && i+2===body.length) matched=null;
     let g, skill;
     if(matched){ [g,skill]=matched; }
     else {
@@ -670,6 +694,12 @@ function analyseWord(raw, taught){
       // core[i+1] sees the trigger even when it's a magic-e 'e' that body-
       // stripping removed (ice -> body "ic", but core still "ice").
       else if(g==="c" && /[eiy]/.test(core[i+1]||"")) skill="adv";
+      // Soft g: the word-final g of a "-ge" spelling says /j/ (see the "Final
+      // soft g" note above). Only the last letter of body reaches here as a bare
+      // 'g' — an earlier hard g (get, tiger, engage) is never word-final, and a
+      // "-dge"/"ng" is consumed as its own grapheme first — so this is the sole,
+      // exceptionless soft-g position. `adv`, like soft c.
+      else if(g==="g" && softGe && i===body.length-1) skill="adv";
       else if(CONS.has(g)) skill="cvc";
       else if(VOWELS.has(g)) skill="cvc";
       else { g=body[i]; skill=null; } // punctuation/digit — ignore

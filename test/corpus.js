@@ -169,6 +169,31 @@ const DECODABLE = [
   ["space", ["adv", "blend", "magice"]],                  // sp blend + soft c + magic-e
   ["place", ["adv", "blend", "magice"]],
 
+  // --- soft g at word-final "-ge" (g = /j/) — advanced code (roadmap #2).
+  //     Unlike ONSET soft g (gem, giant, magic — still a locked limitation,
+  //     because it shares a slot with common hard-g words: get, girl, gift…),
+  //     word-final "-ge" is EXCEPTIONLESS in English. The silent e forces /j/;
+  //     hard final /g/ is spelled "-gue" (vague, league, rogue) or a bare "-g"
+  //     (bag, flag, frog), none of which end in "-ge". Bucketed as `adv`, like
+  //     soft c and "-dge". A magic-e "-ge" keeps its long vowel too (page = long
+  //     a + soft g); an "-nge" reads as n + soft g (a /nj/ blend), never the /ŋ/
+  //     "ng" digraph (sing has no silent e, so it is untouched).
+  ["age", ["adv", "magice"]],                             // long a + soft g
+  ["page", ["adv", "magice"]], ["cage", ["adv", "magice"]],
+  ["rage", ["adv", "magice"]], ["huge", ["adv", "magice"]],
+  ["sage", ["adv", "magice"]], ["wage", ["adv", "magice"]],
+  ["stage", ["adv", "blend", "magice"]],                  // st blend + long a + soft g
+  ["large", ["adv", "rctrl"]], ["forge", ["adv", "rctrl"]],   // ar/or r-controlled + soft g
+  ["urge", ["adv", "rctrl"]], ["merge", ["adv", "rctrl"]],
+  ["gorge", ["adv", "rctrl"]], ["surge", ["adv", "rctrl"]],   // onset g stays HARD; only final g is soft
+  ["charge", ["adv", "digraph", "rctrl"]],                // ch digraph + ar + soft g
+  ["change", ["adv", "blend", "digraph"]],                // ch + a + n+g /nj/ blend + soft g
+  ["range", ["adv", "blend"]], ["hinge", ["adv", "blend"]],   // "-nge" = n + soft g, not the /ŋ/ digraph
+  ["strange", ["adv", "blend"]], ["plunge", ["adv", "blend"]],
+  ["sponge", ["adv", "blend"]], ["fringe", ["adv", "blend"]],
+  ["orange", ["adv", "blend", "rctrl"]],                  // or + a + n+g blend + soft g
+  ["pages", ["adv", "endings", "magice"]],                // soft g composes with a plural -s
+
   // --- doubled consonants = ONE sound, never a blend (roadmap #2 hardening).
   //     A doubled letter (bb tt nn pp dd gg mm rr…) marks the short vowel and is
   //     read once, so it needs the `double` skill, not `blend`. The greedy table
@@ -290,6 +315,17 @@ const NEEDS_SKILL = [
   ["cry", "uk-early", ["team"]],            // fl/cr blend taught, y=/ī/ (team) is not
   ["city", "uk-early", ["adv", "team"]],    // soft c AND y-vowel both untaught
   ["city", "uk-y1", ["adv"]],               // y-vowel now taught; only soft c blocks it
+  // Soft g at word-final "-ge" is advanced code, so a group without `adv` can't
+  // decode it yet. Under uk-y1 (all long-vowel code taught, but NOT advanced)
+  // every "-ge" word is blocked by exactly the soft-g rule — a clean isolation
+  // of the feature; under uk-early the untaught long vowel / r-control shows too.
+  ["page", "uk-early", ["adv", "magice"]],  // soft g AND magic-e both untaught
+  ["large", "uk-early", ["adv", "rctrl"]],  // soft g AND r-controlled both untaught
+  ["change", "uk-early", ["adv"]],          // blend + digraph taught; only soft g blocks it
+  ["page", "uk-y1", ["adv"]],               // long a taught; only soft g blocks it
+  ["huge", "uk-y1", ["adv"]],
+  ["large", "uk-y1", ["adv"]],              // r-control taught; only soft g blocks it
+  ["orange", "uk-y1", ["adv"]],
   // Consonant-le (-le) is advanced code — a group without `adv` can't decode it
   // yet, even when the rest of the word is basic (the old false blend is gone).
   ["little", "uk-early", ["adv"]],          // double taught; only the -le blocks it
@@ -325,6 +361,9 @@ const DECODABLE_UNDER = [
   ["happy", "uk-y1"], ["funny", "uk-y1"], ["cry", "uk-y1"], ["baby", "uk-y1"],
   // consonant-le words decode once advanced code is taught (the `all` preset)
   ["little", "all"], ["gentle", "all"], ["table", "all"], ["purple", "all"],
+  // word-final soft-g "-ge" words decode once advanced code is taught
+  ["page", "all"], ["huge", "all"], ["large", "all"], ["charge", "all"],
+  ["change", "all"], ["orange", "all"], ["sponge", "all"],
 ];
 
 /* ---------------------------------------------------------------
@@ -422,15 +461,20 @@ const KNOWN_LIMITATIONS = [
     note: "medial y still in CONS: m+y reads as a spurious blend" },
   { word: "type", now: ["blend"], want: "t + y=/ī/ split-digraph (long vowel); no blend",
     note: "medial y still in CONS: t+y reads as a spurious blend; y-e long vowel also unmodelled" },
-  // Soft g (g=/j/ before e/i/y) is DELIBERATELY NOT modelled. Unlike soft c, a
-  // by-rule guess is unsafe: hard-g-before-e/i/y is extremely common (get, girl,
-  // gift, give, begin, finger, anger, longer, tiger, eager, together, forget,
-  // target…), so a naive rule would mis-mark ordinary words as advanced code —
-  // and a wrong mark in a phonics tool is worse than a known gap. Reliable soft-g
-  // detection needs a lexicon/morphology, out of scope for the by-rule engine.
-  { word: "gem", now: [], want: "advanced (soft g)", note: "g=/j/ unmodelled — see soft-g note above; scored as basic CVC" },
-  { word: "page", now: ["magice"], want: "advanced (soft g)", note: "g=/j/ unmodelled — see soft-g note above" },
-  { word: "giant", now: ["blend"], want: "advanced (soft g)", note: "g=/j/ unmodelled — see soft-g note above; no true blend" },
+  // Soft g (g=/j/ before e/i/y). WORD-FINAL "-ge" is now MODELLED as advanced
+  // code — see the "soft g at word-final -ge" block in DECODABLE (page, large,
+  // change, orange…). That position is exceptionless, so it's hard-asserted and
+  // page/charge/etc. are promoted there. ONSET / MEDIAL soft g stays DELIBERATELY
+  // unmodelled: a by-rule guess there is unsafe because hard-g-before-e/i/y is
+  // extremely common (get, girl, gift, give, begin, finger, anger, longer, tiger,
+  // eager, together, forget, target…), so a naive rule would mis-mark ordinary
+  // words as advanced code — and a wrong mark in a phonics tool is worse than a
+  // known gap. Reliable onset soft-g detection needs a lexicon, out of scope for
+  // the by-rule engine, so gem/giant/gym are locked to current (hard-g) behaviour.
+  // (gym is covered above under medial-y — it needs BOTH onset soft g and the
+  // medial-y vowel, so it stays there.)
+  { word: "gem", now: [], want: "advanced (onset soft g)", note: "onset g=/j/ unmodelled — shares its slot with get/girl/gift; scored as basic CVC" },
+  { word: "giant", now: ["blend"], want: "advanced (onset soft g)", note: "onset g=/j/ unmodelled; the i+a run reads as a spurious blend" },
 
   // Consonant-le syllable (little, apple, gentle, table, purple, uncle…) is now
   // modelled as advanced code (`adv`) — see the "consonant-le syllable" block in
