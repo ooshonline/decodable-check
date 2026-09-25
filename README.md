@@ -54,7 +54,11 @@ The feature loop is closed; the focus now is the engine that everything rests on
    soft g ✅ (page/large/change/orange read the `-ge` /j/ as advanced code — the
    exceptionless position; `-gue`/`-g` stay hard); still to do: onset soft g
    (gem/giant), syllable blends, medial y (the corpus lists these as locked targets)
-3. Inflection-aware fix-it — correct `-s/-ing/-ed` swap spellings
+3. ~~Inflection-aware fix-it — correct `-s/-ing/-ed` swap spellings~~ ✅ (an
+   amber `looked`/`cries` now gets same-ending swaps — `spotted`, `watched`,
+   `yells` — spelled by rule: double the consonant, drop silent e, y→ies;
+   irregular pasts and ambiguous doubling are skipped, and every generated
+   form is re-checked through `analyseWord` before it's offered)
 4. ~~Shortest path to 100% — multi-skill teach-next mini-plan~~ ✅ (a greedy plan
    names the whole minimal skill set — "teach these 2 and the text works")
 5. ~~Backup-everything export (include the Known words list)~~ ✅ (library export
