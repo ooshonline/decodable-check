@@ -53,7 +53,10 @@ The feature loop is closed; the focus now is the engine that everything rests on
    (little/gentle/table read as the `-le` syllable, not a false blend), word-final
    soft g ✅ (page/large/change/orange read the `-ge` /j/ as advanced code — the
    exceptionless position; `-gue`/`-g` stay hard), `wa`+`ai` ✅ (wait/wail/waist
-   no longer swallow the `ai` team into a false all-CVC "green"); still to do:
+   no longer swallow the `ai` team into a false all-CVC "green"), silent-e
+   inflections ✅ (making/hoped/racing/raging/giggled/cried/crying/noses no longer
+   read as short CVC once the ending is stripped — the dropped e / y→i is rebuilt
+   where the spelling is unambiguous); still to do:
    onset soft g (gem/giant), syllable blends, medial y (corpus-locked targets)
 3. ~~Inflection-aware fix-it — correct `-s/-ing/-ed` swap spellings~~ ✅ (an
    amber `looked`/`cries` now gets same-ending swaps — `spotted`, `watched`,
