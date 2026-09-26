@@ -652,7 +652,7 @@ function analyseWord(raw, taught){
 
   const need = new Set();            // required skills
   const parts = [];                  // {g, skill}
-  let i=0, prevCons=false, ok=true;
+  let i=0;
   while(i < body.length){
     let matched=null;
     for(const [g,skill] of GRAPHEMES){
@@ -662,7 +662,7 @@ function analyseWord(raw, taught){
     // not the /ŋ/ "ng" digraph (sing, ring, long). When soft-ge is in play and
     // the greedy "ng" match sits at the very end of body, drop it so 'n' and the
     // final soft 'g' are scored separately — n+g reads as a blend, the g as `adv`
-    // (mirroring soft c: fancy's n+c is a blend too). Words without the silent e
+    // (a word-final pair, so the syllable-split rule never applies). Words without the silent e
     // (sing, bang) never set softGe, so their "ng" digraph is untouched.
     if(matched && matched[0]==="ng" && softGe && i+2===body.length) matched=null;
     // The "wa" grapheme (want/was/wash → the /wŏ/ where w flattens a to /ŏ/)
@@ -722,16 +722,15 @@ function analyseWord(raw, taught){
       else { g=body[i]; skill=null; } // punctuation/digit — ignore
     }
     if(skill){
-      // consecutive single consonants => a blend. Vowel-y (skilled `team`
-      // above) sits in CONS but is read as a vowel here, so it never chains.
+      // Vowel-y (skilled `team` above) sits in CONS but is read as a vowel
+      // here, so it never chains into a blend.
       const isSingleCons = g.length===1 && CONS.has(g) && !(g==="y" && skill==="team");
-      if(isSingleCons && prevCons){ need.add("blend"); }
-      prevCons = isSingleCons;
       if(skill!=="cvc") need.add(skill);
-      parts.push({g, skill: (isSingleCons&&prevCons)?skill:skill});
+      parts.push({g, skill, cons:isSingleCons});
     }
     i += g.length;
   }
+  if(hasBlend(parts)) need.add("blend");
   if(consLe){ need.add("adv"); parts.push({g:leChunk, skill:"adv"}); }
   if(magicE) need.add("magice");
   if(ending) need.add("endings");
@@ -740,6 +739,44 @@ function analyseWord(raw, taught){
   const missing = [...need].filter(s=>!taught.has(s));
   const cat = missing.length ? "new" : "ok";
   return {cat, need:[...need], missing, magicE, ending, parts};
+}
+
+/* ---------- blends vs. syllable boundaries ----------
+   Consecutive single consonants read as a blend (stop, hand, frog). But two
+   consonants BETWEEN two vowels usually straddle a syllable boundary instead:
+   sun·set, nap·kin, pic·nic, win·ter, can·dy are each two plain closed
+   syllables — the reader never blends n+s or p+k inside one syllable. These
+   VC|CV words are exactly the early two-syllable words UK Phase 2 teaches
+   alongside CVC (sunset, picnic, laptop, pocket), long before adjacent
+   consonants, so flagging them as "needs blends" wrongly held them back.
+   The split is only taken when it is SAFE — every other case keeps the blend,
+   so a doubtful word stays stricter (amber), never a false green:
+   - exactly two consonants (a run of three — ham·ster, pump·kin, hun·dred —
+     always holds a genuine blend on one side, so it still counts);
+   - a vowel grapheme on BOTH sides (a word-edge pair — hand, stop — is a
+     true blend);
+   - the pair cannot itself start a syllable. A legal onset cluster (bl, cr,
+     st, sk…) is ambiguous — se·cret / a·pron keep it together — so basket,
+     mister and whisper stay flagged; "nk" is the glued /ŋk/ (monkey, donkey)
+     and stays flagged too;
+   - the vowel after the pair is not a silent final e (else, since, rinse,
+     dances — the pair there is a word-final cluster, not a boundary). */
+const ONSET_PAIRS = new Set("bl br cl cr dr dw fl fr gl gr pl pr sc sk sl sm sn sp st sw tr tw nk".split(" "));
+function isVowelPart(p){
+  return p && !p.cons && (/^(team|diph|rctrl)$/.test(p.skill) || /[aeiou]/.test(p.g));
+}
+function hasBlend(parts){
+  for(let k=1; k<parts.length; k++){
+    if(!(parts[k].cons && parts[k-1].cons)) continue;
+    const before = parts[k-2], after = parts[k+1];
+    const runOfTwo = !(before && before.cons) && !(after && after.cons);
+    const silentE = after && after.g==="e" &&
+      (k+2===parts.length || (k+3===parts.length && parts[k+2].g==="s"));
+    const boundary = runOfTwo && isVowelPart(before) && isVowelPart(after) &&
+      !silentE && !ONSET_PAIRS.has(parts[k-1].g + parts[k].g);
+    if(!boundary) return true;
+  }
+  return false;
 }
 
 const SKILLNAME = {};
