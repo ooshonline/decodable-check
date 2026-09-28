@@ -244,6 +244,32 @@ for (const c of C.SUGGEST) {
 engine.setTaught(taughtFor("uk-early"));
 
 /* ============================================================
+   12. SILENT-E INFLECTIONS — an inflected form needs exactly what its
+   base needs, plus `endings`. The -ed/-ing spelling drops a silent e
+   (make -> making) or turns y to i (cry -> cried); the engine must see
+   through it, or making/hoped/cried score as short-vowel CVC (a false
+   green). The NOT list guards the look-alikes that must NOT gain one.
+   ============================================================ */
+freshKnown();
+for (const [form, base] of C.SILENT_E) {
+  const f = analyseWord(form, ALL), b = analyseWord(base, ALL);
+  const want = [...new Set([...(b.need || []), "endings"])];
+  check(
+    `SILENT-E   "${form}" = "${base}" + ending`,
+    f.cat === "ok" && eqSet(f.need, want),
+    `expected need=${show(want)} · got ${f.cat} need=${show(f.need || [])}`
+  );
+}
+for (const [form, need] of C.NOT_SILENT_E) {
+  const r = analyseWord(form, ALL);
+  check(
+    `NO-SILENT-E "${form}"`,
+    r.cat === "ok" && eqSet(r.need, need),
+    `expected need=${show(need)} · got ${r.cat} need=${show(r.need || [])}`
+  );
+}
+
+/* ============================================================
    report
    ============================================================ */
 const line = "─".repeat(56);
