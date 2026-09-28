@@ -17,7 +17,7 @@ const C = require("./corpus.js");
 
 const engine = loadEngine();
 const { analyseWord, computeStats, computePlan, tokenize, PRESETS, ALL_SKILL_IDS,
-        inflect, detectInflection, suggestFor } = engine;
+        inflect, detectInflection, suggestFor, upgradeSkills, SKILLS_V } = engine;
 
 /* --- tiny assert harness --- */
 let pass = 0;
@@ -36,6 +36,7 @@ const show = (a) => `[${sorted(a).join(", ")}]`;
 /* resolve a preset id (or the pseudo-preset "cvc") to a taught Set */
 function taughtFor(id) {
   if (id === "cvc") return new Set(C.CVC_PRESET);
+  if (id === "cvc-syll") return new Set(C.CVC_SYLL_PRESET);
   const p = PRESETS.find((x) => x.id === id);
   if (!p || !p.skills) throw new Error(`Unknown preset in corpus: ${id}`);
   return new Set(p.skills);
@@ -267,6 +268,32 @@ for (const [form, need] of C.NOT_SILENT_E) {
     r.cat === "ok" && eqSet(r.need, need),
     `expected need=${show(need)} · got ${r.cat} need=${show(r.need || [])}`
   );
+}
+
+/* ============================================================
+   13. SKILL-SET MIGRATION — sets saved before "Two-syllable words"
+   (syll) existed must keep scoring the same: a legacy preset maps to
+   its current list; a legacy custom set gains syll iff it taught
+   blends (VC|CV words used to need blend); current sets are untouched.
+   ============================================================ */
+{
+  const up = (ids, v) => sorted(upgradeSkills(ids, v));
+  const legacy = (id) => PRESETS.find((p) => p.id === id).skills.filter((s) => s !== "syll");
+  for (const id of ["uk-early", "uk-y1", "sor-g1", "ufli-g1", "all", "sor-k"]) {
+    const want = sorted(PRESETS.find((p) => p.id === id).skills);
+    check(`MIGRATE  legacy ${id} -> current ${id}`, eqSet(up(legacy(id), 1), want),
+      `got ${show(up(legacy(id), 1))} want ${show(want)}`);
+  }
+  check("MIGRATE  sor-k stays without syll", !upgradeSkills(legacy("sor-k"), 1).includes("syll"));
+  check("MIGRATE  legacy custom with blend gains syll",
+    eqSet(up(["cvc", "blend", "team"], undefined), ["blend", "cvc", "syll", "team"]));
+  check("MIGRATE  legacy custom without blend unchanged",
+    eqSet(up(["cvc", "double"], 1), ["cvc", "double"]));
+  check("MIGRATE  current-version set is never touched",
+    eqSet(up(["cvc", "blend"], SKILLS_V), ["blend", "cvc"]));
+  // the point of the migration: a legacy set's verdict on a VC|CV word is unchanged
+  const oldUkEarly = new Set(upgradeSkills(legacy("uk-early"), 1));
+  check("MIGRATE  legacy uk-early still reads sunset", analyseWord("sunset", oldUkEarly).cat === "ok");
 }
 
 /* ============================================================

@@ -58,7 +58,8 @@ The feature loop is closed; the focus now is the engine that everything rests on
    read as short CVC once the ending is stripped — the dropped e / y→i is rebuilt
    where the spelling is unambiguous), syllable-boundary consonants ✅ (sun·set,
    nap·kin, pic·nic, win·ter read as a VC|CV split, not a false blend — ambiguous
-   onset pairs like bas·ket stay strict), medial y ✅ (gym/myth/type/system read
+   onset pairs like bas·ket stay strict; the split now needs its own
+   **Two-syllable words** skill, on in every preset except SoR Kindergarten), medial y ✅ (gym/myth/type/system read
    y as a vowel — advanced code — not a false blend; every·thing/ba·by·sit keep
    final y's bucket); still to do: onset soft g (gem/giant) (corpus-locked target)
 3. ~~Inflection-aware fix-it — correct `-s/-ing/-ed` swap spellings~~ ✅ (an
@@ -70,6 +71,7 @@ The feature loop is closed; the focus now is the engine that everything rests on
    names the whole minimal skill set — "teach these 2 and the text works")
 5. ~~Backup-everything export (include the Known words list)~~ ✅ (library export
    carries the Known words list too)
-6. Tie-in with Ribbit Reading App & Wordlist Wonders (pending scope)
+6. Tie-in with Ribbit Reading App & Wordlist Wonders (on hold — bigger plan to come)
+7. Passage maker — generate a passage that is provably decodable (next)
 
 Built and maintained autonomously by Claude Code. 🐸

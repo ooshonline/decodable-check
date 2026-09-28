@@ -30,7 +30,7 @@
 
 /* Skill ids (from PHASES): cvc double digraph blend endings
                             magice team diph rctrl adv          */
-const ALL = ["cvc", "double", "digraph", "blend", "endings", "magice", "team", "diph", "rctrl", "adv"];
+const ALL = ["cvc", "double", "digraph", "blend", "syll", "endings", "magice", "team", "diph", "rctrl", "adv"];
 
 /* ---------------------------------------------------------------
    1. DECODABLE — the segmenter's grapheme→skill decomposition.
@@ -164,7 +164,7 @@ const DECODABLE = [
   ["cent", ["adv", "blend"]],                             // c=/s/ + nt blend
   ["cell", ["adv", "double"]],                            // c=/s/ + ll double
   ["dance", ["adv", "blend"]],                            // c=/s/, n+c a /ns/ blend
-  ["pencil", ["adv"]],                                    // c=/s/; pen·cil — n|c is a syllable split
+  ["pencil", ["adv", "syll"]],                                    // c=/s/; pen·cil — n|c is a syllable split
   ["circus", ["adv", "rctrl"]],                           // 1st c soft, 2nd c hard (before u)
   ["ice", ["adv", "magice"]],                             // soft c + magic-e long i
   ["race", ["adv", "magice"]], ["face", ["adv", "magice"]],
@@ -247,7 +247,7 @@ const DECODABLE = [
   ["very", ["rctrl", "team"]], ["every", ["rctrl", "team"]],   // er r-controlled + y
   // soft c + final y (both advanced/long-vowel code) — the city residue, fixed:
   ["city", ["adv", "team"]], ["icy", ["adv", "team"]],
-  ["fancy", ["adv", "team"]],                             // soft c + y; fan·cy — n|c is a syllable split
+  ["fancy", ["adv", "syll", "team"]],                             // soft c + y; fan·cy — n|c is a syllable split
   ["spicy", ["adv", "blend", "team"]],                    // sp blend + soft c + y
   ["mercy", ["adv", "rctrl", "team"]],                   // er r-controlled + soft c + y
 
@@ -263,7 +263,7 @@ const DECODABLE = [
   ["nylon", ["adv"]], ["syrup", ["adv"]], ["symbol", ["adv"]],
   ["python", ["adv", "digraph"]], ["physics", ["adv", "digraph", "endings"]],
   ["system", ["adv", "blend"]], ["crystal", ["adv", "blend"]],   // real s+t / c+r blends stay
-  ["gymnast", ["adv", "blend"]], ["hydrant", ["adv", "blend"]],
+  ["gymnast", ["adv", "blend", "syll"]], ["hydrant", ["adv", "blend"]],
   //     y-e split digraph: a medial y takes a silent e exactly like i-e (/ī/).
   ["type", ["adv", "magice"]], ["byte", ["adv", "magice"]], ["hype", ["adv", "magice"]],
   ["tyre", ["adv", "magice"]], ["style", ["adv", "blend", "magice"]],  // st blend; not -le
@@ -318,22 +318,22 @@ const DECODABLE = [
   //     of 3, a word-edge pair, a legal onset (st, sk, bl…), glued "nk", or a
   //     pair before a silent final e all KEEP the blend (see the guards below
   //     and in NEEDS_SKILL).
-  ["sunset", []], ["napkin", []], ["picnic", []], ["laptop", []],
-  ["kidnap", []], ["upset", []], ["admit", []], ["helmet", []],
-  ["magnet", []], ["cactus", []], ["tomcat", []], ["signal", []],
-  ["until", []], ["velvet", []], ["index", []],             // x is one letter /ks/
-  ["unless", ["double"]],                                   // un·less + ss
-  ["selfish", ["digraph"]],                                 // sel·fish + sh
-  ["winter", ["rctrl"]], ["under", ["rctrl"]], ["doctor", ["rctrl"]],
-  ["candy", ["team"]], ["window", ["team"]], ["sixty", ["team"]],
-  ["pancake", ["magice"]], ["reptile", ["magice"]], ["inside", ["magice"]],
-  ["cancel", ["adv"]],                                      // can·cel, soft c
-  ["success", ["adv", "double"]],                           // suc·cess: /k/|/s/, not a blend
+  ["sunset", ["syll"]], ["napkin", ["syll"]], ["picnic", ["syll"]], ["laptop", ["syll"]],
+  ["kidnap", ["syll"]], ["upset", ["syll"]], ["admit", ["syll"]], ["helmet", ["syll"]],
+  ["magnet", ["syll"]], ["cactus", ["syll"]], ["tomcat", ["syll"]], ["signal", ["syll"]],
+  ["until", ["syll"]], ["velvet", ["syll"]], ["index", ["syll"]],             // x is one letter /ks/
+  ["unless", ["double", "syll"]],                                   // un·less + ss
+  ["selfish", ["digraph", "syll"]],                                 // sel·fish + sh
+  ["winter", ["rctrl", "syll"]], ["under", ["rctrl", "syll"]], ["doctor", ["rctrl", "syll"]],
+  ["candy", ["syll", "team"]], ["window", ["syll", "team"]], ["sixty", ["syll", "team"]],
+  ["pancake", ["magice", "syll"]], ["reptile", ["magice", "syll"]], ["inside", ["magice", "syll"]],
+  ["cancel", ["adv", "syll"]],                                      // can·cel, soft c
+  ["success", ["adv", "double", "syll"]],                           // suc·cess: /k/|/s/, not a blend
   //     guards — each KEEPS its blend:
   ["basket", ["blend"]], ["mister", ["blend", "rctrl"]],     // s+stop is a legal onset: ambiguous, stay strict
   ["secret", ["blend"]],                                    // se·cret: cr really is an onset blend
-  ["dentist", ["blend"]],                                   // den·tist, but -st is a real final blend
-  ["insect", ["blend"]],                                    // in·sect, but -ct is a real final blend
+  ["dentist", ["blend", "syll"]],                                   // den·tist, but -st is a real final blend
+  ["insect", ["blend", "syll"]],                                    // in·sect, but -ct is a real final blend
   ["hamster", ["blend", "rctrl"]], ["pumpkin", ["blend"]],  // run of 3: a real blend on one side
   ["monkey", ["blend", "team"]],                            // glued "nk" /ŋk/ stays flagged
   ["else", ["blend"]], ["rinse", ["blend"]],                // final e is silent: ls/ns is a final cluster
@@ -414,10 +414,18 @@ const NEEDS_SKILL = [
   // Syllable-boundary guards: a CVC-only group still can't read a word whose
   // blend is real — the split rule must never turn these into false greens.
   ["basket", "cvc", ["blend"]],
-  ["dentist", "cvc", ["blend"]],
-  ["insect", "cvc", ["blend"]],
+  ["dentist", "cvc", ["blend", "syll"]],
+  ["insect", "cvc", ["blend", "syll"]],
   ["pumpkin", "cvc", ["blend"]],
   ["else", "cvc", ["blend"]],
+  // "Two-syllable words" (syll) is its own skill: a CVC group (or SoR
+  // Kindergarten, which teaches blends but not syllable division yet) can't
+  // read a VC|CV word until it's ticked — and it never needs blends.
+  ["sunset", "cvc", ["syll"]],
+  ["picnic", "cvc", ["syll"]],
+  ["napkin", "sor-k", ["syll"]],
+  ["winter", "sor-k", ["rctrl", "syll"]],
+  ["dentist", "sor-k", ["syll"]],           // blend taught; the n|t split is not
   // Medial y (y as the first vowel) is advanced code. Under uk-y1 these were
   // FALSE GREENS (the y read as a blend, and blends are taught) — now each is
   // blocked by exactly the y-vowel.
@@ -434,6 +442,9 @@ const NEEDS_SKILL = [
 /* A "cvc" convenience preset (cvc + double) used by NEEDS_SKILL and
    DECODABLE_UNDER — the app's "Reset to CVC" button state. */
 const CVC_PRESET = ["cvc", "double"];
+/* CVC + "Two-syllable words": a UK Phase 2 group that reads sunset / picnic
+   before any blends are taught. */
+const CVC_SYLL_PRESET = ["cvc", "double", "syll"];
 
 /* ---------------------------------------------------------------
    3. DECODABLE UNDER A LIMITED SET — the positive side: these words
@@ -460,10 +471,13 @@ const DECODABLE_UNDER = [
   ["making", "uk-y1"], ["hoped", "uk-y1"], ["gazed", "uk-y1"], ["noses", "uk-y1"],
   ["cried", "uk-y1"], ["crying", "uk-y1"],
   ["change", "all"], ["orange", "all"], ["sponge", "all"],
-  // VC|CV two-syllable words are two plain closed syllables — decodable for a
-  // CVC group (UK Phase 2 teaches sunset/picnic/laptop before blends)
-  ["sunset", "cvc"], ["picnic", "cvc"], ["napkin", "cvc"], ["laptop", "cvc"],
-  ["sunset", "uk-early"], ["tomcat", "cvc"],
+  // VC|CV two-syllable words are two plain closed syllables — decodable once
+  // "Two-syllable words" (syll) is taught, with NO blend skill needed
+  // (UK Phase 2 teaches sunset/picnic/laptop alongside CVC, before blends)
+  ["sunset", "uk-early"], ["picnic", "uk-early"], ["napkin", "uk-y1"],
+  ["laptop", "ufli-g1"], ["tomcat", "sor-g1"], ["pencil", "all"],
+  ["sunset", "cvc-syll"], ["picnic", "cvc-syll"], ["napkin", "cvc-syll"],
+  ["laptop", "cvc-syll"], ["tomcat", "cvc-syll"],
   // medial-y words decode once advanced code is taught…
   ["gym", "all"], ["myth", "all"], ["type", "all"], ["system", "all"],
   // …while compounds whose medial y is a head word's final y stay exactly as
@@ -796,6 +810,7 @@ module.exports = {
   DECODABLE,
   NEEDS_SKILL,
   DECODABLE_UNDER,
+  CVC_SYLL_PRESET,
   HEART,
   KNOWN,
   PASSAGE,
