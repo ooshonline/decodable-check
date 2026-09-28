@@ -164,7 +164,7 @@ const DECODABLE = [
   ["cent", ["adv", "blend"]],                             // c=/s/ + nt blend
   ["cell", ["adv", "double"]],                            // c=/s/ + ll double
   ["dance", ["adv", "blend"]],                            // c=/s/, n+c a /ns/ blend
-  ["pencil", ["adv", "blend"]],                           // c=/s/, n+c blend
+  ["pencil", ["adv"]],                                    // c=/s/; pen·cil — n|c is a syllable split
   ["circus", ["adv", "rctrl"]],                           // 1st c soft, 2nd c hard (before u)
   ["ice", ["adv", "magice"]],                             // soft c + magic-e long i
   ["race", ["adv", "magice"]], ["face", ["adv", "magice"]],
@@ -247,7 +247,7 @@ const DECODABLE = [
   ["very", ["rctrl", "team"]], ["every", ["rctrl", "team"]],   // er r-controlled + y
   // soft c + final y (both advanced/long-vowel code) — the city residue, fixed:
   ["city", ["adv", "team"]], ["icy", ["adv", "team"]],
-  ["fancy", ["adv", "blend", "team"]],                    // soft c + n+c /ns/ blend + y
+  ["fancy", ["adv", "team"]],                             // soft c + y; fan·cy — n|c is a syllable split
   ["spicy", ["adv", "blend", "team"]],                    // sp blend + soft c + y
   ["mercy", ["adv", "rctrl", "team"]],                   // er r-controlled + soft c + y
 
@@ -280,6 +280,36 @@ const DECODABLE = [
   ["twinkle", ["adv", "blend"]], ["sprinkle", ["adv", "blend"]],// tw/spr blend + -le
   ["stumble", ["adv", "blend"]], ["cradle", ["adv", "blend"]],
   ["sparkle", ["adv", "blend", "rctrl"]],                       // sp blend + ar + -le
+
+  // --- syllable-boundary consonants are NOT a blend (roadmap #2 hardening).
+  //     Two consonants BETWEEN two vowels usually straddle a syllable split
+  //     (VC|CV): sun·set, nap·kin, pic·nic are two plain closed syllables, and
+  //     the reader never blends n+s or p+k inside one syllable. UK Phase 2
+  //     teaches exactly these words (sunset, picnic, laptop) alongside CVC,
+  //     before adjacent consonants. The split is only taken when safe — a run
+  //     of 3, a word-edge pair, a legal onset (st, sk, bl…), glued "nk", or a
+  //     pair before a silent final e all KEEP the blend (see the guards below
+  //     and in NEEDS_SKILL).
+  ["sunset", []], ["napkin", []], ["picnic", []], ["laptop", []],
+  ["kidnap", []], ["upset", []], ["admit", []], ["helmet", []],
+  ["magnet", []], ["cactus", []], ["tomcat", []], ["signal", []],
+  ["until", []], ["velvet", []], ["index", []],             // x is one letter /ks/
+  ["unless", ["double"]],                                   // un·less + ss
+  ["selfish", ["digraph"]],                                 // sel·fish + sh
+  ["winter", ["rctrl"]], ["under", ["rctrl"]], ["doctor", ["rctrl"]],
+  ["candy", ["team"]], ["window", ["team"]], ["sixty", ["team"]],
+  ["pancake", ["magice"]], ["reptile", ["magice"]], ["inside", ["magice"]],
+  ["cancel", ["adv"]],                                      // can·cel, soft c
+  ["success", ["adv", "double"]],                           // suc·cess: /k/|/s/, not a blend
+  //     guards — each KEEPS its blend:
+  ["basket", ["blend"]], ["mister", ["blend", "rctrl"]],     // s+stop is a legal onset: ambiguous, stay strict
+  ["secret", ["blend"]],                                    // se·cret: cr really is an onset blend
+  ["dentist", ["blend"]],                                   // den·tist, but -st is a real final blend
+  ["insect", ["blend"]],                                    // in·sect, but -ct is a real final blend
+  ["hamster", ["blend", "rctrl"]], ["pumpkin", ["blend"]],  // run of 3: a real blend on one side
+  ["monkey", ["blend", "team"]],                            // glued "nk" /ŋk/ stays flagged
+  ["else", ["blend"]], ["rinse", ["blend"]],                // final e is silent: ls/ns is a final cluster
+  ["hand", ["blend"]], ["stop", ["blend"]],                 // word-edge pairs are true blends
 ];
 
 /* ---------------------------------------------------------------
@@ -353,6 +383,13 @@ const NEEDS_SKILL = [
   ["little", "uk-y1", ["adv"]],
   ["gentle", "uk-y1", ["adv"]],
   ["turtle", "uk-y1", ["adv"]],             // ur taught; only the -le blocks it
+  // Syllable-boundary guards: a CVC-only group still can't read a word whose
+  // blend is real — the split rule must never turn these into false greens.
+  ["basket", "cvc", ["blend"]],
+  ["dentist", "cvc", ["blend"]],
+  ["insect", "cvc", ["blend"]],
+  ["pumpkin", "cvc", ["blend"]],
+  ["else", "cvc", ["blend"]],
 ];
 
 /* A "cvc" convenience preset (cvc + double) used by NEEDS_SKILL and
@@ -384,6 +421,10 @@ const DECODABLE_UNDER = [
   ["making", "uk-y1"], ["hoped", "uk-y1"], ["gazed", "uk-y1"], ["noses", "uk-y1"],
   ["cried", "uk-y1"], ["crying", "uk-y1"],
   ["change", "all"], ["orange", "all"], ["sponge", "all"],
+  // VC|CV two-syllable words are two plain closed syllables — decodable for a
+  // CVC group (UK Phase 2 teaches sunset/picnic/laptop before blends)
+  ["sunset", "cvc"], ["picnic", "cvc"], ["napkin", "cvc"], ["laptop", "cvc"],
+  ["sunset", "uk-early"], ["tomcat", "cvc"],
 ];
 
 /* ---------------------------------------------------------------
@@ -512,11 +553,13 @@ const KNOWN_LIMITATIONS = [
   // is scored as a short cvc vowel — a vowel-length nuance PHASES has no skill for
   // (open syllables aren't a taught skill), not a wrong decodability call.
 
-  // syllable-boundary consonants flagged as a single-syllable blend
-  { word: "sunset", now: ["blend"], want: "two CVC syllables (sun+set) — no blend", note: "n|s spans a syllable boundary" },
-  { word: "napkin", now: ["blend"], want: "two closed syllables — no blend", note: "p|k spans a syllable boundary" },
-  { word: "basket", now: ["blend"], want: "bas+ket — 'sk' split across syllables", note: "syllable-boundary blend" },
-  { word: "picnic", now: ["blend"], want: "pic+nic — no blend", note: "c|n spans a syllable boundary" },
+  // Syllable-boundary consonants (sunset, napkin, picnic…) are now read as a
+  // VC|CV split, not a blend — promoted to the DECODABLE corpus (see the
+  // "syllable-boundary" block there). One residue stays: when the medial pair
+  // is ALSO a legal onset cluster (sk, st, sp…) the split is ambiguous
+  // (bas·ket vs. a·stir / se·cret), so the engine stays strict and keeps the
+  // blend. Stricter is the safe direction — never a false green.
+  { word: "basket", now: ["blend"], want: "bas+ket — 'sk' split across syllables", note: "medial pair is also a legal onset (sk): ambiguous, kept as a blend" },
 
   // Doubled medial consonants (rabbit, kitten, tennis, happen, button…) are now
   // scored as `double`, not a spurious blend — promoted to the DECODABLE corpus
