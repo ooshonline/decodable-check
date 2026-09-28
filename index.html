@@ -572,6 +572,11 @@ const TRICKY = new Set(("the a I to is was said you are they of we he she me be 
   "eye once upon these those water father mother brother other another over")
   .toLowerCase().split(/\s+/));
 
+// Inflection spellings that LOOK like a hidden silent e but aren't: buses/gases
+// are bus+es / gas+es (short vowel), and "during" is not dure+ing.
+const SHORT_SES = new Set(["buses", "gases"]);
+const NO_SILENT_E = new Set(["during"]);
+
 /* ---------- word analysis ---------- */
 function analyseWord(raw, taught){
   const word = raw.toLowerCase();
@@ -586,8 +591,10 @@ function analyseWord(raw, taught){
   const hasVowel = s => /[aeiou]/.test(s);
   if(/ing$/.test(word)){
     const base = word.slice(0, -3);
-    // jumping->jump (base carries its own vowel); thing/bring/string -> i+ng
-    if(base.length >= 2 && hasVowel(base)) ending = "ing";
+    // jumping->jump (base carries its own vowel); thing/bring/string -> i+ng.
+    // crying/flying/trying: the base's final y IS its vowel (cry, fly), so
+    // strip too — otherwise cr+y+i+ng read y as a consonant blend.
+    if(base.length >= 2 && (hasVowel(base) || /[^aeiou]y$/.test(base))) ending = "ing";
   } else if(/ed$/.test(word)){
     const base = word.slice(0, -2);
     // jumped->jump; sled/shed/bled -> e+d (no vowel left in the base)
@@ -595,11 +602,19 @@ function analyseWord(raw, taught){
   } else if(/s$/.test(word)){
     const beforeS = word[word.length - 2];
     if(/es$/.test(word)){
-      const base = word.slice(0, -2);
-      if(base.length >= 2 && /(s|x|z|ch|sh)$/.test(base)){
+      const base = word.slice(0, -2), withE = word.slice(0, -1);
+      // A one-syllable magic-e base ending in s/z (nose, rose, size, prize,
+      // use, close, gaze) takes plain -s; the "es" is NOT a sibilant plural.
+      // Checking sibilant first stripped nos|es and read noses as short o — a
+      // false green. buses/gases are the short-vowel exceptions (bus+es).
+      if(/^[^aeiou]*[aeiou][sz]e$/.test(withE.replace(/qu/g, "kw")) && !SHORT_SES.has(word)){
+        ending = "s";                                   // noses|s, sizes|s (magic-e + s)
+      } else if(base.length >= 2 && /(s|x|z|ch|sh)$/.test(base)){
         ending = "es";                                  // boxes, wishes, glasses, buses (sibilant + es)
       } else if(/[aeiou][bcdfghjklmnpqrstvwxyz]e$/.test(word.slice(0, -1))){
         ending = "s";                                   // notes|s, rides|s (magic-e + plural s)
+      } else if(/(ce|ge|[bcdfgkptz]le)$/.test(withE)){
+        ending = "s";                                   // dances|s, changes|s, tables|s (silent-e base)
       }                                                 // sees/goes/toes: leave whole (root vowel team)
     } else if(word.length - 1 >= 2 && CONS.has(beforeS) && !"sxz".includes(beforeS)){
       ending = "s";                                     // jumps, hands, cats (consonant + s)
@@ -607,6 +622,37 @@ function analyseWord(raw, taught){
     // vowel + s (bus, his, gas) and ss/xs/zs (miss, class) are NOT inflections
   }
   let core = ending ? word.slice(0, word.length-ending.length) : word;
+
+  // Restore the silent e (or final y) that the -ed/-ing spelling removed.
+  // English drops a base's silent e before -ed/-ing (make -> making, hope ->
+  // hoped, race -> racing, rage -> raging) and turns consonant+y into i before
+  // -ed (cry -> cried). Stripping the ending alone left "mak", "hop", "rac",
+  // "cri" — read as short CVC vowels, so making/hoped/racing/cried scored as
+  // decodable for a group never taught magic-e, soft c or y-as-a-vowel: a FALSE
+  // green on some of the most common words in early texts. The base is rebuilt
+  // only where the spelling is unambiguous:
+  //  - one syllable, single vowel + single consonant (mak, hop, rid, us, quak):
+  //    a SHORT-vowel base would have doubled (hopped, hopping) or be spelled
+  //    -ck (picked), so an undoubled final consonant marks a dropped e. w/x/y/h
+  //    finals never double (snowed, boxed, fixing), so they're excluded.
+  //  - -dg / -nc / -rc / -rg / -lg (judging, dancing, forced, charging): no
+  //    English base ends in those letters without an e. "-ng" is NOT rebuilt —
+  //    hanging/singing (hang, sing) and changing (change) can't be told apart.
+  //  - consonant + l before -ed only (giggled, tickled, tables via -s above):
+  //    the consonant-le syllable. Not before -ing, where the "-ling" noun
+  //    suffix (duckling, dumpling, sibling) would be misread.
+  //  - consonant + i before -ed (cried, tried, carried) -> y.
+  // A rebuilt base that is a heart word (come, have, give, live, love) is
+  // left alone: coming/having keep their current reading rather than borrow
+  // a magic-e the whole word never had.
+  if(ending==="ing" || ending==="ed"){
+    let base = null;
+    if(ending==="ed" && /[^aeiou]i$/.test(core)) base = core.slice(0,-1)+"y";
+    else if(/^[^aeiou]*[aeiou][bcdfgjklmnpqrstvz]$/.test(core.replace(/qu/g,"kw"))
+         || /(dg|[nr]c|[rl]g)$/.test(core)
+         || (ending==="ed" && /[bcdfgkptz]l$/.test(core))) base = core+"e";
+    if(base && !TRICKY.has(base) && !NO_SILENT_E.has(word)) core = base;
+  }
 
   // Consonant-le syllable (-le): little, table, gentle, candle, purple, uncle.
   // A word ending <consonant>+le carries a final syllabic /əl/ ("lit·tle",
