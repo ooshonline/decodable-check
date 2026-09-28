@@ -297,6 +297,108 @@ for (const [form, need] of C.NOT_SILENT_E) {
 }
 
 /* ============================================================
+   14. PASSAGE MAKER — every made passage is provably decodable
+   (roadmap #7). For every preset × heart words on/off × every focus
+   skill × every length, generate many passages from a seeded RNG and
+   assert each one re-scores at 100% with nothing amber, has the asked-
+   for number of sentences, uses only the allowed heart words (none when
+   switched off), and spells a/an correctly. A single non-decodable word
+   in a "decodable" passage is the worst bug this tool could ship.
+   ============================================================ */
+{
+  const { makePassage, makerPools, makerNames, MAKER_BANK, MAKER_HEART, MAKER_LENGTHS } = engine;
+  // mulberry32 — deterministic, so a failure is reproducible
+  const seeded = (seed) => () => {
+    seed |= 0; seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const words = (t) => tokenize(t).filter((x) => /^[A-Za-z']+$/.test(x));
+  const sentenceCount = (t) => (t.match(/[.!?]"?(?=\s|$)/g) || []).length;
+
+  // the bank itself: every word reads as decodable with everything taught
+  freshKnown();
+  for (const [role, list] of Object.entries(MAKER_BANK)) {
+    for (const w of list) {
+      const r = analyseWord(w, ALL);
+      check(`MAKER bank ${role} "${w}"`, r.cat === "ok", `bank word is ${r.cat} under ALL`);
+    }
+  }
+
+  let made = 0, seed = 1;
+  const PER = 3;
+  for (const p of PRESETS.filter((x) => x.skills)) {
+    const taughtSet = new Set(p.skills);
+    const focuses = ["", ...p.skills.filter((s) => s !== "cvc")];
+    for (const heart of [true, false]) {
+      for (const focus of focuses) {
+        for (const [len, n] of Object.entries(MAKER_LENGTHS)) {
+          for (let k = 0; k < PER; k++) {
+            freshKnown();
+            const res = makePassage({ taught: taughtSet, focus, sentences: n, heart,
+                                      names: makerNames(new Set()), rng: seeded(seed++) });
+            const tag = `MAKER ${p.id} heart=${heart} focus=${focus || "-"} ${len} #${k}`;
+            check(`${tag} made`, res.ok, res.reason);
+            if (!res.ok) continue;
+            made++;
+            const st = computeStats(res.text, taughtSet);
+            check(`${tag} 100%`, st.pct === 100 && st.nw === 0 && st.ok > 0,
+              `scored ${st.pct}% nw=${st.nw}: ${JSON.stringify(res.text)}`);
+            check(`${tag} sentences`, sentenceCount(res.text) === n,
+              `wanted ${n}, got ${sentenceCount(res.text)}: ${JSON.stringify(res.text)}`);
+            const hearts = words(res.text).filter((w) => analyseWord(w, taughtSet).cat === "tricky");
+            check(`${tag} heart words`,
+              heart ? hearts.every((w) => MAKER_HEART.has(w.toLowerCase())) : hearts.length === 0,
+              `heart words used: ${hearts.join(", ")}`);
+            check(`${tag} a/an`, !/\ba [aeiou]|\ban [^aeiou\s]/i.test(res.text), JSON.stringify(res.text));
+            check(`${tag} no leftover slot`, !/[{}]/.test(res.text), JSON.stringify(res.text));
+          }
+        }
+      }
+    }
+  }
+  check(`MAKER generated passages`, made > 600, `only ${made} passages made`);
+
+  // Known words become the characters — set aside as known, still 100%
+  engine.setKnown(new Set(["zara", "ravi"]));
+  const names = makerNames(engine.getKnown());
+  check("MAKER names from Known words", eqSet(names, ["Zara", "Ravi"]), `got ${names.join(", ")}`);
+  for (let k = 0; k < 20; k++) {
+    const res = makePassage({ taught: taughtFor("sor-k"), sentences: 5, names, rng: seeded(900 + k) });
+    const st = res.ok && computeStats(res.text, taughtFor("sor-k"));
+    check(`MAKER known-name passage #${k}`, res.ok && st.pct === 100 && st.nw === 0 &&
+      !/\b(Sam|Meg|Tom|Pip|Ben|Kit)\b/.test(res.text), JSON.stringify(res.text));
+  }
+  // one known name is topped up so "X and Y" never pairs a name with itself;
+  // heart / bank words marked known are not treated as names
+  engine.setKnown(new Set(["zara", "said", "cat"]));
+  const topped = makerNames(engine.getKnown());
+  check("MAKER one known name topped up", topped.length === 2 && topped[0] === "Zara" && topped[1] === "Sam",
+    `got ${topped.join(", ")}`);
+  freshKnown();
+
+  // focus: a well-stocked skill reaches the ~40% target
+  for (const [preset, focus] of [["uk-early", "digraph"], ["uk-y1", "magice"], ["uk-y1", "team"], ["all", "rctrl"]]) {
+    let met = 0;
+    for (let k = 0; k < 10; k++) {
+      const res = makePassage({ taught: taughtFor(preset), focus, sentences: 5, rng: seeded(500 + k) });
+      if (res.ok && res.focusMet && res.focusPct >= 40) met++;
+    }
+    check(`MAKER focus ${focus} @ ${preset} reaches 40%`, met >= 9, `only ${met}/10 met the target`);
+  }
+
+  // guard rails: nothing taught -> a clear refusal, never a passage
+  const none = makePassage({ taught: new Set(), sentences: 5, rng: seeded(7) });
+  check("MAKER refuses without CVC", !none.ok && /CVC/.test(none.reason), JSON.stringify(none));
+  // the pools only ever hold words that pass the engine for that set
+  const pools = makerPools(taughtFor("sor-k"), true, []);
+  const leak = ["thing", "animal", "place", "adj", "verb", "things", "verbs"].flatMap((k) => pools[k])
+    .filter((w) => analyseWord(w, taughtFor("sor-k")).cat !== "ok");
+  check("MAKER pools are engine-verified", leak.length === 0, `leaked: ${leak.join(", ")}`);
+}
+
+/* ============================================================
    report
    ============================================================ */
 const line = "─".repeat(56);
