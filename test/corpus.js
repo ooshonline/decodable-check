@@ -251,6 +251,34 @@ const DECODABLE = [
   ["spicy", ["adv", "blend", "team"]],                    // sp blend + soft c + y
   ["mercy", ["adv", "rctrl", "team"]],                   // er r-controlled + soft c + y
 
+  // --- medial y = a VOWEL too (roadmap #2 hardening). Consonant y only ever
+  //     starts a syllable before a vowel (yes, beyond, canyon, lawyer), so a
+  //     bare y with a CONSONANT after it is a vowel. When it is the word's
+  //     first vowel it spells /ĭ/ (gym, myth) or, with a split e, /ī/ (type,
+  //     style) — advanced code. Before this fix it sat in CONS and chained into
+  //     a spurious blend (myth m+y, type t+y+p), so Year 1 groups (blends
+  //     taught, advanced code not) were told these were decodable: false greens.
+  ["gym", ["adv"]], ["myth", ["adv", "digraph"]], ["gyms", ["adv", "endings"]],
+  ["pyramid", ["adv"]], ["typical", ["adv"]], ["lyric", ["adv"]],
+  ["nylon", ["adv"]], ["syrup", ["adv"]], ["symbol", ["adv"]],
+  ["python", ["adv", "digraph"]], ["physics", ["adv", "digraph", "endings"]],
+  ["system", ["adv", "blend"]], ["crystal", ["adv", "blend"]],   // real s+t / c+r blends stay
+  ["gymnast", ["adv", "blend"]], ["hydrant", ["adv", "blend"]],
+  //     y-e split digraph: a medial y takes a silent e exactly like i-e (/ī/).
+  ["type", ["adv", "magice"]], ["byte", ["adv", "magice"]], ["hype", ["adv", "magice"]],
+  ["tyre", ["adv", "magice"]], ["style", ["adv", "blend", "magice"]],  // st blend; not -le
+  ["thyme", ["adv", "digraph", "magice"]],
+  //     A medial y AFTER an earlier vowel closes that syllable (every·thing,
+  //     any·way, ba·by·sit, la·dy·bird) — final y's /ē/, so final y's `team`
+  //     bucket. This keeps compounds exactly as decodable as their head word.
+  ["everything", ["digraph", "endings", "rctrl", "team"]], ["anyway", ["team"]],
+  ["anybody", ["team"]], ["everybody", ["rctrl", "team"]],
+  ["babysit", ["team"]], ["ladybird", ["rctrl", "team"]],
+  //     guards — consonant y (before a vowel) and vowel-team y are untouched:
+  ["yak", []], ["yell", ["double"]], ["crayon", ["blend", "team"]],
+  ["boys", ["diph", "endings"]], ["keys", ["endings", "team"]],
+  ["lawyer", ["diph", "rctrl"]], ["backyard", ["digraph", "rctrl"]],
+
   // --- consonant-le syllable (-le) = advanced code (roadmap #2 hardening).
   //     A word ending <consonant>+le carries a final syllabic /əl/: lit·tle,
   //     gen·tle, ta·ble. Modelled as `adv` (PHASES lists "gentle" as its
@@ -390,6 +418,17 @@ const NEEDS_SKILL = [
   ["insect", "cvc", ["blend"]],
   ["pumpkin", "cvc", ["blend"]],
   ["else", "cvc", ["blend"]],
+  // Medial y (y as the first vowel) is advanced code. Under uk-y1 these were
+  // FALSE GREENS (the y read as a blend, and blends are taught) — now each is
+  // blocked by exactly the y-vowel.
+  ["gym", "uk-y1", ["adv"]],
+  ["myth", "uk-y1", ["adv"]],
+  ["type", "uk-y1", ["adv"]],               // magic-e taught; only y-e's y blocks it
+  ["style", "uk-y1", ["adv"]],
+  ["system", "uk-y1", ["adv"]],
+  ["crystal", "uk-y1", ["adv"]],
+  ["type", "uk-early", ["adv", "magice"]],  // y-vowel AND magic-e both untaught
+  ["gym", "cvc", ["adv"]],                  // no spurious blend: only the y blocks it
 ];
 
 /* A "cvc" convenience preset (cvc + double) used by NEEDS_SKILL and
@@ -425,6 +464,11 @@ const DECODABLE_UNDER = [
   // CVC group (UK Phase 2 teaches sunset/picnic/laptop before blends)
   ["sunset", "cvc"], ["picnic", "cvc"], ["napkin", "cvc"], ["laptop", "cvc"],
   ["sunset", "uk-early"], ["tomcat", "cvc"],
+  // medial-y words decode once advanced code is taught…
+  ["gym", "all"], ["myth", "all"], ["type", "all"], ["system", "all"],
+  // …while compounds whose medial y is a head word's final y stay exactly as
+  // decodable as the head word (every / any are uk-y1 words)
+  ["everything", "uk-y1"], ["everybody", "uk-y1"], ["anyway", "uk-y1"], ["babysit", "uk-y1"],
 ];
 
 /* ---------------------------------------------------------------
@@ -516,18 +560,13 @@ const KNOWN_LIMITATIONS = [
   // block in DECODABLE (cent, ice, race, cell, space…). FINAL y as a vowel is
   // now modelled too — see the "final y = a VOWEL" block in DECODABLE (city,
   // happy, cry, fancy…), so city is fixed (adv+team) and promoted there.
-  // The remaining y gap is MEDIAL y — a vowel inside a word (gym, myth, type,
-  // system, crystal). It still sits in CONS, so a consonant beside it reads as a
-  // spurious blend (myth = th digraph + a false m|y blend; type/gym a false y+
-  // cons blend). Unlike final y this can't be resolved by position alone: medial
-  // y is /ĭ/ (gym), /ī/ (type), or part of a team, and telling those apart needs
-  // syllable/vowel-slot analysis. Locked to current behaviour until then.
-  { word: "gym", now: ["blend"], want: "y=/ĭ/ vowel, no blend (advanced spelling)",
-    note: "medial y still in CONS: g+y reads as a spurious blend" },
-  { word: "myth", now: ["blend", "digraph"], want: "m + y=/ĭ/ + th(digraph); no blend",
-    note: "medial y still in CONS: m+y reads as a spurious blend" },
-  { word: "type", now: ["blend"], want: "t + y=/ī/ split-digraph (long vowel); no blend",
-    note: "medial y still in CONS: t+y reads as a spurious blend; y-e long vowel also unmodelled" },
+  // MEDIAL y is modelled too — see the "medial y = a VOWEL" block in DECODABLE
+  // (gym, myth, type, system…), so gym/myth/type are promoted there. One
+  // residue does not change any preset's verdict and stays unlocked: an
+  // inflected y-e word (types, typed, typing) loses its magic-e/endings skills
+  // because the -s/-ed/-ing stripper looks for an a/e/i/o/u vowel in the base.
+  // It still needs `adv`, which only the `all` preset teaches — and that
+  // preset teaches magice/endings too — so it never becomes a false green.
   // Soft g (g=/j/ before e/i/y). WORD-FINAL "-ge" is now MODELLED as advanced
   // code — see the "soft g at word-final -ge" block in DECODABLE (page, large,
   // change, orange…). That position is exceptionless, so it's hard-asserted and
@@ -537,9 +576,9 @@ const KNOWN_LIMITATIONS = [
   // eager, together, forget, target…), so a naive rule would mis-mark ordinary
   // words as advanced code — and a wrong mark in a phonics tool is worse than a
   // known gap. Reliable onset soft-g detection needs a lexicon, out of scope for
-  // the by-rule engine, so gem/giant/gym are locked to current (hard-g) behaviour.
-  // (gym is covered above under medial-y — it needs BOTH onset soft g and the
-  // medial-y vowel, so it stays there.)
+  // the by-rule engine, so gem/giant are locked to current (hard-g) behaviour.
+  // (gym needs BOTH onset soft g and the medial-y vowel; both are `adv`, so the
+  // medial-y rule already scores it correctly and it lives in DECODABLE.)
   { word: "gem", now: [], want: "advanced (onset soft g)", note: "onset g=/j/ unmodelled — shares its slot with get/girl/gift; scored as basic CVC" },
   { word: "giant", now: ["blend"], want: "advanced (onset soft g)", note: "onset g=/j/ unmodelled; the i+a run reads as a spurious blend" },
 

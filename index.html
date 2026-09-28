@@ -678,6 +678,11 @@ function analyseWord(raw, taught){
   let body = core, magicE=false;
   const me = core.match(/^(.*[aeiou][bcdfghjklmnpqrstvwxyz])e$/);
   if(me && !VOWELS.has(core[core.length-2])){ magicE = true; body = core.slice(0,-1); }
+  // y-e split digraph (type, style, byte, rhyme, enzyme): a medial vowel y —
+  // one sitting between two consonants, see "Medial y" below — takes a silent
+  // final e exactly like i-e does, giving /ī/. Requiring a CONSONANT before the
+  // y keeps the vowel teams (ay/oy/ey + cons + e) out of this path.
+  else if(/[bcdfghjklmnpqrstvwxz]y[bcdfghjklmnpqrstvwxz]e$/.test(core)){ magicE = true; body = core.slice(0,-1); }
 
   // Final soft g: a word-final "ge" spells /j/ (age, page, cage, huge, large,
   // charge, change, orange, sponge). Unlike ONSET soft g (gem, giant, magic —
@@ -739,6 +744,25 @@ function analyseWord(raw, taught){
       // the end, and a vowel-team y (day, boy, key) is consumed by ay/oy/ey
       // earlier, so neither is touched.
       if(g==="y" && i===body.length-1 && body.length>1){ skill="team"; }
+      // Medial y = a VOWEL too. Consonant y only ever begins a syllable before a
+      // vowel (yes, beyond, canyon, lawyer, backyard), so a bare y with a
+      // consonant right after it cannot be the consonant /y/ — it is the vowel
+      // /ĭ/ (gym, myth, system, crystal) or, with a split e, /ī/ (type, style).
+      // When the y is the word's FIRST vowel (gym, myth, type, system, crystal,
+      // pyramid) it is an alternative spelling of /ĭ/ or /ī/ — advanced code
+      // (UK Phase 5 teaches y as /i/ and /igh/), never basic CVC. When a vowel
+      // already came before it, the y almost always closes an earlier syllable
+      // of a compound or suffixed word — every·thing, any·way, ba·by·sit,
+      // la·dy·bird — the same /ē/ as final y, so it takes final y's `team`
+      // bucket (this keeps "everything" exactly as decodable as "every").
+      // Before this the y sat in CONS and chained into a spurious blend (myth
+      // read m+y, type t+y+p), so Year 1 groups were told gym/myth/type were
+      // decodable and Teach-next pointed at blends instead of the real gap.
+      // Vowel-team y (day, boy, key) is consumed by ay/oy/ey first, and a
+      // start-of-word y is left alone (i>0), so neither is touched.
+      else if(g==="y" && i>0 && CONS.has(core[i+1]||"")){
+        skill = /[aeiou]/.test(body.slice(0,i)) ? "team" : "adv";
+      }
       // Doubled consonant = ONE sound, never a blend. "rabbit" is rab·bit, not
       // r-a-b-b-it; the doubled letter marks the short vowel and is read once.
       // The greedy table above already catches the floss doubles (ll ss ff zz);
@@ -768,9 +792,9 @@ function analyseWord(raw, taught){
       else { g=body[i]; skill=null; } // punctuation/digit — ignore
     }
     if(skill){
-      // Vowel-y (skilled `team` above) sits in CONS but is read as a vowel
-      // here, so it never chains into a blend.
-      const isSingleCons = g.length===1 && CONS.has(g) && !(g==="y" && skill==="team");
+      // Vowel-y (final `team` or medial `adv` above) sits in CONS but is read
+      // as a vowel here, so it never chains into a blend.
+      const isSingleCons = g.length===1 && CONS.has(g) && !(g==="y" && skill!=="cvc");
       if(skill!=="cvc") need.add(skill);
       parts.push({g, skill, cons:isSingleCons});
     }
@@ -809,7 +833,8 @@ function analyseWord(raw, taught){
      dances — the pair there is a word-final cluster, not a boundary). */
 const ONSET_PAIRS = new Set("bl br cl cr dr dw fl fr gl gr pl pr sc sk sl sm sn sp st sw tr tw nk".split(" "));
 function isVowelPart(p){
-  return p && !p.cons && (/^(team|diph|rctrl)$/.test(p.skill) || /[aeiou]/.test(p.g));
+  // a vowel-y (final or medial) is never `cons`, so any y reaching here is a vowel
+  return p && !p.cons && (/^(team|diph|rctrl)$/.test(p.skill) || /[aeiouy]/.test(p.g));
 }
 function hasBlend(parts){
   for(let k=1; k<parts.length; k++){
