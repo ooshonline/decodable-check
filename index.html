@@ -572,6 +572,11 @@ const TRICKY = new Set(("the a I to is was said you are they of we he she me be 
   "eye once upon these those water father mother brother other another over")
   .toLowerCase().split(/\s+/));
 
+// Inflection spellings that LOOK like a hidden silent e but aren't: buses/gases
+// are bus+es / gas+es (short vowel), and "during" is not dure+ing.
+const SHORT_SES = new Set(["buses", "gases"]);
+const NO_SILENT_E = new Set(["during"]);
+
 /* ---------- word analysis ---------- */
 function analyseWord(raw, taught){
   const word = raw.toLowerCase();
@@ -586,8 +591,10 @@ function analyseWord(raw, taught){
   const hasVowel = s => /[aeiou]/.test(s);
   if(/ing$/.test(word)){
     const base = word.slice(0, -3);
-    // jumping->jump (base carries its own vowel); thing/bring/string -> i+ng
-    if(base.length >= 2 && hasVowel(base)) ending = "ing";
+    // jumping->jump (base carries its own vowel); thing/bring/string -> i+ng.
+    // crying/flying/trying: the base's final y IS its vowel (cry, fly), so
+    // strip too — otherwise cr+y+i+ng read y as a consonant blend.
+    if(base.length >= 2 && (hasVowel(base) || /[^aeiou]y$/.test(base))) ending = "ing";
   } else if(/ed$/.test(word)){
     const base = word.slice(0, -2);
     // jumped->jump; sled/shed/bled -> e+d (no vowel left in the base)
@@ -595,11 +602,19 @@ function analyseWord(raw, taught){
   } else if(/s$/.test(word)){
     const beforeS = word[word.length - 2];
     if(/es$/.test(word)){
-      const base = word.slice(0, -2);
-      if(base.length >= 2 && /(s|x|z|ch|sh)$/.test(base)){
+      const base = word.slice(0, -2), withE = word.slice(0, -1);
+      // A one-syllable magic-e base ending in s/z (nose, rose, size, prize,
+      // use, close, gaze) takes plain -s; the "es" is NOT a sibilant plural.
+      // Checking sibilant first stripped nos|es and read noses as short o — a
+      // false green. buses/gases are the short-vowel exceptions (bus+es).
+      if(/^[^aeiou]*[aeiou][sz]e$/.test(withE.replace(/qu/g, "kw")) && !SHORT_SES.has(word)){
+        ending = "s";                                   // noses|s, sizes|s (magic-e + s)
+      } else if(base.length >= 2 && /(s|x|z|ch|sh)$/.test(base)){
         ending = "es";                                  // boxes, wishes, glasses, buses (sibilant + es)
       } else if(/[aeiou][bcdfghjklmnpqrstvwxyz]e$/.test(word.slice(0, -1))){
         ending = "s";                                   // notes|s, rides|s (magic-e + plural s)
+      } else if(/(ce|ge|[bcdfgkptz]le)$/.test(withE)){
+        ending = "s";                                   // dances|s, changes|s, tables|s (silent-e base)
       }                                                 // sees/goes/toes: leave whole (root vowel team)
     } else if(word.length - 1 >= 2 && CONS.has(beforeS) && !"sxz".includes(beforeS)){
       ending = "s";                                     // jumps, hands, cats (consonant + s)
@@ -607,6 +622,37 @@ function analyseWord(raw, taught){
     // vowel + s (bus, his, gas) and ss/xs/zs (miss, class) are NOT inflections
   }
   let core = ending ? word.slice(0, word.length-ending.length) : word;
+
+  // Restore the silent e (or final y) that the -ed/-ing spelling removed.
+  // English drops a base's silent e before -ed/-ing (make -> making, hope ->
+  // hoped, race -> racing, rage -> raging) and turns consonant+y into i before
+  // -ed (cry -> cried). Stripping the ending alone left "mak", "hop", "rac",
+  // "cri" — read as short CVC vowels, so making/hoped/racing/cried scored as
+  // decodable for a group never taught magic-e, soft c or y-as-a-vowel: a FALSE
+  // green on some of the most common words in early texts. The base is rebuilt
+  // only where the spelling is unambiguous:
+  //  - one syllable, single vowel + single consonant (mak, hop, rid, us, quak):
+  //    a SHORT-vowel base would have doubled (hopped, hopping) or be spelled
+  //    -ck (picked), so an undoubled final consonant marks a dropped e. w/x/y/h
+  //    finals never double (snowed, boxed, fixing), so they're excluded.
+  //  - -dg / -nc / -rc / -rg / -lg (judging, dancing, forced, charging): no
+  //    English base ends in those letters without an e. "-ng" is NOT rebuilt —
+  //    hanging/singing (hang, sing) and changing (change) can't be told apart.
+  //  - consonant + l before -ed only (giggled, tickled, tables via -s above):
+  //    the consonant-le syllable. Not before -ing, where the "-ling" noun
+  //    suffix (duckling, dumpling, sibling) would be misread.
+  //  - consonant + i before -ed (cried, tried, carried) -> y.
+  // A rebuilt base that is a heart word (come, have, give, live, love) is
+  // left alone: coming/having keep their current reading rather than borrow
+  // a magic-e the whole word never had.
+  if(ending==="ing" || ending==="ed"){
+    let base = null;
+    if(ending==="ed" && /[^aeiou]i$/.test(core)) base = core.slice(0,-1)+"y";
+    else if(/^[^aeiou]*[aeiou][bcdfgjklmnpqrstvz]$/.test(core.replace(/qu/g,"kw"))
+         || /(dg|[nr]c|[rl]g)$/.test(core)
+         || (ending==="ed" && /[bcdfgkptz]l$/.test(core))) base = core+"e";
+    if(base && !TRICKY.has(base) && !NO_SILENT_E.has(word)) core = base;
+  }
 
   // Consonant-le syllable (-le): little, table, gentle, candle, purple, uncle.
   // A word ending <consonant>+le carries a final syllabic /əl/ ("lit·tle",
@@ -657,7 +703,7 @@ function analyseWord(raw, taught){
 
   const need = new Set();            // required skills
   const parts = [];                  // {g, skill}
-  let i=0, prevCons=false, ok=true;
+  let i=0;
   while(i < body.length){
     let matched=null;
     for(const [g,skill] of GRAPHEMES){
@@ -667,7 +713,7 @@ function analyseWord(raw, taught){
     // not the /ŋ/ "ng" digraph (sing, ring, long). When soft-ge is in play and
     // the greedy "ng" match sits at the very end of body, drop it so 'n' and the
     // final soft 'g' are scored separately — n+g reads as a blend, the g as `adv`
-    // (mirroring soft c: fancy's n+c is a blend too). Words without the silent e
+    // (a word-final pair, so the syllable-split rule never applies). Words without the silent e
     // (sing, bang) never set softGe, so their "ng" digraph is untouched.
     if(matched && matched[0]==="ng" && softGe && i+2===body.length) matched=null;
     // The "wa" grapheme (want/was/wash → the /wŏ/ where w flattens a to /ŏ/)
@@ -746,17 +792,15 @@ function analyseWord(raw, taught){
       else { g=body[i]; skill=null; } // punctuation/digit — ignore
     }
     if(skill){
-      // consecutive single consonants => a blend. Vowel-y (final `team` or
-      // medial `adv` above) sits in CONS but is read as a vowel here, so it
-      // never chains.
+      // Vowel-y (final `team` or medial `adv` above) sits in CONS but is read
+      // as a vowel here, so it never chains into a blend.
       const isSingleCons = g.length===1 && CONS.has(g) && !(g==="y" && skill!=="cvc");
-      if(isSingleCons && prevCons){ need.add("blend"); }
-      prevCons = isSingleCons;
       if(skill!=="cvc") need.add(skill);
-      parts.push({g, skill: (isSingleCons&&prevCons)?skill:skill});
+      parts.push({g, skill, cons:isSingleCons});
     }
     i += g.length;
   }
+  if(hasBlend(parts)) need.add("blend");
   if(consLe){ need.add("adv"); parts.push({g:leChunk, skill:"adv"}); }
   if(magicE) need.add("magice");
   if(ending) need.add("endings");
@@ -765,6 +809,45 @@ function analyseWord(raw, taught){
   const missing = [...need].filter(s=>!taught.has(s));
   const cat = missing.length ? "new" : "ok";
   return {cat, need:[...need], missing, magicE, ending, parts};
+}
+
+/* ---------- blends vs. syllable boundaries ----------
+   Consecutive single consonants read as a blend (stop, hand, frog). But two
+   consonants BETWEEN two vowels usually straddle a syllable boundary instead:
+   sun·set, nap·kin, pic·nic, win·ter, can·dy are each two plain closed
+   syllables — the reader never blends n+s or p+k inside one syllable. These
+   VC|CV words are exactly the early two-syllable words UK Phase 2 teaches
+   alongside CVC (sunset, picnic, laptop, pocket), long before adjacent
+   consonants, so flagging them as "needs blends" wrongly held them back.
+   The split is only taken when it is SAFE — every other case keeps the blend,
+   so a doubtful word stays stricter (amber), never a false green:
+   - exactly two consonants (a run of three — ham·ster, pump·kin, hun·dred —
+     always holds a genuine blend on one side, so it still counts);
+   - a vowel grapheme on BOTH sides (a word-edge pair — hand, stop — is a
+     true blend);
+   - the pair cannot itself start a syllable. A legal onset cluster (bl, cr,
+     st, sk…) is ambiguous — se·cret / a·pron keep it together — so basket,
+     mister and whisper stay flagged; "nk" is the glued /ŋk/ (monkey, donkey)
+     and stays flagged too;
+   - the vowel after the pair is not a silent final e (else, since, rinse,
+     dances — the pair there is a word-final cluster, not a boundary). */
+const ONSET_PAIRS = new Set("bl br cl cr dr dw fl fr gl gr pl pr sc sk sl sm sn sp st sw tr tw nk".split(" "));
+function isVowelPart(p){
+  // a vowel-y (final or medial) is never `cons`, so any y reaching here is a vowel
+  return p && !p.cons && (/^(team|diph|rctrl)$/.test(p.skill) || /[aeiouy]/.test(p.g));
+}
+function hasBlend(parts){
+  for(let k=1; k<parts.length; k++){
+    if(!(parts[k].cons && parts[k-1].cons)) continue;
+    const before = parts[k-2], after = parts[k+1];
+    const runOfTwo = !(before && before.cons) && !(after && after.cons);
+    const silentE = after && after.g==="e" &&
+      (k+2===parts.length || (k+3===parts.length && parts[k+2].g==="s"));
+    const boundary = runOfTwo && isVowelPart(before) && isVowelPart(after) &&
+      !silentE && !ONSET_PAIRS.has(parts[k-1].g + parts[k].g);
+    if(!boundary) return true;
+  }
+  return false;
 }
 
 const SKILLNAME = {};
