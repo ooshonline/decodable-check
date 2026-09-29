@@ -118,6 +118,14 @@ const DECODABLE = [
   ["sail", ["team"]], ["goat", ["team"]], ["soap", ["team"]],
   ["moon", ["team"]], ["boot", ["team"]], ["leaf", ["team"]],
   ["beak", ["team"]],
+  //     "-eed" is ee + d, not a stripped "-ed" (seed was se|ed: endings only)
+  ["seed", ["team"]], ["need", ["team"]], ["feed", ["team"]], ["weed", ["team"]],
+  ["speed", ["team", "blend"]], ["greed", ["team", "blend"]], ["tweed", ["team", "blend"]],
+  //     ...while a real -ed on an -eed base still strips cleanly
+  ["needed", ["team", "endings"]], ["seeded", ["team", "endings"]],
+  //     ue / oe bases take a bare -d: glue+d, toe+d (glued was glu|ed)
+  ["glued", ["team", "blend", "endings"]], ["clued", ["team", "blend", "endings"]],
+  ["toed", ["team", "endings"]], ["hoed", ["team", "endings"]],
   //     "wa" + "ai": the /wŏ/ "wa" grapheme must yield to the "ai" team, or
   //     wait/wail read as a false all-CVC "green" that hides the team skill.
   ["wait", ["team"]], ["wail", ["team"]], ["waif", ["team"]],
@@ -350,6 +358,13 @@ const NEEDS_SKILL = [
   // UK Reception (cvc double digraph blend endings) — no long-vowel code
   ["rain", "uk-early", ["team"]],
   ["wait", "uk-early", ["team"]],   // was a false green (wa|i|t); now w + ai + t
+  // -eed / -ued / -oed were stripped as "-ed", hiding the vowel team: false greens
+  ["seed", "uk-early", ["team"]],
+  ["need", "uk-early", ["team"]],
+  ["feed", "uk-early", ["team"]],
+  ["speed", "uk-early", ["team"]],
+  ["glued", "uk-early", ["team"]],
+  ["toed", "uk-early", ["team"]],
   ["see", "uk-early", ["team"]],
   ["cake", "uk-early", ["magice"]],
   ["shine", "uk-early", ["magice"]],
@@ -622,6 +637,12 @@ const KNOWN_LIMITATIONS = [
   // FIXED for the clear cases (bus, his, miss, class, this, thing, sled …) —
   // see the DECODABLE "NON-inflections" block, now hard-asserted. Two harder
   // residues remain, each blocked by a *different* engine gap:
+  // "-eed": seed/need/speed are ee + d (FIXED: no longer stripped as se|ed and
+  // hard-asserted in NEEDS_SKILL). The residue: freed/agreed really are free+d /
+  // agree+d, and without a lexicon they read as whole words, so they lose
+  // `endings`. Endings is taught before teams in every preset, so this never
+  // turns a word green that a group can't read.
+  { word: "freed", now: ["blend", "team"], want: "free + d (blend, team, endings)", note: "-eed left whole so seed/need keep the ee team; free+d can't be told apart without a lexicon" },
   { word: "hundred", now: ["blend", "endings"], want: "hun+dred; '-red' is not an -ed inflection", note: "base 'hundr' still has a vowel, so the -ed guard can't reject it — needs a coda/syllable check" },
 
   // greedy 'wa' grapheme (for want/was) eats w+a before a vowel team — FIXED.

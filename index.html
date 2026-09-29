@@ -686,8 +686,14 @@ function analyseWord(raw, taught){
     if(base.length >= 2 && (hasVowel(base) || /[^aeiou]y$/.test(base))) ending = "ing";
   } else if(/ed$/.test(word)){
     const base = word.slice(0, -2);
-    // jumped->jump; sled/shed/bled -> e+d (no vowel left in the base)
-    if(base.length >= 2 && hasVowel(base)) ending = "ed";
+    // jumped->jump; sled/shed/bled -> e+d (no vowel left in the base).
+    // "-eed" is the ee vowel team + d, never "-ed" on a base: stripping read
+    // seed/need/feed/speed as se|ed, which needed only `endings`, not `team`.
+    // That was a FALSE green for any group with endings but no vowel teams.
+    // (freed/agreed ARE free+d/agree+d, but can't be told from seed/need
+    // without a lexicon. Leaving the word whole keeps the ee team either way,
+    // and endings is taught before teams in every preset.)
+    if(base.length >= 2 && hasVowel(base) && !/eed$/.test(word)) ending = "ed";
   } else if(/s$/.test(word)){
     const beforeS = word[word.length - 2];
     if(/es$/.test(word)){
@@ -711,6 +717,10 @@ function analyseWord(raw, taught){
     // vowel + s (bus, his, gas) and ss/xs/zs (miss, class) are NOT inflections
   }
   let core = ending ? word.slice(0, word.length-ending.length) : word;
+  // A base ending in the ue/oe vowel team takes a bare -d (glue -> glued,
+  // toe -> toed), so only the d is the ending. Stripping "ed" left glu/to,
+  // read as a short CVC vowel: the same false green as seed/need.
+  if(ending==="ed" && /[uo]ed$/.test(word)) core = word.slice(0, -1);
 
   // Restore the silent e (or final y) that the -ed/-ing spelling removed.
   // English drops a base's silent e before -ed/-ing (make -> making, hope ->

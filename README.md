@@ -62,7 +62,9 @@ The feature loop is closed; the focus now is the engine that everything rests on
    onset pairs like bas·ket stay strict; the split now needs its own
    **Two-syllable words** skill, on in every preset except SoR Kindergarten), medial y ✅ (gym/myth/type/system read
    y as a vowel — advanced code — not a false blend; every·thing/ba·by·sit keep
-   final y's bucket); still to do: onset soft g (gem/giant) (corpus-locked target)
+   final y's bucket), `-eed`/`-ued`/`-oed` ✅ (seed/need/speed are the ee team +
+   d, and glued/toed are glue/toe + d, not a stripped "-ed" that hid the vowel team);
+   still to do: onset soft g (gem/giant) (corpus-locked target)
 3. ~~Inflection-aware fix-it — correct `-s/-ing/-ed` swap spellings~~ ✅ (an
    amber `looked`/`cries` now gets same-ending swaps — `spotted`, `watched`,
    `yells` — spelled by rule: double the consonant, drop silent e, y→ies;
