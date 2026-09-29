@@ -31,6 +31,10 @@ The original roadmap 1–4 is **done**, plus two extras. On `main`:
    (backup + move between devices).
 5. **Teach next** — the highest-leverage untaught skill to unlock the most amber words.
 6. **Known words** — mark names / class-taught words so they don't count as "not taught yet".
+7. **Engine hardening round (merged 2026-09-28):** soft c, doubles, final/medial y, `-le`,
+   final `-ge`, `wa`/`ai`, drop-e inflections, VC|CV syllable splits, and a
+   **Two-syllable words** skill (`syll`) for those splits. Only onset soft g (gem/giant)
+   is still open, and it's deliberately locked (it needs a lexicon).
 
 ## Roadmap — the next phase (build the highest-priority item not yet done)
 The feature loop (check → rewrite → plan → track → share → back up) is closed. The
@@ -56,27 +60,34 @@ teacher a text they shouldn't use — so engine trustworthiness comes first.
    multi-skill mini-plan ("teach these 2 and the whole text works").
 5. **Backup-everything export.** Fold the *Known words* list (and any other per-group
    state) into the library export so it's a true full backup, not passages only.
-6. **Tie-in with Kyle's Ribbit Reading App & Wordlist Wonders** — the one item that's a
-   product/positioning decision, not just engineering. **Do NOT build on autopilot.**
-   Open questions for Kyle first: what the tie-in *does* (send decodable words into
-   Ribbit? a soft "from the maker of…" cross-link? something deeper?), and whether it's
-   meant to drive people *to* the paid products or add value *for* existing owners.
-7. **Passage maker (Kyle's idea, 2026-09-15).** The inverse of the whole tool: instead of
-   *"is this passage decodable for my group?"*, generate a passage that **is** decodable
-   from preselected parameters. Likely parameters: the taught skill set / preset, an
-   optional skill or two to **feature** (practise `sh`, magic-e…), length (sentences or
-   word count), which heart words are allowed, and any *known* words (names) to weave in.
-   Every generated word must be **provably** decodable: build it from a curated word bank
-   (the Fix-it clusters are a start) assembled into simple sentence frames, and run each
-   candidate word through `analyseWord()` against the taught set **before** it goes in —
-   never trust a template blindly. This is a phonics tool, so a single non-decodable word
-   in a "decodable" passage is the worst kind of bug. **Constraints:** keep it one
-   self-contained `index.html`, **no network / no LLM** — generation is word-bank +
-   sentence-frame + live engine-verification, which also *guarantees* decodability offline.
-   Closes the loop end to end: check → rewrite → plan → track → share → back up → **create**.
-   Bigger than a one-night increment — scope it in stages (e.g. a minimal generator first,
-   then themes/length controls, then polish). Confirm the parameter list with Kyle before
-   building the UI.
+6. **Tie-in with Kyle's Ribbit Reading App & Wordlist Wonders** — **ON HOLD (Kyle,
+   2026-09-28):** Kyle plans something bigger here and wants to hold off. **Do not build
+   or propose it** until Kyle raises it again.
+7. **Passage maker — NEXT UP, spec approved (Kyle delegated the call, 2026-09-28).**
+   The inverse of the tool: instead of *"is this passage decodable?"*, generate one that
+   **is**. **No network / no LLM**: a curated word bank + simple sentence frames +
+   live `analyseWord()` verification, which *guarantees* decodability offline. A single
+   non-decodable word in a "decodable" passage is the worst possible bug.
+   **Parameters (final — build these, nothing more):**
+   - **Skills:** the current taught checklist / preset. No separate picker.
+   - **Focus skill (optional):** one taught skill to practise (e.g. `sh`, magic-e). Aim
+     for at least ~40% of the passage's decodable words to use it; if the bank can't
+     reach that, say so rather than padding.
+   - **Length:** Short (3 sentences) · Medium (5) · Long (8).
+   - **Heart words:** on by default, limited to the most common TRICKY words (the, a,
+     I, to, is, was, said, he, she, we, my, you, of); can be switched off.
+   - **Names:** use the Known-words list as character names when it has any; otherwise
+     a small built-in name bank (Sam, Meg, Tom, Pip, Ben, Kit) — each name verified
+     decodable too.
+   - **Output:** the passage is loaded into the normal checker (so the teacher sees the
+     100% score and can edit it), plus a **New passage** button to reshuffle.
+   **Safety gate:** every word is checked with `analyseWord()` before it's placed, and
+   the finished passage is re-scored — it is shown only if it scores **100%** (heart
+   and known words excluded as usual). Add corpus tests that generate many passages per
+   preset and assert 100% every time.
+   **Stages:** (1) generator + minimal UI panel; (2) themes (animals, school, seaside…)
+   and better sentence variety; (3) polish (print-ready layout, save to library).
+   Build **stage 1** first, one stage per night.
 
 Prefer the top unbuilt item, but use judgement — if a lower item is clearly more
 valuable or lower-risk on a given night, take it. Build only **one** increment.

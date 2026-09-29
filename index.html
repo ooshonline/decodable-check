@@ -533,6 +533,7 @@ const PHASES = [
   { num:2, name:"Digraphs & blends", skills:[
     {id:"digraph", n:"Consonant digraphs", ex:"ship, chin, that, duck, ring"},
     {id:"blend",   n:"Consonant blends", ex:"stop, frog, hand, lamp"},
+    {id:"syll",    n:"Two-syllable words", ex:"sunset, picnic, napkin"},
     {id:"endings", n:"Inflectional endings (-s -ing -ed)", ex:"jumps, running, packed"},
   ]},
   { num:3, name:"Long vowels", skills:[
@@ -800,7 +801,9 @@ function analyseWord(raw, taught){
     }
     i += g.length;
   }
-  if(hasBlend(parts)) need.add("blend");
+  const pairs = scanConsonantPairs(parts);
+  if(pairs.blend) need.add("blend");
+  if(pairs.split) need.add("syll");
   if(consLe){ need.add("adv"); parts.push({g:leChunk, skill:"adv"}); }
   if(magicE) need.add("magice");
   if(ending) need.add("endings");
@@ -819,6 +822,11 @@ function analyseWord(raw, taught){
    VC|CV words are exactly the early two-syllable words UK Phase 2 teaches
    alongside CVC (sunset, picnic, laptop, pocket), long before adjacent
    consonants, so flagging them as "needs blends" wrongly held them back.
+   A safe split instead needs its own skill, "Two-syllable words" (`syll`):
+   UK Phase 2 teaches it alongside CVC, while UFLI / SoR programs treat
+   reading across a syllable break as a separate, later step — so a teacher
+   can tick it (or not) independently of blends. A word can need both
+   (den·tist: n|t split + a real final st blend).
    The split is only taken when it is SAFE — every other case keeps the blend,
    so a doubtful word stays stricter (amber), never a false green:
    - exactly two consonants (a run of three — ham·ster, pump·kin, hun·dred —
@@ -836,7 +844,8 @@ function isVowelPart(p){
   // a vowel-y (final or medial) is never `cons`, so any y reaching here is a vowel
   return p && !p.cons && (/^(team|diph|rctrl)$/.test(p.skill) || /[aeiouy]/.test(p.g));
 }
-function hasBlend(parts){
+function scanConsonantPairs(parts){
+  let blend=false, split=false;
   for(let k=1; k<parts.length; k++){
     if(!(parts[k].cons && parts[k-1].cons)) continue;
     const before = parts[k-2], after = parts[k+1];
@@ -845,9 +854,9 @@ function hasBlend(parts){
       (k+2===parts.length || (k+3===parts.length && parts[k+2].g==="s"));
     const boundary = runOfTwo && isVowelPart(before) && isVowelPart(after) &&
       !silentE && !ONSET_PAIRS.has(parts[k-1].g + parts[k].g);
-    if(!boundary) return true;
+    if(boundary) split=true; else blend=true;
   }
-  return false;
+  return {blend, split};
 }
 
 const SKILLNAME = {};
@@ -993,18 +1002,34 @@ function suggestFor(word){
 const PRESETS = [
   {id:"custom", name:"Custom (your own selection)", desc:"Tick skills by hand below.", skills:null},
   {id:"uk-early", name:"UK Reception - Phases 2-4", desc:"CVC, digraphs, blends and simple endings. No long-vowel code yet.",
-    skills:["cvc","double","digraph","blend","endings"]},
+    skills:["cvc","double","digraph","blend","syll","endings"]},
   {id:"uk-y1", name:"UK Year 1 - Phase 5", desc:"Adds long-vowel spellings: magic-e, vowel teams, diphthongs and r-controlled.",
-    skills:["cvc","double","digraph","blend","endings","magice","team","diph","rctrl"]},
+    skills:["cvc","double","digraph","blend","syll","endings","magice","team","diph","rctrl"]},
   {id:"sor-k", name:"SoR - Kindergarten", desc:"Foundations: single letters, CVC, double letters, digraphs and early blends.",
     skills:["cvc","double","digraph","blend"]},
   {id:"sor-g1", name:"SoR - Grade 1", desc:"Endings plus the long-vowel patterns most G1 sequences introduce.",
-    skills:["cvc","double","digraph","blend","endings","magice","team","diph"]},
+    skills:["cvc","double","digraph","blend","syll","endings","magice","team","diph"]},
   {id:"ufli-g1", name:"UFLI - through Grade 1", desc:"Broad first-grade code, up to and including r-controlled vowels.",
-    skills:["cvc","double","digraph","blend","endings","magice","team","diph","rctrl"]},
+    skills:["cvc","double","digraph","blend","syll","endings","magice","team","diph","rctrl"]},
   {id:"all", name:"Everything (advanced code)", desc:"All skills, including advanced patterns (kn-, -tion, soft c).",
-    skills:["cvc","double","digraph","blend","endings","magice","team","diph","rctrl","adv"]},
+    skills:["cvc","double","digraph","blend","syll","endings","magice","team","diph","rctrl","adv"]},
 ];
+
+/* Skill sets saved before "Two-syllable words" (`syll`) existed. Back then a
+   VC|CV word (sunset, napkin) needed `blend`, so an old set scores it the same
+   way only if it gains `syll` exactly when it taught blends. An old set that
+   matched a preset is mapped onto that preset's current list instead, so
+   "UK Reception" stays "UK Reception" and "SoR - Kindergarten" (no `syll`)
+   stays itself. Saved state now carries SKILLS_V so this runs only once. */
+const SKILLS_V = 2;
+function upgradeSkills(ids, v){
+  if((Number(v)||0) >= SKILLS_V || ids.includes("syll")) return ids;
+  const set = new Set(ids);
+  const p = PRESETS.find(p=>p.skills && p.skills.filter(x=>x!=="syll").length===set.size
+                            && p.skills.every(x=>x==="syll" || set.has(x)));
+  if(p) return [...p.skills];
+  return set.has("blend") ? [...ids, "syll"] : ids;
+}
 
 /* ---------- state ---------- */
 const DEFAULT_PRESET = "uk-early";
@@ -1043,7 +1068,7 @@ let text = SAMPLE;
    Known-words list and the theme keep their own stores. */
 const SESSION_KEY = "decodable-check:session";
 function persistSession(){
-  try{ localStorage.setItem(SESSION_KEY, JSON.stringify({v:1, t:text, s:[...taught]})); }catch(e){}
+  try{ localStorage.setItem(SESSION_KEY, JSON.stringify({v:SKILLS_V, t:text, s:[...taught]})); }catch(e){}
 }
 function loadSession(){
   try{
@@ -1485,7 +1510,7 @@ function showToast(msg, warn){
 }
 
 function encodeState(){
-  const payload=JSON.stringify({v:1, t:text, s:[...taught], k:[...known]});
+  const payload=JSON.stringify({v:SKILLS_V, t:text, s:[...taught], k:[...known]});
   // UTF-8 safe base64, then make it URL-safe
   return btoa(unescape(encodeURIComponent(payload)))
     .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
@@ -1536,7 +1561,7 @@ function restoreFromHash(){
   if(!o) return false;
   const valid=new Set(Object.keys(SKILLNAME));
   text=o.t;
-  taught=new Set(o.s.filter(id=>valid.has(id)));
+  taught=new Set(upgradeSkills(o.s, o.v).filter(id=>valid.has(id)));
   if(Array.isArray(o.k)){
     known=new Set(o.k.filter(x=>typeof x==="string" && /^[a-z']+$/.test(x)));
     persistKnown();                 // adopt the shared set so it sticks in this browser
@@ -1548,7 +1573,7 @@ function restoreFromSession(){
   if(!o) return false;
   const valid=new Set(Object.keys(SKILLNAME));
   text=o.t;
-  taught=new Set(o.s.filter(id=>valid.has(id)));
+  taught=new Set(upgradeSkills(o.s, o.v).filter(id=>valid.has(id)));
   return true;
 }
 (function restoreState(){
@@ -1570,8 +1595,12 @@ function loadLibrary(){
     const raw = localStorage.getItem(LIB_KEY);
     if(!raw) return [];
     const data = JSON.parse(raw);
-    return Array.isArray(data.items) ? data.items : [];
+    return Array.isArray(data.items) ? data.items.map(upgradeLibItem) : [];
   }catch(e){ return []; }               // private mode / corrupt store -> empty
+}
+function upgradeLibItem(it){
+  if(!it || !Array.isArray(it.skills) || (Number(it.sv)||0) >= SKILLS_V) return it;
+  return {...it, skills: upgradeSkills(it.skills, it.sv), sv: SKILLS_V};
 }
 function persistLibrary(items){
   try{ localStorage.setItem(LIB_KEY, JSON.stringify({v:1, items})); return true; }
@@ -1659,6 +1688,7 @@ saveBtn.onclick = ()=>{
     klass,
     text,
     skills: [...taught],
+    sv: SKILLS_V,
     preset: presetSel.value,
     score: s,
     savedAt: Date.now(),
@@ -1729,7 +1759,7 @@ function exportLibrary(){
 function sanitizeLibItem(raw){
   if(!raw || typeof raw!=="object" || typeof raw.text!=="string" || !raw.text.trim()) return null;
   const valid = new Set(Object.keys(SKILLNAME));
-  const skills = Array.isArray(raw.skills) ? raw.skills.filter(s=>valid.has(s)) : [];
+  const skills = Array.isArray(raw.skills) ? upgradeSkills(raw.skills, raw.sv).filter(s=>valid.has(s)) : [];
   const title = (typeof raw.title==="string" && raw.title.trim()) ? raw.title.trim().slice(0,80) : suggestTitle(raw.text);
   const klass = (typeof raw.klass==="string" && raw.klass.trim()) ? raw.klass.trim().slice(0,40) : "Unfiled";
   const savedAt = Number.isFinite(raw.savedAt) ? raw.savedAt : Date.now();
@@ -1739,7 +1769,7 @@ function sanitizeLibItem(raw){
   // recompute the score from text + skills so an imported entry can never
   // disagree with the engine, even if the file was hand-edited or stale
   const score = computeStats(raw.text, new Set(skills));
-  return {id, title, klass, text:raw.text, skills, preset, score, savedAt};
+  return {id, title, klass, text:raw.text, skills, sv:SKILLS_V, preset, score, savedAt};
 }
 
 function importLibraryData(parsed){
@@ -1875,7 +1905,7 @@ render();
 if (typeof module === "object" && module && module.exports) {
   module.exports = {
     analyseWord, tokenize, computeStats, computePlan,
-    inflect, detectInflection, suggestFor,
+    inflect, detectInflection, suggestFor, upgradeSkills, SKILLS_V,
     PHASES, GRAPHEMES, VOWELS, CONS, TRICKY, PRESETS, SKILLNAME, ALL_SKILL_IDS,
     getKnown: () => known,
     setKnown: (s) => { known = s instanceof Set ? s : new Set(s); },
