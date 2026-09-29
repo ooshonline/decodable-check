@@ -584,6 +584,10 @@
           <div class="selwrap"><select id="mkFocus"></select></div>
         </div>
         <div class="mk-field">
+          <label class="mk-label" for="mkTheme">Theme</label>
+          <div class="selwrap"><select id="mkTheme"></select></div>
+        </div>
+        <div class="mk-field">
           <span class="mk-label" id="mkLenLbl">Length</span>
           <div class="mk-seg" id="mkLen" role="group" aria-labelledby="mkLenLbl">
             <button type="button" data-len="short">Short <span class="ms">· 3</span></button>
@@ -1120,42 +1124,301 @@ function upgradeSkills(ids, v){
 }
 
 /* ============================================================
-   Passage maker (roadmap #7, stage 1) — the inverse of the checker.
+   Passage maker (roadmap #7) — the inverse of the checker.
    Instead of "is this passage decodable?", build one that IS, from the
-   ticked skills. No network, no LLM: a curated word bank + simple
-   sentence frames + live analyseWord() verification. Every word — bank
-   words, inflected forms, the frame's own glue words (can, has, and…)
-   and the names — is checked against the taught set BEFORE it is placed,
-   and the finished passage is re-scored with computeStats: it is returned
-   only if it scores 100% with nothing amber. Decodability is never
-   assumed from a template.
-   The bank sticks to words the engine reads correctly (no ball/cold/
+   ticked skills. No network, no LLM: a curated lexicon + sentence frames
+   + live analyseWord() verification. Every word — lexicon words,
+   inflected forms, the frame's own glue words (can, has, and…) and the
+   names — is checked against the taught set BEFORE it is placed, and the
+   finished passage is re-scored with computeStats: it is returned only if
+   it scores 100% with nothing amber. Decodability is never assumed.
+   Stage 2 makes the sentences make sense: every noun carries the
+   adjectives that suit it (a pink pig, never a green cat), every animal
+   its own verbs and places (the duck swims in the pond; the dog barks,
+   Sam never does), and every verb the places it can happen in. A theme
+   narrows the nouns to one setting (farm, seaside, school…).
+   The lexicon sticks to words the engine reads correctly (no ball/cold/
    table/seed-style mis-scores), so the 100% is honest, not just engine-deep.
    ============================================================ */
+
+// Adjective groups. A lexicon entry names the groups (single letters) and
+// any one-off adjectives (whole words) that suit it — whole groups where
+// they'd make nonsense (a green cat) are left off.
+const MAKER_ADJ = {
+  c: "red pink black green brown tan",                    // colours — made things
+  z: "big",
+  m: "wet clean muddy odd",                               // everyday wear and tear
+  w: "wet clean muddy",                                   // …and for creatures
+  f: "soft fluffy",
+  h: "hot",
+  e: "sweet fresh",
+  l: "long short thick",
+  s: "sharp",
+  n: "loud",
+  k: "hard",
+  a: "sad glad sick cute funny silly happy grumpy proud", // creatures only
+};
+
+// Themes: a letter per theme tags the nouns and places that belong to it.
+const MAKER_THEMES = [
+  {id:"",        tag:"",  name:"Any theme — a mix of everything"},
+  {id:"pets",    tag:"A", name:"Pets & animals"},
+  {id:"farm",    tag:"F", name:"On the farm"},
+  {id:"seaside", tag:"S", name:"At the seaside"},
+  {id:"park",    tag:"P", name:"In the park"},
+  {id:"home",    tag:"H", name:"At home"},
+  {id:"school",  tag:"K", name:"At school"},
+];
+
+/* The lexicon, one entry per line, fields split by "|".
+   Places — word | kind | adjectives for "The pond is deep." | themes | flags
+     kinds: W water · P mud & puddles · S sand · O open ground · H shelter ·
+            T trees & hedges · B shop & ship · N animal homes
+     flags: "-" animals only (nest, hole) · "~" never "ran to the ___" (sun, sand) ·
+            "!" never "in the ___" (on the farm, on the ship) */
+const MAKER_PLACES = `
+mud    | P | wet deep          | FP
+sun    | O | hot               | SP  | ~
+hut    | H | big dark          | S
+den    | H | dark              | P
+tent   | H | big dark          | PS
+pond   | W | deep big          | PF
+shed   | H | big dark          | PFH
+ship   | B | big               | S   | !
+shop   | B | big               | H
+nest   | N | big               | P   | -
+sand   | S | hot wet soft      | S   | ~
+cave   | H | dark big deep     | S
+lake   | W | deep big          | P
+hole   | N | deep dark         | P   | -
+sea    | W | deep big          | S
+pool   | W | deep big          | SK
+tree   | T | big               | P
+park   | O | big sunny         | PK
+farm   | O | big muddy         | F   | !
+barn   | H | big dark          | F
+yard   | O | big muddy sunny   | KHF
+hedge  | T | thick big         | P
+puddle | P | big deep muddy    | P`;
+
+/* Verbs — word | where "___ in the place" makes sense (kinds or place
+   words; blank = no place frame) | who: p people & animals, a animals only.
+   An animal only ever does the verbs on its own entry below. */
+const MAKER_VERBS = `
+run     | O S                  | p
+hop     | O S                  | p
+sit     | H O S T N            | p
+nap     | H O S T N            | p
+dig     | S P farm yard park   | p
+jog     | O S                  | p
+swim    | W                    | p
+jump    | O S                  | p
+skip    | O S                  | p
+dash    | O S                  | p
+sing    | H O B                | p
+rest    | H O S T N            | p
+spin    |                      | p
+hum     |                      | p
+yell    |                      | p
+nod     |                      | p
+grin    |                      | p
+sniff   |                      | p
+puff    |                      | p
+splash  | W P                  | p
+chat    | H B O                | p
+hide    | H T O N              | p
+ride    | O                    | p
+bake    | shop hut             | p
+skate   | park yard            | p
+dive    | W                    | p
+smile   |                      | p
+sleep   | H O S T N            | p
+float   | W                    | p
+sail    | sea lake pond        | p
+wait    | H B O                | p
+shout   |                      | p
+crawl   | P S                  | p
+march   | O                    | p
+knit    |                      | p
+wriggle | P S                  | p
+slide   | park                 | p
+bark    |                      | a
+chirp   |                      | a
+peck    | O                    | a
+flap    |                      | a
+buzz    |                      | a`;
+
+/* Animals — word | adjectives | its verbs | where it can be (kinds or
+   place words) | themes | "-" never "fed" (bugs, bees…) */
+const MAKER_ANIMALS = `
+cat    | a z w f black brown tan | run sit nap rest sleep hide jump dash sniff | H O T | AHF
+dog    | a z w f black brown tan | run sit nap dig jump dash sniff bark swim rest sleep hide wait | H O P | AHFP
+hen    | a z w brown red         | sit nap peck run rest hide | O H nest | F
+pig    | a z w pink              | dig sniff nap rest sleep run | P O H | F
+fox    | a z red                 | run dash dig hide sniff nap sleep jump | den hole O | P
+rat    | a z w black brown       | run dash dig hide sniff nap | H P hole | AF
+bug    | a z green black red     | crawl hide rest nap | T P O | P | -
+cub    | a z w f brown           | run nap sleep jump hide dig | den cave | 
+pup    | a z w f black brown tan | run nap sleep dig sniff jump bark sit | H O | AH
+duck   | a z w brown             | swim splash float dive nap rest | pond lake P | FP
+chick  | a z f                   | hop peck chirp nap hide rest | O H nest | F
+moth   | a z brown black         | rest hide nap flap | H T | P | -
+frog   | a z w green brown       | hop jump swim splash sit nap dive hide | pond lake P | PA
+crab   | a z red                 | dig hide crawl nap rest swim | sand sea | S
+slug   | a z w black brown       | crawl hide rest nap | P O | P | -
+skunk  | a z black               | run dig sniff hide nap | O H hole |    | -
+rabbit | a z w f black brown tan | hop dig sniff nap hide run jump sleep | O H hole | AFPK
+kitten | a z w f black brown tan | nap sleep run jump hide sit | H O | AH
+insect | a z green black red     | crawl hide rest | T O P | P | -
+snake  | a z green black brown long | hide rest nap sleep swim slide | S O T hole | 
+mole   | a z w black             | dig hide nap sleep sniff | O hole | P
+mule   | a z w brown tan         | run rest nap sleep sniff | O H | F
+goat   | a z w black brown       | run jump nap rest sniff | O H | F
+bee    | a z                     | buzz hide rest nap | T O nest | P | -
+sheep  | a z w f black           | run rest nap sleep sit | O H | F
+snail  | a z brown               | crawl hide rest nap sleep | O T P | PK | -
+toad   | a z w brown green       | hop jump sit nap hide swim | P O pond | P
+lamb   | a z w f black           | run hop jump skip nap rest sleep | O H | F
+bird   | a z red black brown     | sing chirp flap hop nap rest | T O nest | PA
+fish   | a z red                 | swim hide dive rest float | W | AKS
+seal   | a z w black brown       | swim dive float nap rest splash | sea sand | S
+gull   | a z black               | flap float dive rest nap | sea sand | S
+cow    | a z w black brown       | run rest nap sleep sniff | O H | F
+shrimp | a z pink                | swim hide | sea | S | -`;
+
+/* Things — word | adjectives | themes | "-" can't be owned: never
+   "Sam has / got / had ___", "My ___" (clouds, stars, gates…) */
+const MAKER_THINGS = `
+hat | c z m f | HS
+cap | c z m | HSK
+bag | c z m | HKS
+box | c z m k | HK
+pot | c z h | HP
+pan | c z h | H
+cup | c z h m | HK
+jug | c z m | H
+bed | c z m f | HA
+bus | c z m | K
+van | c z m | HF
+jet | c z |
+net | c z m l | SP
+peg | c | KH
+pen | c z l | K
+pin | c z s | KH
+log | z m l k | PF
+rug | c z m f | HA
+mat | c z m f | HK
+map | c z m | KS
+web | z | P | -
+tub | c z m | H
+nut | z k | P
+bun | z h e | H
+mug | c z h m | H
+doll | c z m f | HK
+bell | c z n | KH
+egg | brown z h e | FH
+shell | c z m k | S
+dish | c z h m | HA
+sock | c z m f | H
+rock | c z m k | SP
+chip | z h | HS
+ring | c z | H
+clock | c z n | KH
+drum | c z n | K
+flag | c z | KS
+tent | c z m | PS
+vest | c z m | H
+lamp | c z h | HK
+belt | c z l | H
+stamp | c | K
+sled | c z |
+brick | c z k | H
+trunk | c z k |
+napkin | c m | H
+laptop | c z | KH
+magnet | c z | K
+muffin | z h e | HK
+puppet | c z f | KH
+picnic | z | P | -
+cobweb | z | H | -
+cake | c z e | HK
+bike | c z m | PK
+kite | c z | PS
+rose | red pink z | P
+bone | z k | AF
+cube | c z | K
+cape | c z f | H
+tape | c z l | K
+plate | c z h m | H
+flute | c z n | K
+rope | z l | PSF
+cone | c z | SP
+boat | c z m | SP
+coat | c z m f | H
+leaf | green brown z m | P
+spoon | c z h m | H
+book | c z m | KH
+train | c z n l | K
+light | z h | H | -
+coin | z | HK
+toy | c z m | HA
+cloud | z pink dark | PS | -
+car | c z m | H
+star | z pink | P | -
+jar | c z | H
+horn | c z n | F
+fork | c z s | H
+shirt | c z m | H
+cart | c z m | F
+torch | c z | H
+scarf | c z m f | H
+knot | z |
+badge | c z | K
+candle | c z h l | H
+apple | red green z e | HKF
+kettle | c z h | H
+bottle | c z | H
+cage | c z | AF
+desk | c z m | K
+chart | c z | K
+brush | c z m | KH
+bucket | c z m | SF
+spade | c z | SP
+gate | c z | FP | -
+swing | c z | P | -
+bench | c z m | P | -`;
+
+const mkWords = s => (s || "").trim().split(/\s+/).filter(Boolean);
+const mkLines = (src, keys) => src.trim().split("\n").map(line=>{
+  const f = line.split("|").map(x=>x.trim()), o = {};
+  keys.forEach((k,i)=>{ o[k] = f[i] || ""; });
+  return o;
+});
+const mkAdj = s => [...new Set(mkWords(s).flatMap(t=>MAKER_ADJ[t] ? mkWords(MAKER_ADJ[t]) : [t]))];
+const MK_PLACE = new Map(mkLines(MAKER_PLACES, ["w","kind","adj","themes","flags"])
+  .map(o=>[o.w, {w:o.w, kind:o.kind, adj:mkWords(o.adj), themes:o.themes, animalOnly:o.flags.includes("-"), noTo:o.flags.includes("~"), noIn:o.flags.includes("!")}]));
+const MK_VERB = new Map(mkLines(MAKER_VERBS, ["w","where","who"])
+  .map(o=>[o.w, {w:o.w, where:mkWords(o.where), people:o.who==="p"}]));
+const MK_ANIMAL = new Map(mkLines(MAKER_ANIMALS, ["w","adj","verbs","where","themes","flags"])
+  .map(o=>[o.w, {w:o.w, adj:mkAdj(o.adj), verbs:mkWords(o.verbs), where:mkWords(o.where), themes:o.themes, noFeed:o.flags.includes("-")}]));
+const MK_THING = new Map(mkLines(MAKER_THINGS, ["w","adj","themes","flags"])
+  .map(o=>[o.w, {w:o.w, adj:mkAdj(o.adj), themes:o.themes, noOwn:o.flags.includes("-")}]));
+// does a place match a list of kinds / place words?
+const mkAt = (list, place) => { const p = MK_PLACE.get(place); return list.includes(p.kind) || list.includes(place); };
+
+// every word the maker can place, by role (checked against the engine in the corpus)
 const MAKER_BANK = {
-  // things you can have / describe (article-safe singular nouns)
-  thing: ("hat cap bag box pot pan cup jug bed bus van jet net peg pen pin log rug mat map web tub nut bun mug " +
-          "doll bell egg shell dish sock rock chip ring clock drum flag tent vest lamp belt stamp sled brick trunk " +
-          "napkin laptop magnet muffin puppet velvet picnic cobweb cake bike kite rose bone cube cape tape plate " +
-          "flute rope cone boat coat leaf spoon book train light coin toy cloud car star jar horn fork shirt cart " +
-          "torch scarf knot badge candle apple kettle bottle cage").split(" "),
-  // creatures that can do things (subjects of the verb frames)
-  animal: ("cat dog hen pig fox rat bug cub pup duck chick moth frog crab slug skunk rabbit kitten insect " +
-           "snake mole mule goat bee sheep snail toad lamb bird").split(" "),
-  // "…in the ___"
-  place: ("mud sun hut den tent pond shed ship shop nest sand cave lake hole sea pool tree park farm barn yard " +
-          "hedge puddle").split(" "),
-  adj: ("big red hot wet sad glad tan pink black soft sick thick fresh long odd cute fine pale safe wide green " +
-        "clean neat deep sweet cool dark short hard sharp loud proud brown funny sunny muddy fluffy silly").split(" "),
+  thing: [...MK_THING.keys()],
+  animal: [...MK_ANIMAL.keys()],
+  place: [...MK_PLACE.keys()],
+  adj: [...new Set([...MK_THING.values(), ...MK_ANIMAL.values(), ...MK_PLACE.values()].flatMap(e=>e.adj))],
   // describing a character: "Sam is ___."
   mood: "glad sad hot wet sick quick happy grumpy muddy silly proud brave".split(" "),
-  // intransitive verbs (base form): "can ___", "Sam ___s in the pond"
-  verb: ("run hop sit nap dig jog swim jump skip dash sing rest spin hum yell nod grin sniff puff splash chat " +
-         "hide ride bake skate dive smile sleep float sail wait shout crawl bark chirp march knit wriggle").split(" "),
+  verb: [...MK_VERB.keys()],
   num: ["six", "ten"],
 };
-// nouns whose plural isn't a plain -s/-es (sheep, leaves, scarves) or reads oddly counted
-const MAKER_NO_PLURAL = new Set(["sheep", "leaf", "scarf"]);
+// nouns whose plural isn't a plain -s/-es (sheep, fish, leaves, scarves)
+const MAKER_NO_PLURAL = new Set(["sheep", "fish", "shrimp", "leaf", "scarf"]);
 // built-in character names (spec) — each still verified decodable before use
 const MAKER_NAMES = ["Sam", "Meg", "Tom", "Pip", "Ben", "Kit"];
 // the only heart words a made passage may use (the most common TRICKY words)
@@ -1164,8 +1427,11 @@ const MAKER_LENGTHS = {short:3, medium:5, long:8};
 
 /* Sentence frames. {slot} draws from a verified pool: N / N2 = names,
    a = "a"/"an" by the next word, things/animals = plurals, verbs = 3rd
-   person -s, V = one verb used twice ("Run, Sam, run!"). Every other word
-   is a fixed glue word, checked like the rest. */
+   person -s, V = one verb used twice ("Run, Sam, run!"), adj = suits the
+   frame's noun, padj = suits its place. Slots are filled so they agree:
+   an animal subject only does its own verbs, in places it can be, and a
+   verb only happens "in the ___" where it makes sense. Every other word is
+   a fixed glue word, checked like the rest. */
 const MAKER_FRAMES = [
   "{N} has {a} {adj} {thing}.",
   "The {thing} is {adj}.",
@@ -1191,31 +1457,58 @@ const MAKER_FRAMES = [
   "{N} {verbs} and {verbs}.",
   "{N} had {num} {adj} {things}.",
   "{adj} {animals} can {verb}.",
+  "The {animal} {verbs} in the {place}.",
+  "The {animal} is {adj}.",
+  "The {place} is {padj}.",
+  "{N} fed the {animal}.",
+  "{N} ran to the {place}.",
+  "{N} and {N2} had fun in the {place}.",
   // heart-word-free frames, so a group with no heart words still gets variety
   "{V}, {N}, {V}!",
   "Can {N} {verb}?",
   "{N} and {N2} {verb}.",
   "{N} can {verb} and {verb}.",
+  "{N} fed {num} {animals}.",
+  "{N} got {num} {things}.",
+  "{N} and {N2} had fun.",
 ];
 
 const cap1 = s => s.charAt(0).toUpperCase() + s.slice(1);
 
-// Build every slot pool for one taught set: only words that pass the engine.
-function makerPools(taughtSet, heart, names){
+// Build every slot pool for one taught set (and theme): only words that
+// pass the engine. Nouns and places are narrowed to the theme; adjectives
+// and verbs are shared, and agreement picks the right ones per sentence.
+function makerPools(taughtSet, heart, names, theme){
   const fits = w => {
     const r = analyseWord(w, taughtSet);
     return r.cat==="ok" || r.cat==="known" || (heart && r.cat==="tricky" && MAKER_HEART.has(w.toLowerCase()));
   };
-  const pick = arr => arr.filter(fits);
-  const plural = arr => arr.filter(w=>!MAKER_NO_PLURAL.has(w)).map(w=>inflect(w,"s")).filter(w=>w && fits(w));
-  return {
-    fits,
-    thing: pick(MAKER_BANK.thing), animal: pick(MAKER_BANK.animal), place: pick(MAKER_BANK.place),
-    adj: pick(MAKER_BANK.adj), mood: pick(MAKER_BANK.mood), verb: pick(MAKER_BANK.verb), num: pick(MAKER_BANK.num),
-    things: plural(MAKER_BANK.thing), animals: plural(MAKER_BANK.animal),
-    verbs: MAKER_BANK.verb.map(w=>inflect(w,"s")).filter(w=>w && fits(w)),
+  const tag = (MAKER_THEMES.find(t=>t.id===(theme||"")) || MAKER_THEMES[0]).tag;
+  const inTheme = e => !tag || e.themes.includes(tag);
+  const plurals = new Map(), vs = new Map();
+  const plural = arr => arr.filter(w=>!MAKER_NO_PLURAL.has(w)).filter(w=>{
+    const p = inflect(w, "s"); if(p && fits(p)){ plurals.set(w, p); return true; } return false;
+  });
+  const thing = [...MK_THING.values()].filter(inTheme).map(e=>e.w).filter(fits);
+  const animal = [...MK_ANIMAL.values()].filter(inTheme).map(e=>e.w).filter(fits);
+  const verb = MAKER_BANK.verb.filter(fits);
+  const verbsBase = MAKER_BANK.verb.filter(w=>{ const s = inflect(w, "s"); if(s && fits(s)){ vs.set(w, s); return true; } return false; });
+  const P = {
+    fits, plurals, vs, theme: tag,
+    thing, animal, verb,
+    place: [...MK_PLACE.values()].filter(inTheme).map(e=>e.w).filter(fits),
+    adj: MAKER_BANK.adj.filter(fits),
+    padj: [...new Set([...MK_PLACE.values()].flatMap(e=>e.adj))].filter(fits),
+    mood: MAKER_BANK.mood.filter(fits), num: MAKER_BANK.num.filter(fits),
     names: names.filter(fits),
   };
+  P.thingsBase = plural(thing);
+  P.animalsBase = plural(animal);
+  P.verbsBase = verbsBase;
+  P.things = P.thingsBase.map(w=>plurals.get(w));
+  P.animals = P.animalsBase.map(w=>plurals.get(w));
+  P.verbs = verbsBase.map(w=>vs.get(w));
+  return P;
 }
 
 // Character names: the Known-words list when it has any (they're set aside
@@ -1230,16 +1523,131 @@ function makerNames(knownSet){
   return out.length ? out : MAKER_NAMES.slice();
 }
 
-/* Make one passage. opts: {taught:Set, focus:skillId|"", sentences:n,
-   heart:bool, names:[…], rng:()=>[0,1)}. Returns {ok:true, text, focusPct,
-   focusMet} or {ok:false, reason}. Tries several drafts, keeps only drafts
-   that re-score at 100%, and prefers the one that best practises the focus. */
+/* Fill one frame so its words agree. ctx.pick(list, surface) chooses from a
+   non-empty list of base words (surface maps a base to the word actually
+   placed, for focus and repeats). Every list handed to pick is already
+   narrowed to choices that leave the rest of the frame fillable, so a frame
+   that fills once always fills. Returns the sentence, or null if this
+   group's pools can't fill the frame at all. */
+function makerFill(frame, P, ctx){
+  const slots = [...frame.matchAll(/\{(\w+)\}/g)].map(m=>m[1]);
+  const has = s => slots.includes(s);
+  if(has("N") && !P.names.length) return null;
+  if(has("N2") && P.names.length<2) return null;
+  const nounSlot = ["thing","things","animal","animals"].find(has);
+  const animal = !!nounSlot && nounSlot.startsWith("animal");
+  const vForm = has("verbs") ? "s" : "base";
+  const vNeed = slots.filter(s=>s==="verb" || s==="verbs").length + (has("V") ? 1 : 0);
+  const toFrame = frame.includes("to the {place}"), inFrame = frame.includes("in the {place}");
+  const owns = /\b(has|got|had|My)\b/.test(frame), feeds = /\bfed\b/.test(frame);
+  const same = x => x;
+
+  const verbsFor = (subj, place) => {
+    const list = animal ? MK_ANIMAL.get(subj).verbs : MAKER_BANK.verb.filter(v=>MK_VERB.get(v).people);
+    return list.filter(v=>(vForm==="s" ? P.vs.has(v) : P.verb.includes(v))
+                          && (!place || mkAt(MK_VERB.get(v).where, place)));
+  };
+  const placesFor = subj => P.place.filter(pl=>{
+    const p = MK_PLACE.get(pl);
+    if(animal ? !mkAt(MK_ANIMAL.get(subj).where, pl) : p.animalOnly) return false;
+    if((toFrame && p.noTo) || (inFrame && p.noIn)) return false;
+    return !vNeed || verbsFor(subj, pl).length >= vNeed;
+  });
+  const adjFor = subj => {
+    const e = animal ? MK_ANIMAL.get(subj) : MK_THING.get(subj);
+    return e.adj.filter(a=>P.adj.includes(a));
+  };
+  const nounOk = n => !(owns && !animal && MK_THING.get(n).noOwn) && !(feeds && animal && MK_ANIMAL.get(n).noFeed)
+    && (!has("adj") || adjFor(n).length>0)
+    && (has("place") ? placesFor(n).length>0 : (!vNeed || verbsFor(n, null).length>=vNeed));
+
+  let noun = null, place = null;
+  const fill = {};
+  if(nounSlot){
+    const plural = nounSlot.endsWith("s");
+    const base = plural ? P[nounSlot+"Base"] : P[nounSlot];
+    const cands = base.filter(nounOk);
+    if(!cands.length) return null;
+    noun = ctx.pick(cands, plural ? (w=>P.plurals.get(w)) : same);
+    fill[nounSlot] = plural ? P.plurals.get(noun) : noun;
+  } else if(has("adj")) return null;          // an adjective needs a noun to agree with
+  if(has("place")){
+    const cands = placesFor(noun);
+    if(!cands.length) return null;
+    place = fill.place = ctx.pick(cands, same);
+  }
+  if(vNeed){
+    const cands = verbsFor(noun, place);
+    if(cands.length < vNeed) return null;
+    const surf = vForm==="s" ? (w=>P.vs.get(w)) : same;
+    const chosen = [];
+    for(let k=0; k<vNeed; k++){
+      const left = cands.filter(v=>!chosen.includes(v));
+      chosen.push(ctx.pick(left.length ? left : cands, surf));
+    }
+    fill.verbList = chosen.map(surf);
+  }
+  if(has("adj")) fill.adj = ctx.pick(adjFor(noun), same);
+  if(has("padj")){
+    if(!place) return null;
+    const cands = MK_PLACE.get(place).adj.filter(a=>P.padj.includes(a));
+    if(!cands.length) return null;
+    fill.padj = ctx.pick(cands, same);
+  }
+  for(const s of ["mood","num"]) if(has(s)){
+    if(!P[s].length) return null;
+    fill[s] = ctx.pick(P[s], same);
+  }
+  let vi = 0;
+  const V = has("V") ? fill.verbList[vi++] : "";
+  return frame.replace(/\{(\w+)\}/g, (m, slot)=>{
+    if(slot==="N") return (has("N2") || ctx.rng()<0.8) ? ctx.lead : ctx.friend;
+    if(slot==="N2") return ctx.friend;
+    if(slot==="a") return "{a}";
+    if(slot==="V") return V;
+    if(slot==="verb" || slot==="verbs") return fill.verbList[vi++];
+    return fill[slot];
+  });
+}
+
+/* Which frames can this group read and fill (for this theme)? A frame is
+   themed when it places a theme noun or place. */
+function makerPlan(taughtSet, heart, names, theme){
+  const P = makerPools(taughtSet, heart, names, theme);
+  const dry = {pick: l=>l[0], rng: ()=>0, lead: P.names[0], friend: P.names[1] || P.names[0]};
+  const usable = MAKER_FRAMES.filter(f=>{
+    const glue = f.replace(/\{[^}]+\}/g, " ").match(/[A-Za-z']+/g) || [];
+    if(!glue.every(P.fits)) return false;
+    if(f.includes("{a}") && !P.fits("a")) return false;       // "an" is re-checked per draft
+    return makerFill(f, P, dry) !== null;
+  });
+  const themed = usable.filter(f=>/\{(thing|things|animal|animals|place)\}/.test(f));
+  return {P, usable, themed};
+}
+
+// can this theme make a passage at these skills? (two themed frames at least)
+function makerThemeReady(taughtSet, heart, theme){
+  if(!taughtSet.has("cvc")) return false;
+  const {usable, themed} = makerPlan(taughtSet, heart, MAKER_NAMES, theme);
+  return usable.length >= 2 && (!theme || themed.length >= 2);
+}
+
+/* Make one passage. opts: {taught:Set, focus:skillId|"", theme:id|"",
+   sentences:n, heart:bool, names:[…], rng:()=>[0,1)}. Returns {ok:true,
+   text, focusPct, focusMet} or {ok:false, reason}. Tries several drafts,
+   keeps only drafts that re-score at 100%, and prefers the one that best
+   practises the focus. */
 function makePassage(opts){
   const taughtSet = opts.taught, focus = opts.focus || "", n = opts.sentences || 5;
-  const heart = opts.heart !== false, rng = opts.rng || Math.random;
+  const heart = opts.heart !== false, rng = opts.rng || Math.random, theme = opts.theme || "";
   if(!taughtSet.has("cvc")) return {ok:false, reason:"Tick “Single letters & CVC” first — every passage is built on it."};
-  const P = makerPools(taughtSet, heart, opts.names || MAKER_NAMES);
+  const {P, usable, themed} = makerPlan(taughtSet, heart, opts.names || MAKER_NAMES, theme);
   if(!P.names.length) return {ok:false, reason:"None of the character names are decodable for this group."};
+  if(usable.length < 2) return {ok:false, reason:"Not enough decodable words for these skills yet — tick a few more (blends or digraphs open up lots)."};
+  if(theme && themed.length < 2){
+    const nm = MAKER_THEMES.find(t=>t.id===theme);
+    return {ok:false, reason:`Not enough “${nm ? nm.name : theme}” words for these skills yet — try Any theme, or tick a few more skills.`};
+  }
   // does a word practise the focus skill? (memoised — pools are re-scanned per slot)
   const focusMemo = new Map();
   const isFocus = w => {
@@ -1247,22 +1655,10 @@ function makePassage(opts){
     if(!focusMemo.has(w)){ const r = analyseWord(w, taughtSet); focusMemo.set(w, r.cat==="ok" && r.need.includes(focus)); }
     return focusMemo.get(w);
   };
-  const glueOk = w => P.fits(w);
-
-  // which frames can this group read at all?
-  const usable = MAKER_FRAMES.filter(f=>{
-    const glue = f.replace(/\{[^}]+\}/g, " ").match(/[A-Za-z']+/g) || [];
-    if(!glue.every(glueOk)) return false;
-    const slots = [...f.matchAll(/\{(\w+)\}/g)].map(m=>m[1]);
-    return slots.every(s=>{
-      if(s==="a") return glueOk("a");                           // "an" is re-checked per draft
-      if(s==="V") return P.verb.length>0;
-      if(s==="N") return P.names.length>=1;
-      if(s==="N2") return P.names.length>=2;
-      return P[s] && P[s].length>0;
-    });
-  });
-  if(usable.length < 2) return {ok:false, reason:"Not enough decodable words for these skills yet — tick a few more (blends or digraphs open up lots)."};
+  const slotPool = {thing:P.thing, things:P.things, animal:P.animal, animals:P.animals, place:P.place,
+    adj:P.adj, padj:P.padj, verb:P.verb, V:P.verb, verbs:P.verbs, mood:P.mood, num:P.num};
+  const focusable = f => [...f.matchAll(/\{(\w+)\}/g)].some(m=>(slotPool[m[1]] || []).some(isFocus))
+    || (f.replace(/\{[^}]+\}/g, " ").match(/[A-Za-z']+/g) || []).some(isFocus);
 
   const choose = arr => arr[Math.floor(rng()*arr.length)];
   let best = null;
@@ -1270,43 +1666,42 @@ function makePassage(opts){
     const used = new Set();
     const lead = choose(P.names);
     const friend = choose(P.names.filter(x=>x!==lead)) || lead;
-    const fill = pool => {
-      let cands = pool.filter(w=>!used.has(w));
-      if(!cands.length) cands = pool;
-      const foc = focus ? cands.filter(isFocus) : [];
+    const ctx = {rng, lead, friend, pick(list, surf){
+      let cands = list.filter(w=>!used.has(surf(w)));
+      if(!cands.length) cands = list;
+      const foc = focus ? cands.filter(w=>isFocus(surf(w))) : [];
       const w = (foc.length && rng()<0.85) ? choose(foc) : choose(cands);
-      used.add(w);
+      used.add(surf(w));
       return w;
-    };
+    }};
     const sentences = [];
     let frames = usable.slice(), prev = null;
     let failed = false;
     for(let s=0; s<n; s++){
       let pool = frames.filter(f=>f!==prev);
       if(!pool.length){ frames = usable.slice(); pool = frames.filter(f=>f!==prev); }
+      // a theme lives in its nouns: favour frames that place one
+      if(theme && rng()<0.75){
+        const tp = pool.filter(f=>themed.includes(f));
+        if(tp.length) pool = tp;
+      }
       // with a focus, favour frames that have a slot the focus words can fill
       if(focus && rng()<0.7){
-        const fp = pool.filter(f=>[...f.matchAll(/\{(\w+)\}/g)].some(m=>P[m[1]] && Array.isArray(P[m[1]]) && P[m[1]].some(isFocus)));
+        const fp = pool.filter(focusable);
         if(fp.length) pool = fp;
       }
       const frame = choose(pool);
       frames = frames.filter(f=>f!==frame);                   // no frame twice until all are used
       prev = frame;
-      const V = frame.includes("{V}") ? fill(P.verb) : "";
-      let out = frame.replace(/\{(\w+)\}/g, (m, slot)=>{
-        if(slot==="N") return (frame.includes("{N2}") || rng()<0.8) ? lead : friend;
-        if(slot==="N2") return friend===lead ? m : friend;
-        if(slot==="a") return "{a}";
-        if(slot==="V") return V;
-        return fill(P[slot]);
-      });
+      let out = makerFill(frame, P, ctx);
+      if(out===null){ failed = true; break; }
       // a / an by the next word's first letter; either form must itself be allowed
       out = out.replace(/\{a\}(\s+)([A-Za-z]+)/g, (m, sp, next)=>{
         const art = /^[aeiou]/i.test(next) ? "an" : "a";
-        if(!glueOk(art)) failed = true;
+        if(!P.fits(art)) failed = true;
         return art + sp + next;
       });
-      if(/[{}]/.test(out)) failed = true;
+      if(/[{}]|undefined/.test(out)) failed = true;
       sentences.push(cap1(out));
     }
     if(failed) continue;
@@ -2191,7 +2586,7 @@ function renderLibrary(){
 }
 
 /* ============================================================
-   Passage maker UI (roadmap #7, stage 1)
+   Passage maker UI (roadmap #7, stages 1–2)
    Settings live in a small modal; the made passage is loaded straight into
    the normal checker, so the teacher sees its 100% score and can edit it.
    While the text is still exactly what the maker produced, a "New passage"
@@ -2205,7 +2600,8 @@ const mkNames = document.getElementById('mkNames');
 const mkMsg   = document.getElementById('mkMsg');
 const mkUsing = document.getElementById('mkUsing');
 const newPassBtn = document.getElementById('newPassBtn');
-const makerOpts = {focus:"", len:"medium", heart:true};
+const mkTheme = document.getElementById('mkTheme');
+const makerOpts = {focus:"", theme:"", len:"medium", heart:true};
 let lastMade = null;                 // the text the maker last produced
 
 function syncNewPassBtn(){ newPassBtn.hidden = !(lastMade && text===lastMade); }
@@ -2217,8 +2613,8 @@ function renderMakerForm(){
     : `your custom selection (${taught.size} skill${taught.size!==1?'s':''})`;
   // focus options: taught skills (CVC underlies every word, so it isn't a focus),
   // each greyed out when the bank has no decodable word that practises it
-  const pools = makerPools(taught, true, []);
-  const bankWords = new Set(["thing","animal","place","adj","mood","verb","things","animals","verbs"].flatMap(k=>pools[k]));
+  const pools = makerPools(taught, true, [], "");
+  const bankWords = new Set(["thing","animal","place","adj","padj","mood","verb","things","animals","verbs"].flatMap(k=>pools[k]));
   if(!taught.has(makerOpts.focus)) makerOpts.focus = "";
   mkFocus.innerHTML = "";
   const none = document.createElement('option'); none.value=""; none.textContent="No focus — a mix of everything taught";
@@ -2233,6 +2629,7 @@ function renderMakerForm(){
   });
   if(makerOpts.focus && mkFocus.querySelector(`option[value="${makerOpts.focus}"]:not([disabled])`)) mkFocus.value = makerOpts.focus;
   else { makerOpts.focus = ""; mkFocus.value = ""; }
+  renderThemes();
   mkLen.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.len===makerOpts.len)));
   mkHeart.checked = makerOpts.heart;
   const names = makerNames(known);
@@ -2243,6 +2640,20 @@ function renderMakerForm(){
     : "From your Known words.";
   mkNames.innerHTML = `${names.map(escHtml).join(", ")}<span class="mk-hint">${escHtml(hint)}</span>`;
   mkMsg.textContent = ""; mkMsg.className = "mk-msg";
+}
+
+// themes, each greyed out when these skills can't fill it yet
+function renderThemes(){
+  mkTheme.innerHTML = "";
+  MAKER_THEMES.forEach(t=>{
+    const ready = makerThemeReady(taught, makerOpts.heart, t.id);
+    const o = document.createElement('option'); o.value = t.id;
+    o.textContent = ready || !t.id ? t.name : `${t.name} (not enough words yet)`;
+    o.disabled = !ready && !!t.id;
+    mkTheme.appendChild(o);
+  });
+  if(!mkTheme.querySelector(`option[value="${makerOpts.theme}"]:not([disabled])`)) makerOpts.theme = "";
+  mkTheme.value = makerOpts.theme;
 }
 
 function openMaker(){
@@ -2260,7 +2671,7 @@ function closeMaker(){
 // make a passage with the current settings; returns false (and says why) on failure
 function runMaker(fromModal){
   const focus = taught.has(makerOpts.focus) ? makerOpts.focus : "";
-  const res = makePassage({taught, focus, sentences:MAKER_LENGTHS[makerOpts.len],
+  const res = makePassage({taught, focus, theme:makerOpts.theme, sentences:MAKER_LENGTHS[makerOpts.len],
                            heart:makerOpts.heart, names:makerNames(known)});
   if(!res.ok){
     if(fromModal){ mkMsg.textContent = res.reason; mkMsg.className = "mk-msg warn"; }
@@ -2272,10 +2683,12 @@ function runMaker(fromModal){
   render();
   showEdit(false);
   const n = MAKER_LENGTHS[makerOpts.len];
+  const th = MAKER_THEMES.find(t=>t.id===makerOpts.theme && t.id);
+  const about = th ? ` ${th.name.replace(/^(On|At|In)( the)? /, "").toLowerCase()}` : "";
   if(focus && !res.focusMet){
     showToast(`Made a new 100% decodable passage — but only ${res.focusPct}% of its words use ${SKILLNAME[focus]}. The word bank is thin for it at these skills.`, true);
   } else {
-    showToast(`Made a new ${n}-sentence passage — 100% decodable${focus ? `, ${res.focusPct}% of words practise ${SKILLNAME[focus]}` : ""}.`);
+    showToast(`Made a new ${n}-sentence${about} passage — 100% decodable${focus ? `, ${res.focusPct}% of words practise ${SKILLNAME[focus]}` : ""}.`);
   }
   return true;
 }
@@ -2290,7 +2703,8 @@ mkLen.addEventListener('click', e=>{
   makerOpts.len = b.dataset.len;
   mkLen.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed', String(x===b)));
 });
-mkHeart.addEventListener('change', ()=>{ makerOpts.heart = mkHeart.checked; });
+mkTheme.addEventListener('change', ()=>{ makerOpts.theme = mkTheme.value; });
+mkHeart.addEventListener('change', ()=>{ makerOpts.heart = mkHeart.checked; renderThemes(); });
 document.getElementById('mkGo').onclick = ()=>{ if(runMaker(true)) closeMaker(); };
 newPassBtn.onclick = ()=>runMaker(false);
 
@@ -2310,7 +2724,8 @@ if (typeof module === "object" && module && module.exports) {
   module.exports = {
     analyseWord, tokenize, computeStats, computePlan,
     inflect, detectInflection, suggestFor, upgradeSkills, SKILLS_V,
-    makePassage, makerPools, makerNames, MAKER_BANK, MAKER_HEART, MAKER_FRAMES, MAKER_LENGTHS,
+    makePassage, makerPools, makerNames, makerThemeReady, MAKER_BANK, MAKER_HEART, MAKER_FRAMES, MAKER_LENGTHS,
+    MAKER_THEMES, MK_THING, MK_ANIMAL, MK_PLACE, MK_VERB,
     PHASES, GRAPHEMES, VOWELS, CONS, TRICKY, PRESETS, SKILLNAME, ALL_SKILL_IDS,
     getKnown: () => known,
     setKnown: (s) => { known = s instanceof Set ? s : new Set(s); },
