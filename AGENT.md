@@ -90,6 +90,12 @@ teacher a text they shouldn't use — so engine trustworthiness comes first.
    boundary blends, soft c/g, `-le` endings (`gentle`, `little`), schwa, and magic-e vs.
    vowel-team overlaps. The `adv` bucket is currently a catch-all — split it where it
    pays off. Every change must keep the corpus green.
+   **Standing rule (Kyle, 2026-09-29):** a *false green* (a word scored decodable when
+   the group can't read it) found at any time goes to the **top of the queue**, ahead of
+   stage work on #7. Fix it, add it to the corpus, and record it under Shipped. A false
+   green hands a teacher a text they shouldn't use. If you can't fix it that night, write
+   it here under **Open false greens** so the next run picks it up.
+   **Open false greens:** none known.
 3. **Inflection-aware fix-it.** Let swaps handle `-s/-es/-ing/-ed` (`looked`, `running`)
    with **correct** spelling (double-consonant, drop-e, y→ies). Only after the corpus
    exists — a wrong generated spelling in a phonics tool is the worst kind of bug, so

@@ -73,7 +73,8 @@ The feature loop is closed; the focus now is the engine that everything rests on
    verdicts; type/style inflections — typing, styled — now need magic-e too),
    and `-all` ✅ (ball/call/tall/small/wall read the a as /aw/ — an alternative
    pronunciation — not short a; shall stays short, and "all" itself is a heart
-   word, as in Letters and Sounds Phase 3);
+   word, as in Letters and Sounds Phase 3), `-eed`/`-ued`/`-oed` ✅ (seed/need/speed are the ee team +
+   d, and glued/toed are glue/toe + d, not a stripped "-ed" that hid the vowel team);
    still to do: onset soft g (gem/giant) (corpus-locked target)
 3. ~~Inflection-aware fix-it — correct `-s/-ing/-ed` swap spellings~~ ✅ (an
    amber `looked`/`cries` now gets same-ending swaps — `spotted`, `watched`,
