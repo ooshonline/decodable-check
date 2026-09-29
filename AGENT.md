@@ -63,7 +63,9 @@ teacher a text they shouldn't use — so engine trustworthiness comes first.
 6. **Tie-in with Kyle's Ribbit Reading App & Wordlist Wonders** — **ON HOLD (Kyle,
    2026-09-28):** Kyle plans something bigger here and wants to hold off. **Do not build
    or propose it** until Kyle raises it again.
-7. **Passage maker — NEXT UP, spec approved (Kyle delegated the call, 2026-09-28).**
+7. **Passage maker — IN PROGRESS, spec approved (Kyle delegated the call, 2026-09-28).**
+   **Stage 1 built** (generator + "Make a passage" modal + "New passage" reshuffle, with
+   corpus tests generating ~1,000 passages across every preset — all 100%). Next: stage 2.
    The inverse of the tool: instead of *"is this passage decodable?"*, generate one that
    **is**. **No network / no LLM**: a curated word bank + simple sentence frames +
    live `analyseWord()` verification, which *guarantees* decodability offline. A single

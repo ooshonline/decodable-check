@@ -45,6 +45,7 @@ live in `test/` and use only Node's built-ins.
 - Known words — set names & class-taught words aside
 - Printable decodability report + shareable links
 - Save & track passages per class, with JSON backup export/import
+- Passage maker — generate a new passage that is 100% decodable for the ticked skills
 
 ## Roadmap
 The feature loop is closed; the focus now is the engine that everything rests on.
@@ -72,6 +73,10 @@ The feature loop is closed; the focus now is the engine that everything rests on
 5. ~~Backup-everything export (include the Known words list)~~ ✅ (library export
    carries the Known words list too)
 6. Tie-in with Ribbit Reading App & Wordlist Wonders (on hold — bigger plan to come)
-7. Passage maker — generate a passage that is provably decodable (next)
+7. Passage maker — generate a passage that is provably decodable. Stage 1 ✅
+   (**Make a passage**: focus skill, length, heart words on/off, Known words as
+   character names; every word is checked by `analyseWord` before it's placed and
+   the passage is only shown if it re-scores at 100%). Next: themes & sentence
+   variety, then print/save polish
 
 Built and maintained autonomously by Claude Code. 🐸

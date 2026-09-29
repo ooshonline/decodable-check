@@ -314,6 +314,45 @@
   .lib-actions .del:hover{color:#fff;background:var(--accent);border-color:var(--accent)}
   .lib-empty{font-size:13.5px;color:var(--ink-soft);line-height:1.55;font-style:italic;padding:6px 2px}
 
+  /* ---- passage maker modal ---- */
+  .mk-using{font-size:12.5px;color:var(--ink-soft);margin:0 2px 14px}
+  .mk-using b{color:var(--ink);font-weight:700}
+  .mk-form{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:6px 14px 4px}
+  .mk-field{display:grid;grid-template-columns:110px 1fr;gap:6px 14px;align-items:center;padding:11px 0;
+    border-top:1px dashed var(--line-strong)}
+  .mk-field:first-child{border-top:none}
+  @media(max-width:480px){.mk-field{grid-template-columns:1fr}}
+  .mk-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+  .mk-field .selwrap{position:relative}
+  .mk-field select{width:100%;appearance:none;-webkit-appearance:none;font:inherit;font-size:13.5px;font-weight:600;
+    color:var(--ink);background:var(--card);border:1px solid var(--line-strong);border-radius:10px;
+    padding:8px 34px 8px 11px;cursor:pointer}
+  .mk-field select:hover{border-color:var(--ink-soft)}
+  .mk-field select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  .mk-field .selwrap::after{content:"";position:absolute;right:13px;top:50%;width:8px;height:8px;
+    border-right:2px solid var(--ink-soft);border-bottom:2px solid var(--ink-soft);
+    transform:translateY(-70%) rotate(45deg);pointer-events:none}
+  .mk-seg{display:inline-flex;background:var(--card);border:1px solid var(--line-strong);border-radius:9px;padding:3px;justify-self:start}
+  .mk-seg button{border:none;background:none;font:inherit;font-size:12.5px;font-weight:600;color:var(--ink-soft);
+    padding:5px 12px;border-radius:6px;cursor:pointer}
+  .mk-seg button .ms{font-weight:500;opacity:.75;font-variant-numeric:tabular-nums}
+  .mk-seg button[aria-pressed="true"]{background:var(--paper);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .mk-seg button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  .mk-check{display:flex;align-items:baseline;gap:9px;cursor:pointer;font-size:13.5px;font-weight:600}
+  .mk-check input{margin:0;position:relative;top:1px;accent-color:var(--accent);width:15px;height:15px;cursor:pointer}
+  .mk-hint{display:block;font-family:"Andika",sans-serif;font-weight:400;font-size:12.5px;color:var(--ink-soft);margin-top:1px}
+  .mk-names{font-family:"Andika",sans-serif;font-weight:700;font-size:14px}
+  .mk-names .mk-hint{font-family:"Public Sans",sans-serif;font-size:11.5px}
+  .mk-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px}
+  .mk-msg{font-size:12.5px;color:var(--ink-soft);line-height:1.45}
+  .mk-msg.warn{color:var(--new-ink);font-weight:600}
+  .new-pass{border:1px solid var(--line-strong);background:var(--paper);color:var(--ink-soft);border-radius:999px;
+    padding:4px 12px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;margin-left:auto;
+    display:inline-flex;align-items:center;gap:6px}
+  .new-pass:hover{color:var(--accent-ink);border-color:var(--accent)}
+  .new-pass:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  @media(max-width:520px){.new-pass{padding:4px 10px}.new-pass .np-lbl{display:none}}   /* icon-only so the header fits a phone */
+
   /* ---- printable report header (screen-hidden, shown on print) ---- */
   .report-head{display:none}
   .report-head .r-kicker{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-ink);font-weight:700}
@@ -339,7 +378,7 @@
     *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
     body{background:#fff}
     .wrap{max-width:100%;padding:0}
-    header.mast,.controls,.tabs,.editor,.tip,#printBtn,.theme-btn,.modal-overlay,.teachnext{display:none!important}
+    header.mast,.controls,.tabs,.editor,.tip,#printBtn,.theme-btn,.modal-overlay,.teachnext,.new-pass{display:none!important}
     .grid{display:block}
     .bench{gap:14px}
     .panel{box-shadow:none;border:1px solid var(--line-strong);break-inside:avoid}
@@ -364,6 +403,9 @@
       <p class="sub">Paste a passage, tick off the phonics skills your group has been taught, and see exactly which words they can decode — and which ones they can't yet.</p>
     </div>
     <div class="mast-actions">
+      <button class="theme-btn" id="makerBtn" aria-label="Make a decodable passage from the ticked skills">
+        <span aria-hidden="true">✎</span><span>Make a passage</span>
+      </button>
       <button class="theme-btn" id="shareBtn" aria-label="Copy a shareable link to this check">
         <span aria-hidden="true">🔗</span><span>Copy link</span>
       </button>
@@ -443,6 +485,9 @@
       <div class="panel">
         <div class="passage-head">
           <h2>Passage</h2>
+          <button class="new-pass" id="newPassBtn" type="button" hidden aria-label="New passage" title="Make another passage with the same settings">
+            <span aria-hidden="true">↻</span><span class="np-lbl">New passage</span>
+          </button>
           <div class="tabs" role="tablist">
             <button class="tab" role="tab" id="tabView" aria-selected="true">Analysis</button>
             <button class="tab" role="tab" id="tabEdit" aria-selected="false">Edit text</button>
@@ -517,6 +562,49 @@
         <input type="file" id="libFile" accept="application/json,.json" hidden>
       </div>
       <div id="libList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ---- passage maker modal ---- -->
+<div class="modal-overlay" id="makerOverlay" role="dialog" aria-modal="true" aria-labelledby="makerTitle" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h2 id="makerTitle">Passage maker</h2>
+        <p>Builds a short passage from the skills ticked in the sidebar. Every word is checked by the same engine before it goes in, and the passage is only shown if it scores 100%.</p>
+      </div>
+      <button class="modal-x" id="makerClose" type="button" aria-label="Close passage maker">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="mk-using">Skills: <b id="mkUsing"></b></div>
+      <div class="mk-form">
+        <div class="mk-field">
+          <label class="mk-label" for="mkFocus">Focus skill</label>
+          <div class="selwrap"><select id="mkFocus"></select></div>
+        </div>
+        <div class="mk-field">
+          <span class="mk-label" id="mkLenLbl">Length</span>
+          <div class="mk-seg" id="mkLen" role="group" aria-labelledby="mkLenLbl">
+            <button type="button" data-len="short">Short <span class="ms">· 3</span></button>
+            <button type="button" data-len="medium">Medium <span class="ms">· 5</span></button>
+            <button type="button" data-len="long">Long <span class="ms">· 8</span></button>
+          </div>
+        </div>
+        <div class="mk-field">
+          <span class="mk-label">Heart words</span>
+          <label class="mk-check"><input type="checkbox" id="mkHeart" checked>
+            <span>Allow common heart words<span class="mk-hint">the, a, I, to, is, was, said, we, my…</span></span></label>
+        </div>
+        <div class="mk-field">
+          <span class="mk-label">Characters</span>
+          <div class="mk-names" id="mkNames"></div>
+        </div>
+      </div>
+      <div class="mk-foot">
+        <span class="mk-msg" id="mkMsg" role="status" aria-live="polite"></span>
+        <button class="save-btn" id="mkGo" type="button">Make passage</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1031,6 +1119,217 @@ function upgradeSkills(ids, v){
   return set.has("blend") ? [...ids, "syll"] : ids;
 }
 
+/* ============================================================
+   Passage maker (roadmap #7, stage 1) — the inverse of the checker.
+   Instead of "is this passage decodable?", build one that IS, from the
+   ticked skills. No network, no LLM: a curated word bank + simple
+   sentence frames + live analyseWord() verification. Every word — bank
+   words, inflected forms, the frame's own glue words (can, has, and…)
+   and the names — is checked against the taught set BEFORE it is placed,
+   and the finished passage is re-scored with computeStats: it is returned
+   only if it scores 100% with nothing amber. Decodability is never
+   assumed from a template.
+   The bank sticks to words the engine reads correctly (no ball/cold/
+   table/seed-style mis-scores), so the 100% is honest, not just engine-deep.
+   ============================================================ */
+const MAKER_BANK = {
+  // things you can have / describe (article-safe singular nouns)
+  thing: ("hat cap bag box pot pan cup jug bed bus van jet net peg pen pin log rug mat map web tub nut bun mug " +
+          "doll bell egg shell dish sock rock chip ring clock drum flag tent vest lamp belt stamp sled brick trunk " +
+          "napkin laptop magnet muffin puppet velvet picnic cobweb cake bike kite rose bone cube cape tape plate " +
+          "flute rope cone boat coat leaf spoon book train light coin toy cloud car star jar horn fork shirt cart " +
+          "torch scarf knot badge candle apple kettle bottle cage").split(" "),
+  // creatures that can do things (subjects of the verb frames)
+  animal: ("cat dog hen pig fox rat bug cub pup duck chick moth frog crab slug skunk rabbit kitten insect " +
+           "snake mole mule goat bee sheep snail toad lamb bird").split(" "),
+  // "…in the ___"
+  place: ("mud sun hut den tent pond shed ship shop nest sand cave lake hole sea pool tree park farm barn yard " +
+          "hedge puddle").split(" "),
+  adj: ("big red hot wet sad glad tan pink black soft sick thick fresh long odd cute fine pale safe wide green " +
+        "clean neat deep sweet cool dark short hard sharp loud proud brown funny sunny muddy fluffy silly").split(" "),
+  // describing a character: "Sam is ___."
+  mood: "glad sad hot wet sick quick happy grumpy muddy silly proud brave".split(" "),
+  // intransitive verbs (base form): "can ___", "Sam ___s in the pond"
+  verb: ("run hop sit nap dig jog swim jump skip dash sing rest spin hum yell nod grin sniff puff splash chat " +
+         "hide ride bake skate dive smile sleep float sail wait shout crawl bark chirp march knit wriggle").split(" "),
+  num: ["six", "ten"],
+};
+// nouns whose plural isn't a plain -s/-es (sheep, leaves, scarves) or reads oddly counted
+const MAKER_NO_PLURAL = new Set(["sheep", "leaf", "scarf"]);
+// built-in character names (spec) — each still verified decodable before use
+const MAKER_NAMES = ["Sam", "Meg", "Tom", "Pip", "Ben", "Kit"];
+// the only heart words a made passage may use (the most common TRICKY words)
+const MAKER_HEART = new Set(["the","a","i","to","is","was","said","he","she","we","my","you","of"]);
+const MAKER_LENGTHS = {short:3, medium:5, long:8};
+
+/* Sentence frames. {slot} draws from a verified pool: N / N2 = names,
+   a = "a"/"an" by the next word, things/animals = plurals, verbs = 3rd
+   person -s, V = one verb used twice ("Run, Sam, run!"). Every other word
+   is a fixed glue word, checked like the rest. */
+const MAKER_FRAMES = [
+  "{N} has {a} {adj} {thing}.",
+  "The {thing} is {adj}.",
+  "{N} can {verb}.",
+  "The {adj} {animal} can {verb}.",
+  "{N} {verbs} in the {place}.",
+  "{a} {animal} is in the {place}.",
+  "{N} and {N2} {verb} in the {place}.",
+  "{N} got {a} {adj} {thing}.",
+  "It is {a} {adj} {thing}.",
+  "{N} said, \"I can {verb}!\"",
+  "{N} has {num} {things}.",
+  "We can {verb} in the {place}.",
+  "{N} was in the {place}.",
+  "My {thing} is {adj}.",
+  "The {animal} {verbs}.",
+  "Is the {thing} {adj}?",
+  "{N} can see {a} {adj} {animal}.",
+  "Look at the {adj} {thing}!",
+  "Then {N} {verbs}.",
+  "{N} is {mood}.",
+  "{N} and {N2} can {verb}.",
+  "{N} {verbs} and {verbs}.",
+  "{N} had {num} {adj} {things}.",
+  "{adj} {animals} can {verb}.",
+  // heart-word-free frames, so a group with no heart words still gets variety
+  "{V}, {N}, {V}!",
+  "Can {N} {verb}?",
+  "{N} and {N2} {verb}.",
+  "{N} can {verb} and {verb}.",
+];
+
+const cap1 = s => s.charAt(0).toUpperCase() + s.slice(1);
+
+// Build every slot pool for one taught set: only words that pass the engine.
+function makerPools(taughtSet, heart, names){
+  const fits = w => {
+    const r = analyseWord(w, taughtSet);
+    return r.cat==="ok" || r.cat==="known" || (heart && r.cat==="tricky" && MAKER_HEART.has(w.toLowerCase()));
+  };
+  const pick = arr => arr.filter(fits);
+  const plural = arr => arr.filter(w=>!MAKER_NO_PLURAL.has(w)).map(w=>inflect(w,"s")).filter(w=>w && fits(w));
+  return {
+    fits,
+    thing: pick(MAKER_BANK.thing), animal: pick(MAKER_BANK.animal), place: pick(MAKER_BANK.place),
+    adj: pick(MAKER_BANK.adj), mood: pick(MAKER_BANK.mood), verb: pick(MAKER_BANK.verb), num: pick(MAKER_BANK.num),
+    things: plural(MAKER_BANK.thing), animals: plural(MAKER_BANK.animal),
+    verbs: MAKER_BANK.verb.map(w=>inflect(w,"s")).filter(w=>w && fits(w)),
+    names: names.filter(fits),
+  };
+}
+
+// Character names: the Known-words list when it has any (they're set aside
+// as known, like any name), topped up from the built-in bank so a two-name
+// frame never pairs a name with itself. Known words that are heart words or
+// bank words (a teacher may mark "said" or "cat" known) aren't names.
+function makerNames(knownSet){
+  const bank = new Set(Object.values(MAKER_BANK).flat());
+  const own = [...knownSet].filter(w=>/^[a-z]+$/.test(w) && !TRICKY.has(w) && !bank.has(w)).map(cap1);
+  const out = own.slice();
+  for(const n of MAKER_NAMES){ if(out.length>=2) break; if(!out.includes(n)) out.push(n); }
+  return out.length ? out : MAKER_NAMES.slice();
+}
+
+/* Make one passage. opts: {taught:Set, focus:skillId|"", sentences:n,
+   heart:bool, names:[…], rng:()=>[0,1)}. Returns {ok:true, text, focusPct,
+   focusMet} or {ok:false, reason}. Tries several drafts, keeps only drafts
+   that re-score at 100%, and prefers the one that best practises the focus. */
+function makePassage(opts){
+  const taughtSet = opts.taught, focus = opts.focus || "", n = opts.sentences || 5;
+  const heart = opts.heart !== false, rng = opts.rng || Math.random;
+  if(!taughtSet.has("cvc")) return {ok:false, reason:"Tick “Single letters & CVC” first — every passage is built on it."};
+  const P = makerPools(taughtSet, heart, opts.names || MAKER_NAMES);
+  if(!P.names.length) return {ok:false, reason:"None of the character names are decodable for this group."};
+  // does a word practise the focus skill? (memoised — pools are re-scanned per slot)
+  const focusMemo = new Map();
+  const isFocus = w => {
+    if(!focus) return false;
+    if(!focusMemo.has(w)){ const r = analyseWord(w, taughtSet); focusMemo.set(w, r.cat==="ok" && r.need.includes(focus)); }
+    return focusMemo.get(w);
+  };
+  const glueOk = w => P.fits(w);
+
+  // which frames can this group read at all?
+  const usable = MAKER_FRAMES.filter(f=>{
+    const glue = f.replace(/\{[^}]+\}/g, " ").match(/[A-Za-z']+/g) || [];
+    if(!glue.every(glueOk)) return false;
+    const slots = [...f.matchAll(/\{(\w+)\}/g)].map(m=>m[1]);
+    return slots.every(s=>{
+      if(s==="a") return glueOk("a");                           // "an" is re-checked per draft
+      if(s==="V") return P.verb.length>0;
+      if(s==="N") return P.names.length>=1;
+      if(s==="N2") return P.names.length>=2;
+      return P[s] && P[s].length>0;
+    });
+  });
+  if(usable.length < 2) return {ok:false, reason:"Not enough decodable words for these skills yet — tick a few more (blends or digraphs open up lots)."};
+
+  const choose = arr => arr[Math.floor(rng()*arr.length)];
+  let best = null;
+  for(let attempt=0; attempt<40; attempt++){
+    const used = new Set();
+    const lead = choose(P.names);
+    const friend = choose(P.names.filter(x=>x!==lead)) || lead;
+    const fill = pool => {
+      let cands = pool.filter(w=>!used.has(w));
+      if(!cands.length) cands = pool;
+      const foc = focus ? cands.filter(isFocus) : [];
+      const w = (foc.length && rng()<0.85) ? choose(foc) : choose(cands);
+      used.add(w);
+      return w;
+    };
+    const sentences = [];
+    let frames = usable.slice(), prev = null;
+    let failed = false;
+    for(let s=0; s<n; s++){
+      let pool = frames.filter(f=>f!==prev);
+      if(!pool.length){ frames = usable.slice(); pool = frames.filter(f=>f!==prev); }
+      // with a focus, favour frames that have a slot the focus words can fill
+      if(focus && rng()<0.7){
+        const fp = pool.filter(f=>[...f.matchAll(/\{(\w+)\}/g)].some(m=>P[m[1]] && Array.isArray(P[m[1]]) && P[m[1]].some(isFocus)));
+        if(fp.length) pool = fp;
+      }
+      const frame = choose(pool);
+      frames = frames.filter(f=>f!==frame);                   // no frame twice until all are used
+      prev = frame;
+      const V = frame.includes("{V}") ? fill(P.verb) : "";
+      let out = frame.replace(/\{(\w+)\}/g, (m, slot)=>{
+        if(slot==="N") return (frame.includes("{N2}") || rng()<0.8) ? lead : friend;
+        if(slot==="N2") return friend===lead ? m : friend;
+        if(slot==="a") return "{a}";
+        if(slot==="V") return V;
+        return fill(P[slot]);
+      });
+      // a / an by the next word's first letter; either form must itself be allowed
+      out = out.replace(/\{a\}(\s+)([A-Za-z]+)/g, (m, sp, next)=>{
+        const art = /^[aeiou]/i.test(next) ? "an" : "a";
+        if(!glueOk(art)) failed = true;
+        return art + sp + next;
+      });
+      if(/[{}]/.test(out)) failed = true;
+      sentences.push(cap1(out));
+    }
+    if(failed) continue;
+    // lay it out two sentences to a line, like the sample passage
+    const lines = [];
+    for(let s=0; s<sentences.length; s+=2) lines.push(sentences.slice(s, s+2).join(" "));
+    const text = lines.join("\n");
+    // SAFETY GATE: the finished passage must re-score at 100% for this group
+    const st = computeStats(text, taughtSet);
+    if(st.nw!==0 || st.pct!==100 || st.ok===0) continue;
+    if(!heart && tokenize(text).some(t=>/^[A-Za-z']+$/.test(t) && analyseWord(t, taughtSet).cat==="tricky")) continue;
+    let focusPct = 0;
+    if(focus){
+      const okWords = tokenize(text).filter(t=>/^[A-Za-z']+$/.test(t) && analyseWord(t, taughtSet).cat==="ok");
+      focusPct = Math.round(okWords.filter(isFocus).length / okWords.length * 100);
+    }
+    const cand = {ok:true, text, focusPct, focusMet: !focus || focusPct>=40};
+    if(!best || cand.focusPct > best.focusPct) best = cand;
+    if(cand.focusMet) break;
+  }
+  return best || {ok:false, reason:"Couldn't build a passage that scores 100% for these skills — tick a few more."};
+}
+
 /* ---------- state ---------- */
 const DEFAULT_PRESET = "uk-early";
 const DEFAULT_TAUGHT = new Set(PRESETS.find(p=>p.id===DEFAULT_PRESET).skills);
@@ -1117,6 +1416,7 @@ function render(){
   buildTeachNext(amber);
   buildTeachPlan(amber);
   updateReportHead();
+  syncNewPassBtn();
   persistSession();                 // remember this passage + skill set for next visit
 }
 
@@ -1432,7 +1732,7 @@ function showEdit(on){
 }
 tabView.onclick=()=>{ text=editor.value||text; render(); showEdit(false); };
 tabEdit.onclick=()=>showEdit(true);
-editor.addEventListener('input',()=>{ text=editor.value; schedulePersist(); });
+editor.addEventListener('input',()=>{ text=editor.value; syncNewPassBtn(); schedulePersist(); });
 
 /* ---------- theme toggle ---------- */
 const root=document.documentElement;
@@ -1890,6 +2190,110 @@ function renderLibrary(){
   libList.appendChild(frag);
 }
 
+/* ============================================================
+   Passage maker UI (roadmap #7, stage 1)
+   Settings live in a small modal; the made passage is loaded straight into
+   the normal checker, so the teacher sees its 100% score and can edit it.
+   While the text is still exactly what the maker produced, a "New passage"
+   button in the passage header reshuffles with the same settings.
+   ============================================================ */
+const makerOverlay = document.getElementById('makerOverlay');
+const mkFocus = document.getElementById('mkFocus');
+const mkLen   = document.getElementById('mkLen');
+const mkHeart = document.getElementById('mkHeart');
+const mkNames = document.getElementById('mkNames');
+const mkMsg   = document.getElementById('mkMsg');
+const mkUsing = document.getElementById('mkUsing');
+const newPassBtn = document.getElementById('newPassBtn');
+const makerOpts = {focus:"", len:"medium", heart:true};
+let lastMade = null;                 // the text the maker last produced
+
+function syncNewPassBtn(){ newPassBtn.hidden = !(lastMade && text===lastMade); }
+
+function renderMakerForm(){
+  const preset = PRESETS.find(p=>p.id===presetSel.value);
+  mkUsing.textContent = preset && preset.id!=="custom"
+    ? preset.name
+    : `your custom selection (${taught.size} skill${taught.size!==1?'s':''})`;
+  // focus options: taught skills (CVC underlies every word, so it isn't a focus),
+  // each greyed out when the bank has no decodable word that practises it
+  const pools = makerPools(taught, true, []);
+  const bankWords = new Set(["thing","animal","place","adj","mood","verb","things","animals","verbs"].flatMap(k=>pools[k]));
+  if(!taught.has(makerOpts.focus)) makerOpts.focus = "";
+  mkFocus.innerHTML = "";
+  const none = document.createElement('option'); none.value=""; none.textContent="No focus — a mix of everything taught";
+  mkFocus.appendChild(none);
+  ALL_SKILL_IDS.forEach(id=>{
+    if(id==="cvc" || !taught.has(id)) return;
+    const n = [...bankWords].filter(w=>analyseWord(w, taught).need.includes(id)).length;
+    const o = document.createElement('option'); o.value=id;
+    o.textContent = n ? SKILLNAME[id] : `${SKILLNAME[id]} (no words yet)`;
+    o.disabled = !n;
+    mkFocus.appendChild(o);
+  });
+  if(makerOpts.focus && mkFocus.querySelector(`option[value="${makerOpts.focus}"]:not([disabled])`)) mkFocus.value = makerOpts.focus;
+  else { makerOpts.focus = ""; mkFocus.value = ""; }
+  mkLen.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.len===makerOpts.len)));
+  mkHeart.checked = makerOpts.heart;
+  const names = makerNames(known);
+  const own = new Set([...known].map(cap1));
+  const extra = names.filter(n=>!own.has(n));
+  const hint = extra.length===names.length ? "Add your own under Known words and they’ll star instead."
+    : extra.length ? `From your Known words, plus ${extra.join(", ")} so two can star.`
+    : "From your Known words.";
+  mkNames.innerHTML = `${names.map(escHtml).join(", ")}<span class="mk-hint">${escHtml(hint)}</span>`;
+  mkMsg.textContent = ""; mkMsg.className = "mk-msg";
+}
+
+function openMaker(){
+  if(!editor.hidden){ text = editor.value; render(); showEdit(false); }
+  renderMakerForm();
+  makerOverlay.hidden = false;
+  requestAnimationFrame(()=>makerOverlay.classList.add('open'));
+  document.getElementById('mkGo').focus();
+}
+function closeMaker(){
+  makerOverlay.classList.remove('open');
+  setTimeout(()=>{ makerOverlay.hidden = true; }, 170);
+}
+
+// make a passage with the current settings; returns false (and says why) on failure
+function runMaker(fromModal){
+  const focus = taught.has(makerOpts.focus) ? makerOpts.focus : "";
+  const res = makePassage({taught, focus, sentences:MAKER_LENGTHS[makerOpts.len],
+                           heart:makerOpts.heart, names:makerNames(known)});
+  if(!res.ok){
+    if(fromModal){ mkMsg.textContent = res.reason; mkMsg.className = "mk-msg warn"; }
+    else showToast(res.reason, true);
+    return false;
+  }
+  text = res.text; lastMade = res.text;
+  if(!editor.hidden) editor.value = text;
+  render();
+  showEdit(false);
+  const n = MAKER_LENGTHS[makerOpts.len];
+  if(focus && !res.focusMet){
+    showToast(`Made a new 100% decodable passage — but only ${res.focusPct}% of its words use ${SKILLNAME[focus]}. The word bank is thin for it at these skills.`, true);
+  } else {
+    showToast(`Made a new ${n}-sentence passage — 100% decodable${focus ? `, ${res.focusPct}% of words practise ${SKILLNAME[focus]}` : ""}.`);
+  }
+  return true;
+}
+
+document.getElementById('makerBtn').onclick = openMaker;
+document.getElementById('makerClose').onclick = closeMaker;
+makerOverlay.addEventListener('click', e=>{ if(e.target===makerOverlay) closeMaker(); });
+document.addEventListener('keydown', e=>{ if(e.key==="Escape" && !makerOverlay.hidden) closeMaker(); });
+mkFocus.addEventListener('change', ()=>{ makerOpts.focus = mkFocus.value; });
+mkLen.addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  makerOpts.len = b.dataset.len;
+  mkLen.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed', String(x===b)));
+});
+mkHeart.addEventListener('change', ()=>{ makerOpts.heart = mkHeart.checked; });
+document.getElementById('mkGo').onclick = ()=>{ if(runMaker(true)) closeMaker(); };
+newPassBtn.onclick = ()=>runMaker(false);
+
 applyTheme();
 renderKnown();
 render();
@@ -1906,6 +2310,7 @@ if (typeof module === "object" && module && module.exports) {
   module.exports = {
     analyseWord, tokenize, computeStats, computePlan,
     inflect, detectInflection, suggestFor, upgradeSkills, SKILLS_V,
+    makePassage, makerPools, makerNames, MAKER_BANK, MAKER_HEART, MAKER_FRAMES, MAKER_LENGTHS,
     PHASES, GRAPHEMES, VOWELS, CONS, TRICKY, PRESETS, SKILLNAME, ALL_SKILL_IDS,
     getKnown: () => known,
     setKnown: (s) => { known = s instanceof Set ? s : new Set(s); },
