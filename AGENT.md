@@ -69,7 +69,24 @@ teacher a text they shouldn't use — so engine trustworthiness comes first.
    **Stage 2 built (2026-09-29)** — themes (pets, farm, seaside, park, home, school) and
    sentences whose words agree: a lexicon gives each noun its adjectives, each animal its
    verbs and places, each verb where it can happen; corpus tests check agreement and
-   on-theme nouns in ~750 more passages. Next: stage 3 (print-ready layout, save to library).
+   on-theme nouns in ~750 more passages.
+   **Stage 3 built (2026-09-30)** — a made passage gets a decodable title ("Sam and the
+   Duck") and a made-passage bar (New passage · Pupil copy · Save). **Pupil copy** prints
+   a clean large-print sheet (name/date, title, passage, "read it three times", a teacher
+   footer with the live score and heart words to pre-teach). **Save** opens the library
+   with the title filled in; saved made passages are marked "✎ Made · theme".
+   **Stage 4 — custom themes (approved by Kyle, 2026-09-30; build next).** A teacher makes
+   their own theme: (a) name it and tick words from the built-in lexicon (they keep their
+   agreement data), and (b) type their own words under Things / Animals / Places. Typed
+   words carry no meaning data, so they only go into "safe" frames that make sense for
+   any word ("Sam has a ___.", "Sam fed the ___.", "The ___ can nap.", "Sam was in the
+   ___."), and never into plural frames (the engine can't spell mice/sheep). Store custom
+   themes like Known words (localStorage + library backup).
+   **Kyle's rule for teacher-typed words:** do NOT block a word that isn't decodable for
+   the ticked skills — use it, but **alert** the teacher clearly (when adding it and in the
+   made-passage toast), and let the normal checker show it amber. Built-in lexicon words
+   keep the strict 100% gate. Later option: per-word tick-boxes ("can swim?") to unlock
+   more frames.
    The inverse of the tool: instead of *"is this passage decodable?"*, generate one that
    **is**. **No network / no LLM**: a curated word bank + simple sentence frames +
    live `analyseWord()` verification, which *guarantees* decodability offline. A single
@@ -93,7 +110,7 @@ teacher a text they shouldn't use — so engine trustworthiness comes first.
    preset and assert 100% every time.
    **Stages:** (1) generator + minimal UI panel; (2) themes (animals, school, seaside…)
    and better sentence variety; (3) polish (print-ready layout, save to library).
-   One stage per night; stages 1 and 2 are done.
+   One stage per night; stages 1–3 are done, stage 4 (custom themes) is next.
 
 Prefer the top unbuilt item, but use judgement — if a lower item is clearly more
 valuable or lower-risk on a given night, take it. Build only **one** increment.

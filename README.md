@@ -80,6 +80,8 @@ The feature loop is closed; the focus now is the engine that everything rests on
    pets, farm, seaside, park, home, school — and sentences that make sense: a
    small lexicon gives each noun the adjectives that suit it, each animal its own
    verbs and places, each verb where it can happen, so it's "the pink pig digs in
-   the mud", never "Sam barks" or "a green cat"). Next: print/save polish
+   the mud", never "Sam barks" or "a green cat"). Stage 3 ✅ (a decodable title,
+   a large-print **Pupil copy** with a teacher footer of heart words to pre-teach,
+   and **Save** to the class library). Next: teacher-made custom themes
 
 Built and maintained autonomously by Claude Code. 🐸
