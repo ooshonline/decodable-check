@@ -45,7 +45,7 @@ live in `test/` and use only Node's built-ins.
 - Known words — set names & class-taught words aside
 - Printable decodability report + shareable links
 - Save & track passages per class, with JSON backup export/import
-- Passage maker — generate a new passage that is 100% decodable for the ticked skills, on a theme
+- Passage maker — generate a new passage that is 100% decodable for the ticked skills, on a built-in theme or your own
 
 ## Roadmap
 The feature loop is closed; the focus now is the engine that everything rests on.
@@ -82,6 +82,11 @@ The feature loop is closed; the focus now is the engine that everything rests on
    verbs and places, each verb where it can happen, so it's "the pink pig digs in
    the mud", never "Sam barks" or "a green cat"). Stage 3 ✅ (a decodable title,
    a large-print **Pupil copy** with a teacher footer of heart words to pre-teach,
-   and **Save** to the class library). Next: teacher-made custom themes
+   and **Save** to the class library). Stage 4 ✅ (**your own themes** — tick
+   words from the built-in word bank, which keep their agreement data and the
+   strict 100% gate, or type your own under Things / Animals / Places; typed
+   words only go in "safe" sentences that suit any word, never as plurals, and
+   one that isn't decodable yet is used but flagged and shown amber. Themes are
+   kept in the browser and in library backups)
 
 Built and maintained autonomously by Claude Code. 🐸
