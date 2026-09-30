@@ -532,6 +532,77 @@ for (const [form, need] of C.NOT_SILENT_E) {
 }
 
 /* ============================================================
+   16. PASSAGE MAKER, stage 3 — titles, pupil copies, saving.
+   A made passage's title goes on the pupil copy, so it must be as
+   decodable as the passage (no "the" when heart words are off, a name
+   the passage actually uses). The pupil sheet's teacher footer reports
+   the live score and the heart words to pre-teach. Library items keep
+   the "made" marker through export/import, and junk markers are dropped.
+   ============================================================ */
+{
+  const { makePassage, makerNames, pupilSheetHtml, sanitizeLibItem, MAKER_THEMES, MAKER_HEART } = engine;
+  const seeded = (seed) => () => {
+    seed |= 0; seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  let seed = 9000, titled = 0, withNoun = 0, heartTitled = 0;
+  for (const p of PRESETS.filter((x) => x.skills)) {
+    const taughtSet = new Set(p.skills);
+    for (const th of MAKER_THEMES) {
+      for (const heart of [true, false]) {
+        for (let k = 0; k < 3; k++) {
+          freshKnown();
+          const res = makePassage({ taught: taughtSet, theme: th.id, sentences: 5, heart,
+                                    names: makerNames(new Set()), rng: seeded(seed++) });
+          if (!res.ok) continue;
+          const tag = `TITLE ${p.id} ${th.id || "any"} heart=${heart} #${k}`;
+          check(`${tag} has a title`, typeof res.title === "string" && res.title.length > 0, JSON.stringify(res));
+          titled++;
+          if (heart) { heartTitled++; if (/(^The | and the )/.test(res.title)) withNoun++; }
+          const st = computeStats(res.title, taughtSet);
+          check(`${tag} title decodable`, st.pct === 100 && st.nw === 0,
+            `${JSON.stringify(res.title)} scored ${st.pct}%`);
+          const hearts = tokenize(res.title).filter((w) => /^[A-Za-z]+$/.test(w) && analyseWord(w, taughtSet).cat === "tricky");
+          check(`${tag} title heart words`, heart ? hearts.every((w) => MAKER_HEART.has(w.toLowerCase())) : hearts.length === 0,
+            `${JSON.stringify(res.title)} uses ${hearts.join(", ")}`);
+          const lead = res.title.split(" ")[0];
+          check(`${tag} title name is in the passage`, new RegExp(`\\b${lead}\\b`).test(res.text),
+            `${lead} not in ${JSON.stringify(res.text)}`);
+          const noun = (res.title.match(/ and the (\w+)$/) || [])[1];
+          if (noun) check(`${tag} title noun is in the passage`, new RegExp(`\\b${noun.toLowerCase()}`).test(res.text.toLowerCase()),
+            `${noun} not in ${JSON.stringify(res.text)}`);
+        }
+      }
+    }
+  }
+  check("TITLE titles made", titled > 150, `only ${titled}`);
+  // with heart words on ("the" allowed), most titles name an animal or thing
+  check("TITLE most titles name an animal or thing", withNoun > heartTitled * 0.8, `${withNoun}/${heartTitled}`);
+
+  // pupil sheet: title, lines, live score, heart words, escaping
+  freshKnown();
+  const ukE = taughtFor("uk-early");
+  const sheet = pupilSheetHtml("The cat sat.\nSam said, \"Run!\"", "Sam and the Cat", ukE, "UK Reception");
+  check("PUPIL sheet title", sheet.includes('<h1 class="ps-title">Sam and the Cat</h1>'), sheet);
+  check("PUPIL sheet one <p> per line", (sheet.match(/<p>/g) || []).length === 2, sheet);
+  check("PUPIL sheet escapes quotes", sheet.includes("&quot;Run!&quot;"), sheet);
+  check("PUPIL sheet 100% footer", /100% decodable for UK Reception/.test(sheet), sheet);
+  check("PUPIL sheet heart words", /pre-teach: the, said/.test(sheet), sheet);
+  const amber = pupilSheetHtml("The goat can run.", "", ukE, "UK Reception");
+  check("PUPIL sheet warns on amber", /1 word needs an untaught skill/.test(amber) && !/ps-title/.test(amber), amber);
+  check("PUPIL sheet escapes html", !pupilSheetHtml("<b>hi</b>", "<i>x</i>", ukE, "S").includes("<b>hi"), "unescaped");
+
+  // library items keep the made marker; junk markers are dropped
+  const base = { text: "The cat sat.", skills: ["cvc"], title: "T", klass: "K" };
+  check("LIB keeps made theme", sanitizeLibItem({ ...base, made: "seaside" }).made === "seaside", "dropped");
+  check("LIB keeps made any", sanitizeLibItem({ ...base, made: "any" }).made === "any", "dropped");
+  check("LIB drops junk made", !("made" in sanitizeLibItem({ ...base, made: "<script>" })), "kept junk");
+  check("LIB no made on hand-typed", !("made" in sanitizeLibItem(base)), "made appeared");
+}
+
+/* ============================================================
    report
    ============================================================ */
 const line = "─".repeat(56);
