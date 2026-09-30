@@ -399,6 +399,139 @@ for (const [form, need] of C.NOT_SILENT_E) {
 }
 
 /* ============================================================
+   15. PASSAGE MAKER, stage 2 — themes and sentences that make sense.
+   Every themed passage is still 100% (same gate as section 14), a theme
+   that can't be filled refuses clearly instead of drifting off-theme,
+   and the words in each sentence agree: an adjective suits its noun
+   (never a green cat), an animal only does its own verbs, a verb only
+   happens "in the ___" where it can, names never bark or chirp, clouds
+   and gates are never owned, bugs are never fed.
+   ============================================================ */
+{
+  const { makePassage, makerNames, makerThemeReady, MAKER_THEMES, MAKER_BANK,
+          MK_THING, MK_ANIMAL, MK_PLACE, MK_VERB, inflect } = engine;
+  const seeded = (seed) => () => {
+    seed |= 0; seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  // surface form -> lexicon entry (singular and plural nouns, base and -s verbs)
+  const noun = new Map(), verb = new Map();
+  for (const [w, e] of MK_THING) { noun.set(w, { ...e, animal: false }); noun.set(inflect(w, "s"), { ...e, animal: false }); }
+  for (const [w, e] of MK_ANIMAL) { noun.set(w, { ...e, animal: true }); noun.set(inflect(w, "s"), { ...e, animal: true }); }
+  for (const [w, e] of MK_VERB) { verb.set(w, e); verb.set(inflect(w, "s"), e); }
+  const adjs = new Set(MAKER_BANK.adj);
+  const at = (list, pl) => list.includes(MK_PLACE.get(pl).kind) || list.includes(pl);
+  const names = new Set(["Sam", "Meg", "Tom", "Pip", "Ben", "Kit"]);
+
+  // returns a list of agreement problems in one made passage
+  const disagreements = (text) => {
+    const bad = [];
+    for (const sent of text.split(/(?<=[.!?]"?)\s+/)) {
+      const w = sent.replace(/[^A-Za-z' ]/g, " ").split(/\s+/).filter(Boolean);
+      const lw = w.map((x) => x.toLowerCase());
+      lw.forEach((x, i) => {
+        const nx = lw[i + 1];
+        // adjective + noun
+        if (adjs.has(x) && noun.has(nx) && !noun.get(nx).adj.includes(x)) bad.push(`"${x} ${nx}"`);
+        // animal + (can) verb
+        if (noun.has(x) && noun.get(x).animal) {
+          const v = nx === "can" ? lw[i + 2] : nx;
+          if (verb.has(v) && !noun.get(x).verbs.includes(verb.get(v).w)) bad.push(`"${x} ${v}"`);
+        }
+        // a name never does an animals-only verb
+        if (names.has(w[i]) && verb.has(nx) && !verb.get(nx).people) bad.push(`"${w[i]} ${nx}"`);
+        // "<verb> in the <place>" happens where the verb can
+        if (verb.has(x) && nx === "in" && lw[i + 2] === "the" && MK_PLACE.has(lw[i + 3])
+            && !at(verb.get(x).where, lw[i + 3])) bad.push(`"${x} in the ${lw[i + 3]}"`);
+        if (x === "in" && nx === "the" && MK_PLACE.get(lw[i + 2])?.noIn) bad.push(`"in the ${lw[i + 2]}"`);
+      });
+      // "The X is Y." / "Is the X Y?" / "My X is Y."
+      const m = sent.match(/^(?:The|My) (\w+) is (\w+)[.!?]$/) || sent.match(/^Is the (\w+) (\w+)\?$/);
+      if (m) {
+        const [, n, a] = m;
+        // (tent is both a thing and a place — either reading may license it)
+        const ok = (noun.has(n) && noun.get(n).adj.includes(a)) || (MK_PLACE.has(n) && MK_PLACE.get(n).adj.includes(a));
+        if ((noun.has(n) || MK_PLACE.has(n)) && !ok) bad.push(`"${n} is ${a}"`);
+      }
+      // "A X is in the P." — the animal lives there
+      const h = sent.match(/^An? (\w+) is in the (\w+)\./);
+      if (h && noun.has(h[1]) && !at(noun.get(h[1]).where, h[2])) bad.push(`"${h[1]} in the ${h[2]}"`);
+      // an animal subject + verb + place: it can be there
+      const av = sent.match(/^The (\w+) (\w+) in the (\w+)\./);
+      if (av && noun.has(av[1]) && noun.get(av[1]).animal && !at(noun.get(av[1]).where, av[3])) bad.push(`"${av[1]} … ${av[3]}"`);
+      for (const x of lw) {
+        if (noun.has(x) && noun.get(x).noOwn && /\b(has|got|had|my)\b/i.test(sent)) bad.push(`owns "${x}"`);
+        if (noun.has(x) && noun.get(x).noFeed && /\bfed\b/.test(sent)) bad.push(`fed "${x}"`);
+      }
+    }
+    return bad;
+  };
+
+  // the validator itself catches the nonsense stage 1 could make
+  for (const t of ["Sam has a green cat.", "The dog chirps.", "Meg barks.", "Tom swims in the shed.",
+                   "The hat is sad.", "Sam got ten clouds.", "Kit fed six bugs.", "We can dig in the farm.",
+                   "A crab is in the barn.", "The sea is sunny."]) {
+    check(`AGREE validator flags ${JSON.stringify(t)}`, disagreements(t).length > 0, "not flagged");
+  }
+  check("AGREE validator passes a good sentence",
+    disagreements("The pink pig digs in the mud. Sam fed the duck. The pond is deep.").length === 0,
+    disagreements("The pink pig digs in the mud. Sam fed the duck. The pond is deep.").join(", "));
+
+  // every lexicon cross-reference points at a real entry
+  for (const [w, e] of MK_ANIMAL) {
+    for (const v of e.verbs) check(`LEX ${w} verb "${v}" exists`, MK_VERB.has(v), "unknown verb");
+    for (const p of e.where) check(`LEX ${w} place "${p}" exists`, /^[A-Z]$/.test(p) || MK_PLACE.has(p), "unknown place");
+  }
+  for (const [w, e] of MK_VERB) for (const p of e.where)
+    check(`LEX verb ${w} place "${p}" exists`, /^[A-Z]$/.test(p) || MK_PLACE.has(p), "unknown place");
+  for (const t of MAKER_THEMES.filter((x) => x.id)) {
+    const tagged = [...MK_THING.values(), ...MK_ANIMAL.values(), ...MK_PLACE.values()].filter((e) => e.themes.includes(t.tag));
+    check(`LEX theme ${t.id} has 15+ words`, tagged.length >= 15, `only ${tagged.length}`);
+  }
+
+  let made = 0, refused = 0, seed = 5000;
+  for (const p of PRESETS.filter((x) => x.skills)) {
+    const taughtSet = new Set(p.skills);
+    for (const th of MAKER_THEMES) {
+      for (const heart of [true, false]) {
+        const ready = makerThemeReady(taughtSet, heart, th.id);
+        for (const n of [3, 5, 8]) {
+          for (let k = 0; k < 3; k++) {
+            freshKnown();
+            const res = makePassage({ taught: taughtSet, theme: th.id, sentences: n, heart,
+                                      names: makerNames(new Set()), rng: seeded(seed++) });
+            const tag = `THEME ${p.id} ${th.id || "any"} heart=${heart} n=${n} #${k}`;
+            check(`${tag} made iff ready`, res.ok === ready, res.ok ? "made but not ready" : res.reason);
+            if (!res.ok) { refused++; check(`${tag} says why`, /try Any theme|tick a few more/.test(res.reason), res.reason); continue; }
+            made++;
+            const st = computeStats(res.text, taughtSet);
+            check(`${tag} 100%`, st.pct === 100 && st.nw === 0 && st.ok > 0,
+              `scored ${st.pct}% nw=${st.nw}: ${JSON.stringify(res.text)}`);
+            const bad = disagreements(res.text);
+            check(`${tag} words agree`, bad.length === 0, `${bad.join(", ")} in ${JSON.stringify(res.text)}`);
+            // off-theme nouns never appear in a themed passage
+            if (th.id) {
+              const off = res.text.toLowerCase().match(/[a-z]+/g).filter((x) => {
+                const e = noun.get(x) || MK_PLACE.get(x);
+                return e && !e.themes.includes(th.tag) && !adjs.has(x) && !verb.has(x);
+              });
+              check(`${tag} on theme`, off.length === 0, `off-theme: ${off.join(", ")} in ${JSON.stringify(res.text)}`);
+            }
+          }
+        }
+      }
+    }
+  }
+  check("THEME passages made", made > 400, `only ${made}`);
+  // every theme works for a Year 1 group, heart words on or off
+  for (const th of MAKER_THEMES)
+    for (const heart of [true, false])
+      check(`THEME ${th.id || "any"} ready @ uk-y1 heart=${heart}`, makerThemeReady(taughtFor("uk-y1"), heart, th.id), "not ready");
+}
+
+/* ============================================================
    report
    ============================================================ */
 const line = "─".repeat(56);

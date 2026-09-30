@@ -65,7 +65,11 @@ teacher a text they shouldn't use — so engine trustworthiness comes first.
    or propose it** until Kyle raises it again.
 7. **Passage maker — IN PROGRESS, spec approved (Kyle delegated the call, 2026-09-28).**
    **Stage 1 built** (generator + "Make a passage" modal + "New passage" reshuffle, with
-   corpus tests generating ~1,000 passages across every preset — all 100%). Next: stage 2.
+   corpus tests generating ~1,000 passages across every preset — all 100%).
+   **Stage 2 built (2026-09-29)** — themes (pets, farm, seaside, park, home, school) and
+   sentences whose words agree: a lexicon gives each noun its adjectives, each animal its
+   verbs and places, each verb where it can happen; corpus tests check agreement and
+   on-theme nouns in ~750 more passages. Next: stage 3 (print-ready layout, save to library).
    The inverse of the tool: instead of *"is this passage decodable?"*, generate one that
    **is**. **No network / no LLM**: a curated word bank + simple sentence frames +
    live `analyseWord()` verification, which *guarantees* decodability offline. A single
@@ -89,7 +93,7 @@ teacher a text they shouldn't use — so engine trustworthiness comes first.
    preset and assert 100% every time.
    **Stages:** (1) generator + minimal UI panel; (2) themes (animals, school, seaside…)
    and better sentence variety; (3) polish (print-ready layout, save to library).
-   Build **stage 1** first, one stage per night.
+   One stage per night; stages 1 and 2 are done.
 
 Prefer the top unbuilt item, but use judgement — if a lower item is clearly more
 valuable or lower-risk on a given night, take it. Build only **one** increment.
