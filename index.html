@@ -996,6 +996,28 @@ function analyseWord(raw, taught){
     }
     i += g.length;
   }
+  // Long vowels in closed syllables (kind, child, old, most, roll) and the
+  // silent l of walk / half / calm / folk — see longClosedVowel() below. The
+  // vowel is re-filed as `adv`; a silent l stops being a consonant, so it can't
+  // chain into a false "lk"/"lf" blend. The nd/ld/lt/st after a long vowel IS
+  // a real final blend, so those still count.
+  let hint = "";
+  const lcv = longClosedVowel(core);
+  if(lcv){
+    let off = 0;
+    for(let k=0; k<parts.length; k++){
+      const p = parts[k];
+      if(lcv.at >= off && lcv.at < off + p.g.length){
+        p.skill = "adv";
+        if(lcv.silentL && parts[k+1] && parts[k+1].g==="l"){ parts[k+1].skill="adv"; parts[k+1].cons=false; }
+        need.add("adv");
+        hint = lcv.hint;
+        break;
+      }
+      off += p.g.length;
+    }
+  }
+
   const pairs = scanConsonantPairs(parts);
   if(pairs.blend) need.add("blend");
   if(pairs.split) need.add("syll");
@@ -1006,7 +1028,48 @@ function analyseWord(raw, taught){
   // determine decodability
   const missing = [...need].filter(s=>!taught.has(s));
   const cat = missing.length ? "new" : "ok";
-  return {cat, need:[...need], missing, magicE, ending, parts};
+  return {cat, need:[...need], missing, magicE, ending, parts, hint};
+}
+
+/* ---------- long vowels in closed syllables ----------
+   A closed syllable (vowel + consonants) normally has a SHORT vowel, which is
+   all the engine assumed — so kind, find, child, wild, old, cold, gold, told,
+   bolt, most, post, roll and scroll scored as plain short-vowel CVC + blend.
+   They aren't: the vowel is LONG (/kīnd/, /ōld/, /mōst/, /rōl/). A child taught
+   only CVC and blends reads "kind" as /kĭnd/ — a FALSE green on some of the
+   commonest words in early texts (find, kind, old, cold, most, child).
+   Programs teach these as their own pattern (UFLI's "closed syllable
+   exceptions" -ild -ind -old -olt -ost -oll; UK Phase 5 alternative
+   pronunciations — i as /igh/ in find, o as /oa/ in cold), after the core
+   code, so they're filed as advanced code (`adv`), like soft c and -dge.
+   The silent-l words are the same story: walk, talk, chalk, half, calf, calm,
+   palm, folk and yolk have a silent l and an a/o that isn't short — the l
+   isn't sounded, so the old "lk"/"lf" blend was wrong too.
+   Each pattern is checked against the END of the base word (after an
+   inflection is stripped: finding -> find, rolled -> roll), plus a few
+   suffixes that keep the long vowel (kindness, wildest, golden, colder,
+   mostly, roller). Only patterns that are reliably long are taken — the
+   short exceptions are listed (wind — the noun; doll; build; compost), and
+   -ost is limited to most/post/host/ghost because cost/lost/frost are short.
+   Ambiguous cases stay as before: -ind/-ild + "er" (finder vs. hinder,
+   wilder vs. bewilder) and -oll + "en" (swollen vs. pollen). The listed
+   short exceptions and the ambiguous cases keep their short-vowel reading. */
+const CLOSED_SHORT = new Set(["wind", "doll", "moll", "loll", "gild", "compost"]);
+function longClosedVowel(core){
+  const m = core.match(/^(.*?)(ild|ind)(est|ly|ness|less)?$/)
+         || core.match(/^(.*?)(old|olt)(er|est|en|ly|ness)?$/)
+         || core.match(/^(.*?)(oll)(er|ers)?$/)
+         || core.match(/^(.*?[mph])(ost)(ly|er|ess)?$/);
+  if(m){
+    const stem = m[1] + m[2];
+    if(CLOSED_SHORT.has(stem) || (m[2]==="ild" && /u$/.test(m[1]))) return null;  // build, guild
+    const v = m[2][0];
+    return {at:m[1].length, silentL:false,
+      hint:`the ${v} in "${stem}" is long ${v==="i"?"/ī/":"/ō/"} (a closed-syllable exception)`};
+  }
+  const s = core.match(/^(.*?)(alk|alf|alm|olk)$/);
+  if(s) return {at:s[1].length, silentL:true, hint:`the l in "${core}" is silent`};
+  return null;
 }
 
 /* ---------- blends vs. syllable boundaries ----------
@@ -2053,7 +2116,8 @@ function buildInfo(word,res){
     return "OK|Decodable using: "+(skills.length?skills.join(", "):"basic CVC")+".";
   }
   const miss=res.missing.map(s=>SKILLNAME[s]||s);
-  return "NEW|Needs a skill you haven't ticked: "+miss.join(", ")+".";
+  const why = res.hint && res.missing.includes("adv") ? " — "+res.hint : "";
+  return "NEW|Needs a skill you haven't ticked: "+miss.join(", ")+why+".";
 }
 
 function updateScore(ok,nw,tr,kn){

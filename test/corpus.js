@@ -338,6 +338,41 @@ const DECODABLE = [
   ["monkey", ["blend", "team"]],                            // glued "nk" /ŋk/ stays flagged
   ["else", ["blend"]], ["rinse", ["blend"]],                // final e is silent: ls/ns is a final cluster
   ["hand", ["blend"]], ["stop", ["blend"]],                 // word-edge pairs are true blends
+
+  // --- long vowels in closed syllables = advanced code (roadmap #2 hardening).
+  //     kind/find/child/old/cold/most/roll have a LONG vowel in a closed
+  //     syllable — UFLI's "closed syllable exceptions" (-ild -ind -old -olt
+  //     -ost -oll), UK Phase 5's i=/igh/ (find) and o=/oa/ (cold). The engine
+  //     read them as short CVC + blend: a FALSE green for any group with
+  //     blends but no advanced code. The final nd/ld/lt/st IS a real blend,
+  //     so it still counts; roll's ll still scores as a double.
+  ["kind", ["adv", "blend"]], ["find", ["adv", "blend"]], ["mind", ["adv", "blend"]],
+  ["blind", ["adv", "blend"]], ["behind", ["adv", "blend"]], ["remind", ["adv", "blend"]],
+  ["wild", ["adv", "blend"]], ["mild", ["adv", "blend"]], ["child", ["adv", "blend", "digraph"]],
+  ["old", ["adv", "blend"]], ["cold", ["adv", "blend"]], ["gold", ["adv", "blend"]],
+  ["told", ["adv", "blend"]], ["hold", ["adv", "blend"]], ["scold", ["adv", "blend"]],
+  ["bolt", ["adv", "blend"]], ["colt", ["adv", "blend"]], ["jolt", ["adv", "blend"]],
+  ["most", ["adv", "blend"]], ["post", ["adv", "blend"]], ["host", ["adv", "blend"]],
+  ["ghost", ["adv", "blend"]],
+  ["roll", ["adv", "double"]], ["troll", ["adv", "blend", "double"]], ["scroll", ["adv", "blend", "double"]],
+  //     inflected / suffixed forms keep the long vowel:
+  ["finding", ["adv", "blend", "endings"]], ["kinds", ["adv", "blend", "endings"]],
+  ["holding", ["adv", "blend", "endings"]], ["bolted", ["adv", "blend", "endings"]],
+  ["rolled", ["adv", "double", "endings"]], ["posts", ["adv", "blend", "endings"]],
+  ["kindness", ["adv", "blend", "double"]], ["wildest", ["adv", "blend", "syll"]],
+  ["golden", ["adv", "syll"]], ["colder", ["adv", "rctrl", "syll"]], ["mostly", ["adv", "blend", "team"]],
+  //     silent l (walk, half, calm, folk): the l isn't sounded, so there is
+  //     no lk/lf/lm blend — the a/o + silent l is the advanced pattern.
+  ["walk", ["adv"]], ["talk", ["adv"]], ["chalk", ["adv", "digraph"]], ["stalk", ["adv", "blend"]],
+  ["half", ["adv"]], ["calf", ["adv"]], ["calm", ["adv"]], ["palm", ["adv"]],
+  ["folk", ["adv"]], ["yolk", ["adv"]], ["walked", ["adv", "endings"]],
+  //     guards — each KEEPS its short vowel (no adv):
+  ["wind", ["blend"]],                                      // the noun (a windy day): short i
+  ["children", ["blend", "digraph"]],                       // chil·dren: short i
+  ["build", ["blend"]],                                     // u+i, not the -ild pattern
+  ["doll", ["double"]], ["pollen", ["double"]],             // short o before ll
+  ["lost", ["blend"]], ["cost", ["blend"]], ["frost", ["blend"]], // short -ost
+  ["milk", ["blend"]], ["help", ["blend"]], ["belt", ["blend"]], // l is sounded: a real blend
 ];
 
 /* ---------------------------------------------------------------
@@ -437,6 +472,23 @@ const NEEDS_SKILL = [
   ["crystal", "uk-y1", ["adv"]],
   ["type", "uk-early", ["adv", "magice"]],  // y-vowel AND magic-e both untaught
   ["gym", "cvc", ["adv"]],                  // no spurious blend: only the y blocks it
+  // Long vowels in closed syllables + silent l are advanced code. Each of these
+  // was a FALSE GREEN for every preset with blends (read as short CVC + blend):
+  // a Reception group was told "kind", "old" and "walk" were decodable.
+  ["kind", "uk-early", ["adv"]],
+  ["find", "uk-early", ["adv"]],
+  ["child", "uk-early", ["adv"]],
+  ["old", "uk-early", ["adv"]],
+  ["cold", "uk-early", ["adv"]],
+  ["most", "uk-early", ["adv"]],
+  ["roll", "uk-early", ["adv"]],
+  ["finding", "uk-early", ["adv"]],         // endings taught; the long i is not
+  ["walk", "uk-early", ["adv"]],
+  ["half", "uk-early", ["adv"]],
+  ["told", "sor-k", ["adv"]],
+  ["walk", "cvc", ["adv"]],                 // no spurious lk blend: only the silent l blocks it
+  ["kind", "ufli-g1", ["adv"]],
+  ["gold", "uk-y1", ["adv"]],
 ];
 
 /* A "cvc" convenience preset (cvc + double) used by NEEDS_SKILL and
@@ -453,6 +505,9 @@ const CVC_SYLL_PRESET = ["cvc", "double", "syll"];
    --------------------------------------------------------------- */
 const DECODABLE_UNDER = [
   ["cat", "uk-early"], ["hand", "uk-early"], ["ship", "uk-early"],
+  // short-vowel neighbours of the closed-syllable exceptions stay decodable
+  ["wind", "uk-early"], ["lost", "uk-early"], ["doll", "uk-early"], ["milk", "uk-early"],
+  ["children", "uk-early"], ["kind", "all"], ["walk", "all"], ["roll", "all"],
   ["jumps", "uk-early"], ["duck", "uk-early"], ["glad", "uk-early"],
   ["off", "uk-early"], ["fast", "uk-early"],
   ["cat", "cvc"], ["hen", "cvc"], ["sun", "cvc"], ["bell", "cvc"],
