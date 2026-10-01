@@ -75,7 +75,7 @@ teacher a text they shouldn't use — so engine trustworthiness comes first.
    a clean large-print sheet (name/date, title, passage, "read it three times", a teacher
    footer with the live score and heart words to pre-teach). **Save** opens the library
    with the title filled in; saved made passages are marked "✎ Made · theme".
-   **Stage 4 — custom themes (approved by Kyle, 2026-09-30; build next).** A teacher makes
+   **Stage 4 — custom themes (approved by Kyle, 2026-09-30; built 2026-09-30, in PR).** A teacher makes
    their own theme: (a) name it and tick words from the built-in lexicon (they keep their
    agreement data), and (b) type their own words under Things / Animals / Places. Typed
    words carry no meaning data, so they only go into "safe" frames that make sense for
@@ -110,7 +110,9 @@ teacher a text they shouldn't use — so engine trustworthiness comes first.
    preset and assert 100% every time.
    **Stages:** (1) generator + minimal UI panel; (2) themes (animals, school, seaside…)
    and better sentence variety; (3) polish (print-ready layout, save to library).
-   One stage per night; stages 1–3 are done, stage 4 (custom themes) is next.
+   One stage per night; stages 1–4 are built (stage 4 awaiting review). The passage
+   maker's spec is now complete — after it lands, prefer engine hardening / polish
+   (e.g. the "Later option" per-word tick-boxes only if Kyle asks for them).
 
 Prefer the top unbuilt item, but use judgement — if a lower item is clearly more
 valuable or lower-risk on a given night, take it. Build only **one** increment.

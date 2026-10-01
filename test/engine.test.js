@@ -398,6 +398,7 @@ for (const [form, need] of C.NOT_SILENT_E) {
   check("MAKER pools are engine-verified", leak.length === 0, `leaked: ${leak.join(", ")}`);
 }
 
+let disagreeFn = null;   // section 15's agreement validator, reused by section 17
 /* ============================================================
    15. PASSAGE MAKER, stage 2 — themes and sentences that make sense.
    Every themed passage is still 100% (same gate as section 14), a theme
@@ -469,6 +470,7 @@ for (const [form, need] of C.NOT_SILENT_E) {
     return bad;
   };
 
+  disagreeFn = disagreements;
   // the validator itself catches the nonsense stage 1 could make
   for (const t of ["Sam has a green cat.", "The dog chirps.", "Meg barks.", "Tom swims in the shed.",
                    "The hat is sad.", "Sam got ten clouds.", "Kit fed six bugs.", "We can dig in the farm.",
@@ -600,6 +602,187 @@ for (const [form, need] of C.NOT_SILENT_E) {
   check("LIB keeps made any", sanitizeLibItem({ ...base, made: "any" }).made === "any", "dropped");
   check("LIB drops junk made", !("made" in sanitizeLibItem({ ...base, made: "<script>" })), "kept junk");
   check("LIB no made on hand-typed", !("made" in sanitizeLibItem(base)), "made appeared");
+}
+
+/* ============================================================
+   17. PASSAGE MAKER, stage 4 — custom themes.
+   A teacher's theme = words ticked from the lexicon (strict 100% gate,
+   full agreement) + words typed under Things / Animals / Places. Typed
+   words go ONLY into the safe frames, never as plurals, and — Kyle's
+   rule — are used even when not decodable yet: they're the only words
+   allowed to be amber, and every one of them is reported in `flagged`.
+   Themes survive storage and backup files through normCustomTheme.
+   ============================================================ */
+{
+  const { makePassage, makerNames, makerThemeReady, normCustomTheme, customThemeSize, MAKER_SAFE_FRAMES,
+          MK_THING, MK_ANIMAL, MK_PLACE, inflect, libraryPayload, importLibraryData, sanitizeLibItem,
+          madeThemeLabel, getCustomThemes, setCustomThemes } = engine;
+  const seeded = (seed) => () => {
+    seed |= 0; seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const words = (thing, animal, place) => ({ thing, animal, place });
+  const E = words([], [], []);
+
+  // --- normalisation: the one gate for editor, storage and backups ---
+  check("CUSTOM rejects non-objects", normCustomTheme(null) === null && normCustomTheme("x") === null, "accepted");
+  check("CUSTOM rejects bad id", normCustomTheme({ id: "farm", name: "x" }) === null
+    && normCustomTheme({ id: "my-<b>", name: "x" }) === null, "accepted");
+  const n1 = normCustomTheme({ id: "my-abc", name: "  Mini   beasts ",
+    words: words(["hat", "nope"], ["duck", "hat"], ["mud"]),
+    own: words(["Twig", "hat", "a", "web!", "stick", "stick", 5, "x".repeat(21)], ["spider", "cat"], ["log"]) });
+  check("CUSTOM name trimmed", n1.name === "Mini beasts", n1.name);
+  check("CUSTOM ticked words must be lexicon words of that role",
+    n1.words.thing.join() === "hat" && n1.words.animal.join() === "cat,duck", JSON.stringify(n1.words));
+  check("CUSTOM typed lexicon word moves to ticked", n1.words.thing.includes("hat") && !n1.own.thing.includes("hat")
+    && n1.words.animal.includes("cat") && !n1.own.animal.includes("cat"), JSON.stringify(n1));
+  check("CUSTOM typed words lower-cased, junk dropped, deduped", n1.own.thing.join() === "stick,twig", n1.own.thing.join());
+  check("CUSTOM size", customThemeSize(n1) === 1 + 2 + 1 + 2 + 1 + 1, String(customThemeSize(n1)));
+  check("CUSTOM default name", normCustomTheme({ id: "my-z" }).name === "My theme", normCustomTheme({ id: "my-z" }).name);
+  const many = normCustomTheme({ id: "my-m", own: words(Array.from({ length: 60 }, (_, i) => "w" + "abcdefghij"[i % 10] + "k".repeat(1 + Math.floor(i / 10))), [], []) });
+  check("CUSTOM typed words capped at 40", many.own.thing.length === 40, String(many.own.thing.length));
+
+  // --- a ticked-only theme behaves exactly like a built-in one ---
+  const farmish = normCustomTheme({ id: "my-farm", name: "Our farm",
+    words: words(["bucket", "cap", "bag", "net"], ["pig", "hen", "duck", "cat", "dog", "rat"], ["mud", "pond", "barn", "shed", "yard"]) });
+  const inFarmish = new Set([...farmish.words.thing, ...farmish.words.animal, ...farmish.words.place]);
+  const lexNoun = new Map();
+  for (const lex of [MK_THING, MK_ANIMAL, MK_PLACE]) for (const w of lex.keys()) { lexNoun.set(w, w); lexNoun.set(inflect(w, "s"), w); }
+  let seed = 13000, madeTicked = 0;
+  for (const p of PRESETS.filter((x) => x.skills)) {
+    const taughtSet = new Set(p.skills);
+    for (const heart of [true, false]) {
+      const ready = makerThemeReady(taughtSet, heart, farmish);
+      for (const n of [3, 5, 8]) {
+        freshKnown();
+        const res = makePassage({ taught: taughtSet, theme: farmish, sentences: n, heart, names: makerNames(new Set()), rng: seeded(seed++) });
+        const tag = `CUSTOM-TICKED ${p.id} heart=${heart} n=${n}`;
+        check(`${tag} made iff ready`, res.ok === ready, res.ok ? "made but not ready" : res.reason);
+        if (!res.ok) { check(`${tag} says why`, /add a few more words/.test(res.reason), res.reason); continue; }
+        madeTicked++;
+        const st = computeStats(res.text, taughtSet);
+        check(`${tag} 100%`, st.pct === 100 && st.nw === 0, `${st.pct}% ${JSON.stringify(res.text)}`);
+        check(`${tag} nothing flagged`, res.flagged.length === 0, res.flagged.join());
+        const bad = disagreeFn(res.text);
+        check(`${tag} words agree`, bad.length === 0, `${bad.join(", ")} in ${JSON.stringify(res.text)}`);
+        const offNouns = res.text.toLowerCase().match(/[a-z]+/g).filter((x) => lexNoun.has(x) && !inFarmish.has(lexNoun.get(x)));
+        check(`${tag} only the theme's nouns`, offNouns.length === 0, `off-theme: ${offNouns.join(", ")} in ${JSON.stringify(res.text)}`);
+      }
+    }
+  }
+  check("CUSTOM-TICKED passages made", madeTicked > 20, `only ${madeTicked}`);
+
+  // --- typed words: safe frames only, never plural, amber allowed & flagged ---
+  const safeRes = MAKER_SAFE_FRAMES.map((f) => new RegExp("^" + f
+    .replace(/[.!?]/g, (c) => "\\" + c)
+    .replace(/\{N2?\}/g, "[A-Z][a-z]+").replace(/\{a\}/g, "an?")
+    .replace(/\{t(thing|animal|place)\}/g, "(?<t>[a-z]+)") + "$"));
+  const bugs = normCustomTheme({ id: "my-bugs", name: "Minibeasts",
+    words: words(["net", "web", "leaf"], ["bug", "bee", "snail", "slug"], ["hedge"]),
+    own: words(["stick", "twig", "pebble"], ["spider", "worm", "ant", "beetle", "ladybird"], ["grass", "garden", "woods"]) });
+  check("CUSTOM test theme's typed words are really typed", customThemeSize(bugs) === 3 + 4 + 1 + 3 + 5 + 3, JSON.stringify(bugs));
+  const typedAll = new Set([...bugs.own.thing, ...bugs.own.animal, ...bugs.own.place]);
+  const typedPlurals = new Set([...typedAll].flatMap((w) => [w + "s", w + "es", inflect(w, "s")]));
+  let madeTyped = 0, sawTyped = 0, sawFlag = 0;
+  for (const p of PRESETS.filter((x) => x.skills)) {
+    const taughtSet = new Set(p.skills);
+    for (const heart of [true, false]) {
+      for (const n of [3, 5, 8]) {
+        for (let k = 0; k < 4; k++) {
+          freshKnown();
+          const res = makePassage({ taught: taughtSet, theme: bugs, sentences: n, heart, names: makerNames(new Set()), rng: seeded(seed++) });
+          const tag = `CUSTOM-TYPED ${p.id} heart=${heart} n=${n} #${k}`;
+          if (!res.ok) { check(`${tag} says why`, /add a few more words|tick a few more/.test(res.reason), res.reason); continue; }
+          madeTyped++;
+          const toks = tokenize(res.text).filter((t) => /^[A-Za-z']+$/.test(t));
+          const amber = [...new Set(toks.filter((t) => analyseWord(t, taughtSet).cat === "new").map((t) => t.toLowerCase()))];
+          check(`${tag} only typed words are amber`, amber.every((w) => typedAll.has(w)), `amber: ${amber.join(", ")} in ${JSON.stringify(res.text)}`);
+          check(`${tag} every amber word is flagged`, amber.sort().join() === [...res.flagged].sort().join(),
+            `amber ${amber.join()} vs flagged ${res.flagged.join()}`);
+          if (res.flagged.length) sawFlag++;
+          check(`${tag} typed words never plural`, !toks.some((t) => typedPlurals.has(t.toLowerCase())), JSON.stringify(res.text));
+          if (!heart) check(`${tag} no heart words`, !toks.some((t) => analyseWord(t, taughtSet).cat === "tricky"), JSON.stringify(res.text));
+          for (const sent of res.text.split(/(?<=[.!?]"?)\s+/)) {
+            const lw = sent.toLowerCase().match(/[a-z]+/g) || [];
+            if (!lw.some((w) => typedAll.has(w))) continue;
+            sawTyped++;
+            const m = safeRes.map((r) => sent.match(r)).find(Boolean);
+            check(`${tag} typed word only in a safe frame`, !!m && typedAll.has(m.groups.t), JSON.stringify(sent));
+          }
+          const tst = computeStats(res.title, taughtSet);
+          check(`${tag} title decodable`, res.title && tst.nw === 0 && tst.pct === 100, JSON.stringify(res.title));
+          const bad = disagreeFn(res.text);
+          check(`${tag} bank words still agree`, bad.length === 0, `${bad.join(", ")} in ${JSON.stringify(res.text)}`);
+        }
+      }
+    }
+  }
+  check("CUSTOM-TYPED passages made", madeTyped > 60, `only ${madeTyped}`);
+  check("CUSTOM-TYPED typed words get used", sawTyped > madeTyped * 0.7, `${sawTyped} sentences over ${madeTyped} passages`);
+  check("CUSTOM-TYPED undecodable typed words get flagged", sawFlag > 10, `only ${sawFlag}`);
+
+  // a typed word the group CAN read is used and not flagged; a known word isn't amber
+  {
+    const ukE = taughtFor("uk-early");
+    const t = normCustomTheme({ id: "my-t", name: "T", own: words(["twig"], ["spider"], []) });
+    let usedTwig = false, cleanTwig = true;
+    for (let k = 0; k < 30; k++) {
+      freshKnown();
+      const r = makePassage({ taught: ukE, theme: t, sentences: 8, heart: true, names: makerNames(new Set()), rng: seeded(seed++) });
+      if (!r.ok) continue;
+      if (/\btwig\b/.test(r.text)) usedTwig = true;
+      if (r.flagged.includes("twig")) cleanTwig = false;
+    }
+    check("CUSTOM decodable typed word is used", usedTwig, "twig never used");
+    check("CUSTOM decodable typed word never flagged", cleanTwig, "twig flagged");
+    engine.setKnown(new Set(["spider"]));
+    let snailFlag = false;
+    for (let k = 0; k < 20; k++) {
+      const r = makePassage({ taught: ukE, theme: t, sentences: 8, heart: true, names: ["Sam", "Meg"], rng: seeded(seed++) });
+      if (r.ok && r.flagged.includes("spider")) snailFlag = true;
+    }
+    check("CUSTOM known typed word not flagged", !snailFlag, "spider flagged though known");
+    freshKnown();
+    // typed words only + heart words off: no safe frame fits — refuse, and say why
+    const r = makePassage({ taught: taughtFor("uk-y1"), theme: t, sentences: 5, heart: false, names: makerNames(new Set()), rng: seeded(1) });
+    check("CUSTOM typed-only, heart off refuses", !r.ok && /heart words switched on/.test(r.reason), JSON.stringify(r));
+  }
+
+  // --- custom themes resolve by id, like built-ins ---
+  {
+    const before = getCustomThemes();
+    setCustomThemes([bugs]);
+    const r = makePassage({ taught: taughtFor("uk-y1"), theme: "my-bugs", sentences: 5, heart: true, names: makerNames(new Set()), rng: seeded(7) });
+    check("CUSTOM theme by id makes a passage", r.ok, r.reason);
+    check("CUSTOM theme by id stays on theme", r.ok && (r.text.toLowerCase().match(/[a-z]+/g) || [])
+      .filter((x) => lexNoun.has(x) && MK_ANIMAL.has(lexNoun.get(x))).every((x) => bugs.words.animal.includes(lexNoun.get(x))), r.text);
+    check("CUSTOM ready by id", makerThemeReady(taughtFor("uk-y1"), true, "my-bugs"), "not ready");
+    const unknown = makePassage({ taught: taughtFor("uk-y1"), theme: "my-gone", sentences: 3, heart: true, names: makerNames(new Set()), rng: seeded(8) });
+    check("CUSTOM deleted theme id falls back to any theme", unknown.ok && unknown.flagged.length === 0, JSON.stringify(unknown));
+
+    // --- backups: exported, re-imported by id, junk dropped ---
+    const pay = libraryPayload();
+    check("BACKUP payload carries themes", Array.isArray(pay.themes) && pay.themes[0].id === "my-bugs", JSON.stringify(pay.themes));
+    const rt = JSON.parse(JSON.stringify(pay));
+    setCustomThemes([]);
+    const imp = importLibraryData({ items: [], themes: [...rt.themes, { id: "farm" }, "junk", { ...rt.themes[0], name: "dupe" }] });
+    check("BACKUP import adds theme once", imp.ok && imp.themesAdded === 1 && getCustomThemes().length === 1, JSON.stringify(imp));
+    check("BACKUP import round-trips the theme", JSON.stringify(getCustomThemes()[0]) === JSON.stringify(bugs), JSON.stringify(getCustomThemes()[0]));
+    const again = importLibraryData({ themes: rt.themes });
+    check("BACKUP re-import is a no-op", again.ok && again.themesAdded === 0 && getCustomThemes().length === 1, JSON.stringify(again));
+    check("BACKUP themes-only file accepted", importLibraryData({ themes: [] }).ok, "rejected");
+    setCustomThemes(before);
+  }
+
+  // --- library rows: a custom-made passage keeps its theme's name ---
+  const base = { text: "The cat sat.", skills: ["cvc"], title: "T", klass: "K" };
+  const it = sanitizeLibItem({ ...base, made: "custom", madeName: "  Mini  beasts " });
+  check("LIB keeps custom theme name", it.made === "custom" && it.madeName === "Mini beasts", JSON.stringify(it));
+  check("LIB drops madeName on built-ins", !("madeName" in sanitizeLibItem({ ...base, made: "farm", madeName: "x" })), "kept");
+  check("LIB label for custom", madeThemeLabel("custom", "Minibeasts") === " · Minibeasts", madeThemeLabel("custom", "Minibeasts"));
+  check("LIB label for built-in unchanged", madeThemeLabel("seaside") === " · seaside", madeThemeLabel("seaside"));
 }
 
 /* ============================================================

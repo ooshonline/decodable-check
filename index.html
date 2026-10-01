@@ -346,6 +346,42 @@
   .mk-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px}
   .mk-msg{font-size:12.5px;color:var(--ink-soft);line-height:1.45}
   .mk-msg.warn{color:var(--new-ink);font-weight:600}
+  .mk-theme-row{display:flex;gap:6px;align-items:center;min-width:0}
+  .mk-theme-row .selwrap{flex:1;min-width:0}
+  .mk-theme-row .lt-btn{padding:7px 10px;flex:none}
+  @media(max-width:420px){.mk-theme-row #mkThemeNew span:last-child{display:none}}
+  /* custom theme editor */
+  .te-input{width:100%;font:inherit;font-size:14px;font-weight:600;color:var(--ink);background:var(--card);
+    border:1px solid var(--line-strong);border-radius:10px;padding:8px 11px;min-width:0}
+  .te-input:focus-visible{outline:2px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+  .te .lib-tools{margin:18px 2px 6px}
+  .te-count{font-size:11.5px;color:var(--ink-soft);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .te-note{font-size:12px;color:var(--ink-soft);line-height:1.5;margin:0 2px 10px}
+  .te-group{margin:0 0 12px}
+  .te-glabel{font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin:0 2px 6px}
+  .te-chips{display:flex;flex-wrap:wrap;gap:6px}
+  .te-chip{font:inherit;font-family:"Andika",sans-serif;font-weight:700;font-size:13.5px;color:var(--ink-soft);
+    background:var(--card);border:1px solid var(--line-strong);border-radius:999px;padding:3px 11px;cursor:pointer;
+    transition:background .12s,border-color .12s,color .12s}
+  .te-chip:hover{border-color:var(--ink-soft);color:var(--ink)}
+  .te-chip[aria-pressed="true"]{background:var(--ok-bg);border-color:var(--ok-edge);color:var(--ok-ink)}
+  .te-chip[aria-pressed="true"]::before{content:"✓ ";font-family:"Public Sans",sans-serif;font-size:11px}
+  .te-chip.off{opacity:.5;border-style:dashed}
+  .te-chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .te-own{display:grid;grid-template-columns:78px 1fr;gap:6px 12px;align-items:start;padding:9px 0;border-top:1px dashed var(--line-strong)}
+  .te-own:first-child{border-top:none;padding-top:2px}
+  .te-own .te-glabel{margin:8px 0 0}
+  @media(max-width:480px){.te-own{grid-template-columns:1fr}.te-own .te-glabel{margin:0}}
+  .te-own .known-add input{background:var(--card)}
+  .te-own .known-chips:empty{display:none}
+  .known-chip.amber{background:var(--new-bg);border-color:var(--new-edge);color:var(--new-ink)}
+  .known-chip.amber > span::after{content:" !";font-family:"Public Sans",sans-serif}
+  .te-alert{font-size:12.5px;line-height:1.45;color:var(--ink-soft);min-height:0;margin:4px 2px 0}
+  .te-alert.warn{color:var(--new-ink);font-weight:600;background:var(--new-bg);border:1px solid var(--new-edge);
+    border-radius:10px;padding:8px 11px}
+  .te-foot{gap:8px}
+  .te-spacer{flex:1}
+  .te-del:hover:not(:disabled){color:#fff!important;background:var(--accent);border-color:var(--accent)!important}
   .new-pass{border:1px solid var(--line-strong);background:var(--paper);color:var(--ink-soft);border-radius:999px;
     padding:4px 12px;font:inherit;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;margin-left:auto;
     display:inline-flex;align-items:center;gap:6px}
@@ -592,10 +628,10 @@
       <div class="lib-tools">
         <span class="lt-title">Saved passages</span>
         <span class="lt-rule"></span>
-        <button class="lt-btn" id="libExport" type="button" aria-label="Export your passages and known words as a backup file">
+        <button class="lt-btn" id="libExport" type="button" aria-label="Export your passages, known words and themes as a backup file">
           <span aria-hidden="true">↧</span><span>Export</span>
         </button>
-        <button class="lt-btn" id="libImport" type="button" aria-label="Import a backup file — restores passages and known words">
+        <button class="lt-btn" id="libImport" type="button" aria-label="Import a backup file — restores passages, known words and themes">
           <span aria-hidden="true">↥</span><span>Import</span>
         </button>
         <input type="file" id="libFile" accept="application/json,.json" hidden>
@@ -611,11 +647,12 @@
     <div class="modal-head">
       <div>
         <h2 id="makerTitle">Passage maker</h2>
-        <p>Builds a short passage from the skills ticked in the sidebar. Every word is checked by the same engine before it goes in, and the passage is only shown if it scores 100%.</p>
+        <p id="makerDesc">Builds a short passage from the skills ticked in the sidebar. Every word is checked by the same engine before it goes in, and the passage is only shown if it scores 100%.</p>
       </div>
       <button class="modal-x" id="makerClose" type="button" aria-label="Close passage maker">×</button>
     </div>
-    <div class="modal-body">
+    <div class="modal-body" id="mkBody">
+     <div id="mkMain">
       <div class="mk-using">Skills: <b id="mkUsing"></b></div>
       <div class="mk-form">
         <div class="mk-field">
@@ -624,7 +661,11 @@
         </div>
         <div class="mk-field">
           <label class="mk-label" for="mkTheme">Theme</label>
-          <div class="selwrap"><select id="mkTheme"></select></div>
+          <div class="mk-theme-row">
+            <div class="selwrap"><select id="mkTheme"></select></div>
+            <button class="lt-btn" id="mkThemeEdit" type="button" hidden>Edit</button>
+            <button class="lt-btn" id="mkThemeNew" type="button" aria-label="Make your own theme"><span aria-hidden="true">＋</span><span>Your own</span></button>
+          </div>
         </div>
         <div class="mk-field">
           <span class="mk-label" id="mkLenLbl">Length</span>
@@ -647,6 +688,29 @@
       <div class="mk-foot">
         <span class="mk-msg" id="mkMsg" role="status" aria-live="polite"></span>
         <button class="save-btn" id="mkGo" type="button">Make passage</button>
+      </div>
+     </div>
+      <!-- custom theme editor (stage 4): swaps in for the settings above -->
+      <div class="te" id="mkEditor" hidden>
+        <div class="mk-form">
+          <div class="mk-field">
+            <label class="mk-label" for="teName">Theme name</label>
+            <input class="te-input" id="teName" type="text" maxlength="40" placeholder="e.g. Minibeasts" autocomplete="off">
+          </div>
+        </div>
+        <div class="lib-tools"><span class="lt-title">Pick from the word bank</span><span class="lt-rule"></span><span class="te-count" id="teBankCount"></span></div>
+        <p class="te-note">Tick the words that fit your theme. These words know what goes with them (a pink pig, a duck that swims), so they can go in any sentence. Faded words aren’t decodable with these skills yet — they’re skipped until they are.</p>
+        <div id="teBank"></div>
+        <div class="lib-tools"><span class="lt-title">Add your own words</span><span class="lt-rule"></span></div>
+        <p class="te-note">Your own words only go in simple sentences that suit any word — <i>Sam has a ___.</i> · <i>Sam fed the ___.</i> · <i>The ___ can nap.</i> · <i>Sam was in the ___.</i> — and never as plurals. A word that isn’t decodable yet is still used, but it shows amber so you can pre-teach it.</p>
+        <div id="teOwn"></div>
+        <div class="te-alert" id="teAlert" role="status" aria-live="polite"></div>
+        <div class="mk-foot te-foot">
+          <button class="lt-btn te-del" id="teDelete" type="button">Delete theme</button>
+          <span class="te-spacer"></span>
+          <button class="lt-btn" id="teCancel" type="button">Cancel</button>
+          <button class="save-btn" id="teSave" type="button">Save theme</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1512,6 +1576,66 @@ const MAKER_FRAMES = [
   "{N} and {N2} had fun.",
 ];
 
+/* Custom themes (stage 4). A teacher's own theme is a name plus
+   (a) words ticked from the built-in lexicon — they keep their agreement
+   data and go through the normal frames — and (b) words typed in under
+   Things / Animals / Places. Typed words carry no meaning data, so they
+   only go into these "safe" frames, which make sense for any word, and
+   never into a plural frame (the engine can't spell mice or sheep).
+   Kyle's rule: a typed word that isn't decodable yet is NOT blocked — it is
+   used, flagged to the teacher, and shown amber by the normal checker.
+   Ticked lexicon words keep the strict 100% gate. */
+const MAKER_SAFE_FRAMES = [
+  "{N} has {a} {tthing}.",
+  "{N} got {a} {tthing}.",
+  "Look at the {tthing}!",
+  "{N} fed the {tanimal}.",
+  "The {tanimal} can nap.",
+  "{N} can see the {tanimal}.",
+  "{N} was in the {tplace}.",
+];
+const MAKER_OWN_ROLES = ["thing", "animal", "place"];
+const MAKER_OWN_MAX = 40;            // typed words per role
+// the lexicon map for one role
+const mkLex = role => role==="thing" ? MK_THING : role==="animal" ? MK_ANIMAL : MK_PLACE;
+
+/* Validate & normalise a custom theme from anywhere (the editor, storage,
+   a backup file). Returns null if it's unusable. A typed word that is
+   already in the lexicon for its role is moved to the ticked words, so it
+   keeps its agreement data (and the strict gate). */
+function normCustomTheme(raw){
+  if(!raw || typeof raw!=="object") return null;
+  const id = typeof raw.id==="string" && /^my-[a-z0-9]{1,16}$/.test(raw.id) ? raw.id : null;
+  if(!id) return null;
+  const name = (typeof raw.name==="string" && raw.name.replace(/\s+/g, " ").trim().slice(0,40)) || "My theme";
+  const words = {}, own = {};
+  const inRaw = (o, role) => (o && typeof o==="object" && Array.isArray(o[role])) ? o[role] : [];
+  for(const role of MAKER_OWN_ROLES){
+    const lex = mkLex(role);
+    const w = new Set(inRaw(raw.words, role).filter(x=>typeof x==="string" && lex.has(x)));
+    const typed = new Set();
+    for(const x of inRaw(raw.own, role)){
+      if(typeof x!=="string") continue;
+      const t = x.toLowerCase().trim();
+      if(!/^[a-z]{2,20}$/.test(t)) continue;
+      if(lex.has(t)) w.add(t); else if(typed.size < MAKER_OWN_MAX) typed.add(t);
+    }
+    words[role] = [...w].sort();
+    own[role] = [...typed].sort();
+  }
+  return {id, name, words, own};
+}
+const customThemeSize = t => MAKER_OWN_ROLES.reduce((n, r)=>n + t.words[r].length + t.own[r].length, 0);
+
+// a theme id or custom-theme object -> what makerPools needs
+function makerThemeSpec(theme){
+  if(theme && typeof theme==="object") return {custom: theme, name: theme.name};
+  const b = MAKER_THEMES.find(t=>t.id===(theme||""));
+  if(b) return {tag: b.tag, name: b.name};
+  const c = customThemes.find(t=>t.id===theme);
+  return c ? {custom: c, name: c.name} : {tag: "", name: MAKER_THEMES[0].name};
+}
+
 const cap1 = s => s.charAt(0).toUpperCase() + s.slice(1);
 
 // Build every slot pool for one taught set (and theme): only words that
@@ -1522,20 +1646,24 @@ function makerPools(taughtSet, heart, names, theme){
     const r = analyseWord(w, taughtSet);
     return r.cat==="ok" || r.cat==="known" || (heart && r.cat==="tricky" && MAKER_HEART.has(w.toLowerCase()));
   };
-  const tag = (MAKER_THEMES.find(t=>t.id===(theme||"")) || MAKER_THEMES[0]).tag;
-  const inTheme = e => !tag || e.themes.includes(tag);
+  const spec = makerThemeSpec(theme), tag = spec.tag, cu = spec.custom;
+  // a built-in theme narrows by tag; a custom one by the words it ticked
+  const inRole = role => e => cu ? cu.words[role].includes(e.w) : (!tag || e.themes.includes(tag));
   const plurals = new Map(), vs = new Map();
   const plural = arr => arr.filter(w=>!MAKER_NO_PLURAL.has(w)).filter(w=>{
     const p = inflect(w, "s"); if(p && fits(p)){ plurals.set(w, p); return true; } return false;
   });
-  const thing = [...MK_THING.values()].filter(inTheme).map(e=>e.w).filter(fits);
-  const animal = [...MK_ANIMAL.values()].filter(inTheme).map(e=>e.w).filter(fits);
+  const thing = [...MK_THING.values()].filter(inRole("thing")).map(e=>e.w).filter(fits);
+  const animal = [...MK_ANIMAL.values()].filter(inRole("animal")).map(e=>e.w).filter(fits);
   const verb = MAKER_BANK.verb.filter(fits);
   const verbsBase = MAKER_BANK.verb.filter(w=>{ const s = inflect(w, "s"); if(s && fits(s)){ vs.set(w, s); return true; } return false; });
   const P = {
-    fits, plurals, vs, theme: tag,
+    fits, plurals, vs, theme: cu ? cu.id : tag,
     thing, animal, verb,
-    place: [...MK_PLACE.values()].filter(inTheme).map(e=>e.w).filter(fits),
+    place: [...MK_PLACE.values()].filter(inRole("place")).map(e=>e.w).filter(fits),
+    // a custom theme's typed words: NOT gated by fits (flagged instead), safe frames only
+    tthing: cu ? cu.own.thing.slice() : [], tanimal: cu ? cu.own.animal.slice() : [],
+    tplace: cu ? cu.own.place.slice() : [],
     adj: MAKER_BANK.adj.filter(fits),
     padj: [...new Set([...MK_PLACE.values()].flatMap(e=>e.adj))].filter(fits),
     mood: MAKER_BANK.mood.filter(fits), num: MAKER_BANK.num.filter(fits),
@@ -1580,6 +1708,14 @@ function makerFill(frame, P, ctx){
   const toFrame = frame.includes("to the {place}"), inFrame = frame.includes("in the {place}");
   const owns = /\b(has|got|had|My)\b/.test(frame), feeds = /\bfed\b/.test(frame);
   const same = x => x;
+  // a safe frame: its one typed slot needs no agreement
+  const tSlot = ["tthing","tanimal","tplace"].find(has);
+  if(tSlot){
+    if(!P[tSlot].length) return null;
+    const w = ctx.pick(P[tSlot], same);
+    return frame.replace(/\{(\w+)\}/g, (m, slot)=>
+      slot==="N" ? ((has("N2") || ctx.rng()<0.8) ? ctx.lead : ctx.friend) : slot==="a" ? "{a}" : slot===tSlot ? w : m);
+  }
 
   const verbsFor = (subj, place) => {
     const list = animal ? MK_ANIMAL.get(subj).verbs : MAKER_BANK.verb.filter(v=>MK_VERB.get(v).people);
@@ -1654,13 +1790,14 @@ function makerFill(frame, P, ctx){
 function makerPlan(taughtSet, heart, names, theme){
   const P = makerPools(taughtSet, heart, names, theme);
   const dry = {pick: l=>l[0], rng: ()=>0, lead: P.names[0], friend: P.names[1] || P.names[0]};
-  const usable = MAKER_FRAMES.filter(f=>{
+  const frames = P.tthing.length || P.tanimal.length || P.tplace.length ? MAKER_FRAMES.concat(MAKER_SAFE_FRAMES) : MAKER_FRAMES;
+  const usable = frames.filter(f=>{
     const glue = f.replace(/\{[^}]+\}/g, " ").match(/[A-Za-z']+/g) || [];
     if(!glue.every(P.fits)) return false;
     if(f.includes("{a}") && !P.fits("a")) return false;       // "an" is re-checked per draft
     return makerFill(f, P, dry) !== null;
   });
-  const themed = usable.filter(f=>/\{(thing|things|animal|animals|place)\}/.test(f));
+  const themed = usable.filter(f=>/\{(thing|things|animal|animals|place|tthing|tanimal|tplace)\}/.test(f));
   return {P, usable, themed};
 }
 
@@ -1684,7 +1821,7 @@ function makerTitle(text, P){
     .sort((a,b)=>{ const ia = first(key(a)), ib = first(key(b));
       return (ia<0 ? first(P.plurals.get(a)) : ia) - (ib<0 ? first(P.plurals.get(b)) : ib); });
   const names = P.names.filter(n=>words.includes(n)).sort((a,b)=>words.indexOf(a)-words.indexOf(b));
-  const nouns = [...byText(P.animal, x=>x), ...byText(P.thing, x=>x)];
+  const nouns = [...byText(P.animal.concat(P.tanimal), x=>x), ...byText(P.thing.concat(P.tthing), x=>x)];
   const lead = names[0];
   const cands = lead
     ? [...nouns.map(n=>`${lead} and the ${cap1(n)}`), ...(names[1] ? [`${lead} and ${names[1]}`] : []), lead]
@@ -1692,9 +1829,10 @@ function makerTitle(text, P){
   return cands.find(t=>t.split(" ").every(w=>P.fits(w))) || "";
 }
 
-/* Make one passage. opts: {taught:Set, focus:skillId|"", theme:id|"",
+/* Make one passage. opts: {taught:Set, focus:skillId|"", theme:id|""|custom theme,
    sentences:n, heart:bool, names:[…], rng:()=>[0,1)}. Returns {ok:true,
-   text, title, focusPct, focusMet} or {ok:false, reason}. Tries several drafts,
+   text, title, focusPct, focusMet, flagged} or {ok:false, reason}; flagged
+   lists a custom theme's typed words that aren't decodable yet (shown amber). Tries several drafts,
    keeps only drafts that re-score at 100%, and prefers the one that best
    practises the focus. */
 function makePassage(opts){
@@ -1704,10 +1842,16 @@ function makePassage(opts){
   const {P, usable, themed} = makerPlan(taughtSet, heart, opts.names || MAKER_NAMES, theme);
   if(!P.names.length) return {ok:false, reason:"None of the character names are decodable for this group."};
   if(usable.length < 2) return {ok:false, reason:"Not enough decodable words for these skills yet — tick a few more (blends or digraphs open up lots)."};
+  const spec = makerThemeSpec(theme);
   if(theme && themed.length < 2){
-    const nm = MAKER_THEMES.find(t=>t.id===theme);
-    return {ok:false, reason:`Not enough “${nm ? nm.name : theme}” words for these skills yet — try Any theme, or tick a few more skills.`};
+    const ownOnly = spec.custom && !heart && (P.tthing.length || P.tanimal.length || P.tplace.length);
+    return {ok:false, reason: spec.custom
+      ? `Not enough words in “${spec.name}” for these skills yet — add a few more words to it, or tick a few more skills.`
+        + (ownOnly ? " Your own words go in sentences with “the” and “a”, so they need heart words switched on." : "")
+      : `Not enough “${spec.name}” words for these skills yet — try Any theme, or tick a few more skills.`};
   }
+  // a custom theme's typed words: the only words allowed to show amber (Kyle's rule)
+  const typed = new Set([...P.tthing, ...P.tanimal, ...P.tplace]);
   // does a word practise the focus skill? (memoised — pools are re-scanned per slot)
   const focusMemo = new Map();
   const isFocus = w => {
@@ -1716,7 +1860,8 @@ function makePassage(opts){
     return focusMemo.get(w);
   };
   const slotPool = {thing:P.thing, things:P.things, animal:P.animal, animals:P.animals, place:P.place,
-    adj:P.adj, padj:P.padj, verb:P.verb, V:P.verb, verbs:P.verbs, mood:P.mood, num:P.num};
+    adj:P.adj, padj:P.padj, verb:P.verb, V:P.verb, verbs:P.verbs, mood:P.mood, num:P.num,
+    tthing:P.tthing, tanimal:P.tanimal, tplace:P.tplace};
   const focusable = f => [...f.matchAll(/\{(\w+)\}/g)].some(m=>(slotPool[m[1]] || []).some(isFocus))
     || (f.replace(/\{[^}]+\}/g, " ").match(/[A-Za-z']+/g) || []).some(isFocus);
 
@@ -1769,16 +1914,21 @@ function makePassage(opts){
     const lines = [];
     for(let s=0; s<sentences.length; s+=2) lines.push(sentences.slice(s, s+2).join(" "));
     const text = lines.join("\n");
-    // SAFETY GATE: the finished passage must re-score at 100% for this group
-    const st = computeStats(text, taughtSet);
-    if(st.nw!==0 || st.pct!==100 || st.ok===0) continue;
-    if(!heart && tokenize(text).some(t=>/^[A-Za-z']+$/.test(t) && analyseWord(t, taughtSet).cat==="tricky")) continue;
+    // SAFETY GATE: the finished passage must re-score at 100% for this group.
+    // The one exception is a teacher's own typed word: it may be amber, and
+    // is flagged instead — every other word must still be decodable.
+    const toks = tokenize(text).filter(t=>/^[A-Za-z']+$/.test(t));
+    const cats = toks.map(t=>[t.toLowerCase(), analyseWord(t, taughtSet).cat]);
+    if(cats.some(([w, c])=>c==="new" && !typed.has(w))) continue;
+    if(!cats.some(([w, c])=>c==="ok")) continue;
+    if(!heart && cats.some(([w, c])=>c==="tricky" && !typed.has(w))) continue;
+    const flagged = [...new Set(cats.filter(([w, c])=>c==="new").map(([w])=>w))];
     let focusPct = 0;
     if(focus){
       const okWords = tokenize(text).filter(t=>/^[A-Za-z']+$/.test(t) && analyseWord(t, taughtSet).cat==="ok");
       focusPct = Math.round(okWords.filter(isFocus).length / okWords.length * 100);
     }
-    const cand = {ok:true, text, focusPct, focusMet: !focus || focusPct>=40};
+    const cand = {ok:true, text, focusPct, focusMet: !focus || focusPct>=40, flagged};
     if(!best || cand.focusPct > best.focusPct) best = cand;
     if(cand.focusMet) break;
   }
@@ -1810,6 +1960,25 @@ function persistKnown(){
   try{ localStorage.setItem(KNOWN_KEY, JSON.stringify([...known])); }catch(e){}
 }
 let known = loadKnown();
+
+/* ---------- custom passage-maker themes (stage 4) ----------
+   Stored per browser like Known words, and carried in library backup files.
+   Everything read back goes through normCustomTheme, so a hand-edited or
+   stale store can't smuggle in a malformed theme. */
+const THEMES_KEY = "decodable-check:themes";
+function cleanCustomThemes(arr){
+  const seen = new Set();
+  return (Array.isArray(arr) ? arr : []).map(normCustomTheme)
+    .filter(t=>t && !seen.has(t.id) && seen.add(t.id));
+}
+function loadCustomThemes(){
+  try{ return cleanCustomThemes(JSON.parse(localStorage.getItem(THEMES_KEY) || "[]")); }
+  catch(e){ return []; }                 // private mode / corrupt store -> none
+}
+function persistCustomThemes(){
+  try{ localStorage.setItem(THEMES_KEY, JSON.stringify(customThemes)); }catch(e){}
+}
+let customThemes = loadCustomThemes();
 
 const SAMPLE = `Meg is a red hen. She can run in the mud.\nA big cat sat on the log. The cat had a nap in the sun.\nThen Meg let out a yell! The cat ran off fast.\nMeg is so glad. She will rest in her nest.\nThe hen can see a big red bug.`;
 let text = SAMPLE;
@@ -2449,7 +2618,8 @@ saveBtn.onclick = ()=>{
     preset: presetSel.value,
     score: s,
     savedAt: Date.now(),
-    ...(madeNow() ? {made: lastMadeInfo.theme} : {}),   // made by the Passage maker (theme id, or "any")
+    // made by the Passage maker (theme id, "any", or "custom" + the theme's name)
+    ...(madeNow() ? {made: lastMadeInfo.theme, ...(lastMadeInfo.name ? {madeName: lastMadeInfo.name} : {})} : {}),
   });
   const stored = persistLibrary(library);
   lastClass = klass==="Unfiled" ? "" : klass;
@@ -2488,13 +2658,15 @@ function deleteItem(id){
    re-importing the same file is a no-op), and merges the known words additively
    (an import never wipes the list already on this device). No server, no
    dependency — the data travels in the file, like share links. */
+function libraryPayload(){
+  return {app:"decodable-check", type:"library", v:1, exportedAt:new Date().toISOString(),
+          items:library, known:[...known].sort(), themes:customThemes};
+}
 function exportLibrary(){
-  if(!library.length && !known.size){
-    showToast("Nothing to export yet — save a passage or add a known word first.", true); return;
+  if(!library.length && !known.size && !customThemes.length){
+    showToast("Nothing to export yet — save a passage, add a known word or make a theme first.", true); return;
   }
-  const payload = JSON.stringify(
-    {app:"decodable-check", type:"library", v:1, exportedAt:new Date().toISOString(),
-     items:library, known:[...known].sort()}, null, 2);
+  const payload = JSON.stringify(libraryPayload(), null, 2);
   try{
     const blob = new Blob([payload], {type:"application/json"});
     const url = URL.createObjectURL(blob);
@@ -2503,10 +2675,11 @@ function exportLibrary(){
     a.download = `decodable-check-library-${new Date().toISOString().slice(0,10)}.json`;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(url), 1000);
-    const n = library.length, k = known.size;
+    const n = library.length, k = known.size, t = customThemes.length;
     const parts = [];
     if(n) parts.push(`${n} passage${n!==1?'s':''}`);
     if(k) parts.push(`${k} known word${k!==1?'s':''}`);
+    if(t) parts.push(`${t} theme${t!==1?'s':''}`);
     showToast(`Exported ${parts.join(' & ')} — keep the file safe or open it on another device.`);
   }catch(e){
     showToast("Couldn't create the backup file in this browser.", true);
@@ -2528,6 +2701,9 @@ function sanitizeLibItem(raw){
   // disagree with the engine, even if the file was hand-edited or stale
   const score = computeStats(raw.text, new Set(skills));
   const made = typeof raw.made==="string" && /^[a-z]{1,20}$/.test(raw.made) ? {made: raw.made} : {};
+  // a passage made from a teacher's own theme keeps that theme's name
+  if(made.made==="custom" && typeof raw.madeName==="string" && raw.madeName.trim())
+    made.madeName = raw.madeName.replace(/\s+/g, " ").trim().slice(0,40);
   return {id, title, klass, text:raw.text, skills, sv:SKILLS_V, preset, score, savedAt, ...made};
 }
 
@@ -2536,9 +2712,10 @@ function importLibraryData(parsed){
   const rawItems = isArr ? parsed
     : (parsed && Array.isArray(parsed.items)) ? parsed.items : null;
   const rawKnown = (!isArr && parsed && Array.isArray(parsed.known)) ? parsed.known : null;
+  const rawThemes = (!isArr && parsed && Array.isArray(parsed.themes)) ? parsed.themes : null;
   // a legacy backup is a bare array of passages; a current one is an object
-  // carrying items and/or a known list. Reject only if it has neither.
-  if(rawItems===null && rawKnown===null) return {ok:false};
+  // carrying items, a known list and/or custom themes. Reject only if it has none.
+  if(rawItems===null && rawKnown===null && rawThemes===null) return {ok:false};
 
   // passages — sanitised, re-scored and merged by id
   let added=0, skipped=0;
@@ -2573,7 +2750,18 @@ function importLibraryData(parsed){
     if(knownAdded){ persistKnown(); renderKnown(); render(); }
   }
 
-  return {ok:true, added, skipped, knownAdded};
+  // custom themes — validated, merged by id (a theme already here is kept as is)
+  let themesAdded=0;
+  if(rawThemes){
+    const have = new Set(customThemes.map(t=>t.id));
+    cleanCustomThemes(rawThemes).forEach(t=>{
+      if(have.has(t.id)) return;
+      customThemes.push(t); have.add(t.id); themesAdded++;
+    });
+    if(themesAdded) persistCustomThemes();
+  }
+
+  return {ok:true, added, skipped, knownAdded, themesAdded};
 }
 
 libExport.onclick = exportLibrary;
@@ -2589,7 +2777,7 @@ libFile.onchange = ()=>{
     else {
       const res = importLibraryData(parsed);
       if(!res.ok){ showToast("That file isn't a Decodable Check library.", true); }
-      else if(res.added===0 && res.knownAdded===0){
+      else if(res.added===0 && res.knownAdded===0 && res.themesAdded===0){
         showToast(res.skipped
           ? `Already up to date — ${res.skipped} passage${res.skipped!==1?'s':''} already in your library.`
           : "Nothing new to import from that file.", true);
@@ -2597,6 +2785,7 @@ libFile.onchange = ()=>{
         const parts=[];
         if(res.added) parts.push(`${res.added} passage${res.added!==1?'s':''}`);
         if(res.knownAdded) parts.push(`${res.knownAdded} known word${res.knownAdded!==1?'s':''}`);
+        if(res.themesAdded) parts.push(`${res.themesAdded} theme${res.themesAdded!==1?'s':''}`);
         showToast(`Imported ${parts.join(' · ')}${res.skipped?` · ${res.skipped} passage${res.skipped!==1?'s':''} skipped`:''}.`);
       }
     }
@@ -2607,7 +2796,8 @@ libFile.onchange = ()=>{
 };
 
 // "Made · seaside" in a library row for a passage the maker produced
-function madeThemeLabel(id){
+function madeThemeLabel(id, name){
+  if(id==="custom") return name ? ` · ${name}` : "";
   const t = MAKER_THEMES.find(x=>x.id===id && x.id);
   return t ? ` · ${t.name.replace(/^(On|At|In)( the)? /, "").toLowerCase()}` : "";
 }
@@ -2616,7 +2806,7 @@ function renderLibrary(){
   // class-name autocomplete
   const classes = [...new Set(library.map(i=>i.klass))];
   classNames.innerHTML = classes.map(c=>`<option value="${escHtml(c)}">`).join("");
-  libExport.disabled = library.length===0 && known.size===0;   // nothing to back up yet
+  libExport.disabled = library.length===0 && known.size===0 && customThemes.length===0;   // nothing to back up yet
 
   if(library.length===0){
     libList.innerHTML = `<div class="lib-empty">No saved passages yet. Name this one above and hit save — reload it any time, and watch each class's decodability build up over the year.</div>`;
@@ -2643,7 +2833,7 @@ function renderLibrary(){
       row.innerHTML =
         `<div class="lib-badge" style="background:${c.bg};color:${c.ink};border-color:${c.edge}">${i.score.pct}<span class="pc">%</span></div>`+
         `<div class="lib-meta"><div class="lib-title">${escHtml(i.title)}</div>`+
-        `<div class="lib-sub">${i.made ? `✎ Made${madeThemeLabel(i.made)} · ` : ""}${date} · ${words} word${words!==1?'s':''} · ${nSkills} skill${nSkills!==1?'s':''} taught</div></div>`+
+        `<div class="lib-sub">${i.made ? `✎ Made${escHtml(madeThemeLabel(i.made, i.madeName))} · ` : ""}${date} · ${words} word${words!==1?'s':''} · ${nSkills} skill${nSkills!==1?'s':''} taught</div></div>`+
         `<div class="lib-actions"><button class="load" type="button">Load</button><button class="del" type="button">Delete</button></div>`;
       row.querySelector('.load').onclick = ()=>loadItem(i);
       row.querySelector('.del').onclick  = ()=>deleteItem(i.id);
@@ -2673,7 +2863,7 @@ const newPassBtn = document.getElementById('newPassBtn');
 const mkTheme = document.getElementById('mkTheme');
 const makerOpts = {focus:"", theme:"", len:"medium", heart:true};
 let lastMade = null;                 // the text the maker last produced
-let lastMadeInfo = {title:"", theme:""};
+let lastMadeInfo = {title:"", theme:"", name:""};
 const madeBar = document.getElementById('madeBar');
 const madeTitle = document.getElementById('madeTitle');
 const pupilSheet = document.getElementById('pupilSheet');
@@ -2753,7 +2943,9 @@ function renderMakerForm(){
   mkMsg.textContent = ""; mkMsg.className = "mk-msg";
 }
 
-// themes, each greyed out when these skills can't fill it yet
+// themes, each greyed out when these skills can't fill it yet. A teacher's
+// own themes stay selectable either way, so they can always be edited; making
+// from one that's too thin says what to add instead.
 function renderThemes(){
   mkTheme.innerHTML = "";
   MAKER_THEMES.forEach(t=>{
@@ -2763,12 +2955,190 @@ function renderThemes(){
     o.disabled = !ready && !!t.id;
     mkTheme.appendChild(o);
   });
+  if(customThemes.length){
+    const g = document.createElement('optgroup'); g.label = "Your themes";
+    customThemes.forEach(t=>{
+      const o = document.createElement('option'); o.value = t.id;
+      o.textContent = makerThemeReady(taught, makerOpts.heart, t) ? t.name : `${t.name} (needs more words)`;
+      g.appendChild(o);
+    });
+    mkTheme.appendChild(g);
+  }
   if(!mkTheme.querySelector(`option[value="${makerOpts.theme}"]:not([disabled])`)) makerOpts.theme = "";
   mkTheme.value = makerOpts.theme;
+  syncThemeTools();
+}
+const isCustomTheme = id => customThemes.some(t=>t.id===id);
+function syncThemeTools(){
+  mkThemeEdit.hidden = !isCustomTheme(makerOpts.theme);
+  mkThemeEdit.setAttribute('aria-label', mkThemeEdit.hidden ? "Edit theme"
+    : `Edit “${customThemes.find(t=>t.id===makerOpts.theme).name}”`);
+}
+
+/* ---------- custom theme editor (stage 4) ----------
+   Swaps in for the maker's settings inside the same modal. The draft is a
+   plain {id, name, words, own} object; every save goes through
+   normCustomTheme, the same gate as storage and backup files. */
+const mkMain = document.getElementById('mkMain');
+const mkEditor = document.getElementById('mkEditor');
+const mkThemeEdit = document.getElementById('mkThemeEdit');
+const teName = document.getElementById('teName');
+const teBank = document.getElementById('teBank');
+const teOwn = document.getElementById('teOwn');
+const teAlert = document.getElementById('teAlert');
+const teBankCount = document.getElementById('teBankCount');
+const teDelete = document.getElementById('teDelete');
+const TE_ROLES = [
+  {role:"animal", label:"Animals", ph:"e.g. snail, ant, frog"},
+  {role:"thing",  label:"Things",  ph:"e.g. leaf, web, stick"},
+  {role:"place",  label:"Places",  ph:"e.g. log, rock, grass"},
+];
+let teDraft = null;
+const makerDesc = document.getElementById('makerDesc');
+const MAKER_DESC = makerDesc.textContent;
+const TE_DESC = "Tick words from the built-in word bank and add your own. Your themes are kept in this browser and go in library backups.";
+
+// what an untaught typed word still needs, for the alert
+function teMissing(w){
+  const r = analyseWord(w, taught);
+  return r.cat==="new" ? r.missing.map(x=>SKILLNAME[x] || x) : null;
+}
+function teWarn(msg){ teAlert.textContent = msg; teAlert.className = msg ? "te-alert warn" : "te-alert"; }
+
+function openThemeEditor(id){
+  const t = customThemes.find(x=>x.id===id);
+  teDraft = t ? JSON.parse(JSON.stringify(t))
+    : {id: "my-" + Date.now().toString(36) + Math.random().toString(36).slice(2,5), name:"",
+       words:{thing:[], animal:[], place:[]}, own:{thing:[], animal:[], place:[]}};
+  teName.value = teDraft.name;
+  teDelete.hidden = !t;
+  document.getElementById('makerTitle').textContent = t ? "Edit your theme" : "Make your own theme";
+  makerDesc.textContent = TE_DESC;
+  teWarn("");
+  renderThemeEditor();
+  mkMain.hidden = true; mkEditor.hidden = false;
+  document.getElementById('mkBody').scrollTop = 0;
+  teName.focus();
+}
+function closeThemeEditor(){
+  teDraft = null;
+  document.getElementById('makerTitle').textContent = "Passage maker";
+  makerDesc.textContent = MAKER_DESC;
+  mkEditor.hidden = true; mkMain.hidden = false;
+}
+
+function renderThemeEditor(){
+  // word bank: toggle chips per role; faded when not decodable for these skills
+  teBank.innerHTML = "";
+  TE_ROLES.forEach(({role, label})=>{
+    const grp = document.createElement('div'); grp.className = "te-group";
+    grp.innerHTML = `<div class="te-glabel">${label}</div>`;
+    const chips = document.createElement('div'); chips.className = "te-chips";
+    [...mkLex(role).keys()].sort().forEach(w=>{
+      const b = document.createElement('button'); b.type = "button"; b.className = "te-chip"; b.textContent = w;
+      const on = teDraft.words[role].includes(w);
+      const miss = teMissing(w);
+      b.setAttribute('aria-pressed', String(on));
+      if(miss){ b.classList.add('off'); b.title = `Not decodable yet — needs ${miss.join(" + ")}. Skipped until it is.`; }
+      b.onclick = ()=>{
+        const list = teDraft.words[role], i = list.indexOf(w);
+        if(i>=0) list.splice(i, 1); else list.push(w);
+        b.setAttribute('aria-pressed', String(i<0));
+        teCount();
+      };
+      chips.appendChild(b);
+    });
+    grp.appendChild(chips);
+    teBank.appendChild(grp);
+  });
+  teCount();
+  // typed words: an Add box and chips per role; amber when not decodable yet
+  teOwn.innerHTML = "";
+  TE_ROLES.forEach(({role, label, ph})=>{
+    const row = document.createElement('div'); row.className = "te-own";
+    row.innerHTML = `<div class="te-glabel">${label}</div><div>
+      <form class="known-add"><input type="text" maxlength="60" placeholder="${ph}" autocomplete="off" spellcheck="false" aria-label="Add your own ${label.toLowerCase()}"><button class="known-addbtn" type="submit">Add</button></form>
+      <div class="known-chips"></div></div>`;
+    const input = row.querySelector('input'), chips = row.querySelector('.known-chips');
+    teDraft.own[role].forEach(w=>{
+      const miss = teMissing(w);
+      const chip = document.createElement('span'); chip.className = "known-chip" + (miss ? " amber" : "");
+      if(miss) chip.title = `Not decodable yet — needs ${miss.join(" + ")}. It will show amber.`;
+      const lab = document.createElement('span'); lab.textContent = w; chip.appendChild(lab);
+      const x = document.createElement('button'); x.type = "button"; x.textContent = "×";
+      x.setAttribute('aria-label', `Remove ${w}`);
+      x.onclick = ()=>{ teDraft.own[role] = teDraft.own[role].filter(v=>v!==w); teWarn(""); renderThemeEditor(); };
+      chip.appendChild(x);
+      chips.appendChild(chip);
+    });
+    row.querySelector('form').addEventListener('submit', e=>{
+      e.preventDefault();
+      teAddOwn(role, input.value);
+      renderThemeEditor();
+      teOwn.querySelectorAll('.te-own input')[TE_ROLES.findIndex(r=>r.role===role)].focus();
+    });
+    teOwn.appendChild(row);
+  });
+}
+function teCount(){
+  const n = MAKER_OWN_ROLES.reduce((a, r)=>a + teDraft.words[r].length, 0);
+  teBankCount.textContent = n ? `${n} ticked` : "";
+}
+
+// add typed words (comma/space separated) to one role, with Kyle's rule:
+// never block an undecodable word — add it and say clearly what it needs
+function teAddOwn(role, str){
+  const lex = mkLex(role), flagged = [], moved = [], bad = [];
+  for(const raw of String(str).toLowerCase().split(/[\s,;]+/).filter(Boolean)){
+    if(!/^[a-z]{2,20}$/.test(raw)){ bad.push(raw); continue; }
+    if(lex.has(raw)){                                   // already in the bank: tick it instead
+      if(!teDraft.words[role].includes(raw)) teDraft.words[role].push(raw);
+      moved.push(raw); continue;
+    }
+    if(teDraft.own[role].includes(raw)) continue;
+    if(teDraft.own[role].length >= MAKER_OWN_MAX){ bad.push(raw); continue; }
+    teDraft.own[role].push(raw);
+    const miss = teMissing(raw);
+    if(miss) flagged.push(`“${raw}” needs ${miss.join(" + ")}`);
+  }
+  const msgs = [];
+  if(flagged.length) msgs.push(`Added — but not decodable for these skills yet: ${flagged.join("; ")}. ${flagged.length>1?"They":"It"}’ll show amber in the passage, so pre-teach ${flagged.length>1?"them":"it"} or add ${flagged.length>1?"them":"it"} to Known words.`);
+  if(moved.length) msgs.push(`${moved.join(", ")} ${moved.length>1?"are":"is"} already in the word bank — ticked there instead, so ${moved.length>1?"they go":"it goes"} in every kind of sentence.`);
+  if(bad.length) msgs.push(`Skipped ${bad.map(b=>`“${b}”`).join(", ")} — use single words of letters only (${MAKER_OWN_MAX} per group at most).`);
+  teWarn(msgs.join(" "));
+}
+
+function saveThemeEditor(){
+  // an Add box that was typed in but not submitted still counts
+  teOwn.querySelectorAll('.te-own input').forEach((inp, i)=>{ if(inp.value.trim()) teAddOwn(TE_ROLES[i].role, inp.value); });
+  teDraft.name = teName.value;
+  const t = normCustomTheme(teDraft);
+  if(!t || !customThemeSize(t)){ teWarn("Tick or add at least a few words first."); renderThemeEditor(); return; }
+  const i = customThemes.findIndex(x=>x.id===t.id);
+  if(i>=0) customThemes[i] = t; else customThemes.push(t);
+  persistCustomThemes();
+  makerOpts.theme = t.id;
+  closeThemeEditor();
+  renderThemes();
+  const ready = makerThemeReady(taught, makerOpts.heart, t);
+  mkMsg.textContent = ready ? `Saved “${t.name}”.` : `Saved “${t.name}” — it needs a few more words the group can read before it can make a passage.`;
+  mkMsg.className = ready ? "mk-msg" : "mk-msg warn";
+  renderLibrary();                     // the export button counts themes too
+}
+function deleteThemeEditor(){
+  const t = customThemes.find(x=>x.id===teDraft.id);
+  if(!t || !confirm(`Delete the theme “${t.name}”? Passages you made from it stay in your library.`)) return;
+  customThemes = customThemes.filter(x=>x.id!==t.id);
+  persistCustomThemes();
+  if(makerOpts.theme===t.id) makerOpts.theme = "";
+  closeThemeEditor();
+  renderThemes();
+  mkMsg.textContent = `Deleted “${t.name}”.`; mkMsg.className = "mk-msg";
 }
 
 function openMaker(){
   if(!editor.hidden){ text = editor.value; render(); showEdit(false); }
+  closeThemeEditor();
   renderMakerForm();
   makerOverlay.hidden = false;
   requestAnimationFrame(()=>makerOverlay.classList.add('open'));
@@ -2790,14 +3160,19 @@ function runMaker(fromModal){
     return false;
   }
   text = res.text; lastMade = res.text;
-  lastMadeInfo = {title: res.title || "", theme: makerOpts.theme || "any"};
+  const cu = customThemes.find(t=>t.id===makerOpts.theme);
+  lastMadeInfo = {title: res.title || "", theme: cu ? "custom" : (makerOpts.theme || "any"), name: cu ? cu.name : ""};
   if(!editor.hidden) editor.value = text;
   render();
   showEdit(false);
   const n = MAKER_LENGTHS[makerOpts.len];
   const th = MAKER_THEMES.find(t=>t.id===makerOpts.theme && t.id);
-  const about = th ? ` ${th.name.replace(/^(On|At|In)( the)? /, "").toLowerCase()}` : "";
-  if(focus && !res.focusMet){
+  const about = th ? ` ${th.name.replace(/^(On|At|In)( the)? /, "").toLowerCase()}` : cu ? ` “${cu.name}”` : "";
+  if(res.flagged && res.flagged.length){
+    // Kyle's rule: a teacher's own word is used, never silently — say so plainly
+    const f = res.flagged, many = f.length>1;
+    showToast(`Made a new${about} passage. Heads up: ${f.join(", ")} ${many?"aren’t":"isn’t"} decodable for these skills yet — shown amber. Pre-teach ${many?"them":"it"}, or add ${many?"them":"it"} to Known words.`, true);
+  } else if(focus && !res.focusMet){
     showToast(`Made a new 100% decodable passage — but only ${res.focusPct}% of its words use ${SKILLNAME[focus]}. The word bank is thin for it at these skills.`, true);
   } else {
     showToast(`Made a new ${n}-sentence${about} passage — 100% decodable${focus ? `, ${res.focusPct}% of words practise ${SKILLNAME[focus]}` : ""}.`);
@@ -2815,7 +3190,12 @@ mkLen.addEventListener('click', e=>{
   makerOpts.len = b.dataset.len;
   mkLen.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed', String(x===b)));
 });
-mkTheme.addEventListener('change', ()=>{ makerOpts.theme = mkTheme.value; });
+mkTheme.addEventListener('change', ()=>{ makerOpts.theme = mkTheme.value; syncThemeTools(); mkMsg.textContent = ""; mkMsg.className = "mk-msg"; });
+document.getElementById('mkThemeNew').onclick = ()=>openThemeEditor(null);
+mkThemeEdit.onclick = ()=>openThemeEditor(makerOpts.theme);
+document.getElementById('teCancel').onclick = ()=>{ closeThemeEditor(); renderThemes(); };
+document.getElementById('teSave').onclick = saveThemeEditor;
+teDelete.onclick = deleteThemeEditor;
 mkHeart.addEventListener('change', ()=>{ makerOpts.heart = mkHeart.checked; renderThemes(); });
 document.getElementById('mkGo').onclick = ()=>{ if(runMaker(true)) closeMaker(); };
 newPassBtn.onclick = ()=>runMaker(false);
@@ -2838,7 +3218,10 @@ if (typeof module === "object" && module && module.exports) {
   module.exports = {
     analyseWord, tokenize, computeStats, computePlan,
     inflect, detectInflection, suggestFor, upgradeSkills, SKILLS_V,
-    makePassage, makerPools, makerNames, makerThemeReady, makerTitle, pupilSheetHtml, sanitizeLibItem, MAKER_BANK, MAKER_HEART, MAKER_FRAMES, MAKER_LENGTHS,
+    makePassage, makerPools, makerNames, makerPlan, normCustomTheme, customThemeSize, MAKER_SAFE_FRAMES,
+    libraryPayload, importLibraryData, madeThemeLabel,
+    getCustomThemes: () => customThemes,
+    setCustomThemes: (a) => { customThemes = a; }, makerThemeReady, makerTitle, pupilSheetHtml, sanitizeLibItem, MAKER_BANK, MAKER_HEART, MAKER_FRAMES, MAKER_LENGTHS,
     MAKER_THEMES, MK_THING, MK_ANIMAL, MK_PLACE, MK_VERB,
     PHASES, GRAPHEMES, VOWELS, CONS, TRICKY, PRESETS, SKILLNAME, ALL_SKILL_IDS,
     getKnown: () => known,
