@@ -29,8 +29,8 @@
    ============================================================ */
 
 /* Skill ids (from PHASES): cvc double digraph blend endings
-                            magice team diph rctrl adv          */
-const ALL = ["cvc", "double", "digraph", "blend", "syll", "endings", "magice", "team", "diph", "rctrl", "adv"];
+                            magice team diph rctrl alt adv      */
+const ALL = ["cvc", "double", "digraph", "blend", "syll", "endings", "magice", "team", "diph", "rctrl", "alt", "adv"];
 
 /* ---------------------------------------------------------------
    1. DECODABLE — the segmenter's grapheme→skill decomposition.
@@ -156,47 +156,47 @@ const DECODABLE = [
   ["bridge", ["adv", "blend"]], ["crumb", ["adv", "blend"]],
   ["wreck", ["adv", "digraph"]],
 
-  // --- soft c (c = /s/ before e, i, y) — advanced code, not the basic /k/.
-  //     A beginner can't decode these with hard c; each needs the soft-c rule
-  //     (bucketed as `adv`). Reliable in English, so hard-asserted. (Soft g is a
+  // --- soft c (c = /s/ before e, i, y) — an alternative pronunciation, not
+  //     the basic /k/. A beginner can't decode these with hard c; each needs
+  //     the soft-c rule (bucketed as `alt`, split out of `adv`). Reliable in English, so hard-asserted. (Soft g is a
   //     documented limitation — its hard-g exceptions defeat a by-rule model.)
-  ["cinema", ["adv"]],                                    // c=/s/, all single letters
-  ["cent", ["adv", "blend"]],                             // c=/s/ + nt blend
-  ["cell", ["adv", "double"]],                            // c=/s/ + ll double
-  ["dance", ["adv", "blend"]],                            // c=/s/, n+c a /ns/ blend
-  ["pencil", ["adv", "syll"]],                                    // c=/s/; pen·cil — n|c is a syllable split
-  ["circus", ["adv", "rctrl"]],                           // 1st c soft, 2nd c hard (before u)
-  ["ice", ["adv", "magice"]],                             // soft c + magic-e long i
-  ["race", ["adv", "magice"]], ["face", ["adv", "magice"]],
-  ["nice", ["adv", "magice"]], ["mice", ["adv", "magice"]],
-  ["rice", ["adv", "magice"]], ["dice", ["adv", "magice"]],
-  ["space", ["adv", "blend", "magice"]],                  // sp blend + soft c + magic-e
-  ["place", ["adv", "blend", "magice"]],
+  ["cinema", ["alt"]],                                    // c=/s/, all single letters
+  ["cent", ["alt", "blend"]],                             // c=/s/ + nt blend
+  ["cell", ["alt", "double"]],                            // c=/s/ + ll double
+  ["dance", ["alt", "blend"]],                            // c=/s/, n+c a /ns/ blend
+  ["pencil", ["alt", "syll"]],                                    // c=/s/; pen·cil — n|c is a syllable split
+  ["circus", ["alt", "rctrl"]],                           // 1st c soft, 2nd c hard (before u)
+  ["ice", ["alt", "magice"]],                             // soft c + magic-e long i
+  ["race", ["alt", "magice"]], ["face", ["alt", "magice"]],
+  ["nice", ["alt", "magice"]], ["mice", ["alt", "magice"]],
+  ["rice", ["alt", "magice"]], ["dice", ["alt", "magice"]],
+  ["space", ["alt", "blend", "magice"]],                  // sp blend + soft c + magic-e
+  ["place", ["alt", "blend", "magice"]],
 
-  // --- soft g at word-final "-ge" (g = /j/) — advanced code (roadmap #2).
+  // --- soft g at word-final "-ge" (g = /j/) — alternative pronunciation (roadmap #2).
   //     Unlike ONSET soft g (gem, giant, magic — still a locked limitation,
   //     because it shares a slot with common hard-g words: get, girl, gift…),
   //     word-final "-ge" is EXCEPTIONLESS in English. The silent e forces /j/;
   //     hard final /g/ is spelled "-gue" (vague, league, rogue) or a bare "-g"
-  //     (bag, flag, frog), none of which end in "-ge". Bucketed as `adv`, like
-  //     soft c and "-dge". A magic-e "-ge" keeps its long vowel too (page = long
+  //     (bag, flag, frog), none of which end in "-ge". Bucketed as `alt`, like
+  //     soft c ("-dge" stays its own `adv` grapheme). A magic-e "-ge" keeps its long vowel too (page = long
   //     a + soft g); an "-nge" reads as n + soft g (a /nj/ blend), never the /ŋ/
   //     "ng" digraph (sing has no silent e, so it is untouched).
-  ["age", ["adv", "magice"]],                             // long a + soft g
-  ["page", ["adv", "magice"]], ["cage", ["adv", "magice"]],
-  ["rage", ["adv", "magice"]], ["huge", ["adv", "magice"]],
-  ["sage", ["adv", "magice"]], ["wage", ["adv", "magice"]],
-  ["stage", ["adv", "blend", "magice"]],                  // st blend + long a + soft g
-  ["large", ["adv", "rctrl"]], ["forge", ["adv", "rctrl"]],   // ar/or r-controlled + soft g
-  ["urge", ["adv", "rctrl"]], ["merge", ["adv", "rctrl"]],
-  ["gorge", ["adv", "rctrl"]], ["surge", ["adv", "rctrl"]],   // onset g stays HARD; only final g is soft
-  ["charge", ["adv", "digraph", "rctrl"]],                // ch digraph + ar + soft g
-  ["change", ["adv", "blend", "digraph"]],                // ch + a + n+g /nj/ blend + soft g
-  ["range", ["adv", "blend"]], ["hinge", ["adv", "blend"]],   // "-nge" = n + soft g, not the /ŋ/ digraph
-  ["strange", ["adv", "blend"]], ["plunge", ["adv", "blend"]],
-  ["sponge", ["adv", "blend"]], ["fringe", ["adv", "blend"]],
-  ["orange", ["adv", "blend", "rctrl"]],                  // or + a + n+g blend + soft g
-  ["pages", ["adv", "endings", "magice"]],                // soft g composes with a plural -s
+  ["age", ["alt", "magice"]],                             // long a + soft g
+  ["page", ["alt", "magice"]], ["cage", ["alt", "magice"]],
+  ["rage", ["alt", "magice"]], ["huge", ["alt", "magice"]],
+  ["sage", ["alt", "magice"]], ["wage", ["alt", "magice"]],
+  ["stage", ["alt", "blend", "magice"]],                  // st blend + long a + soft g
+  ["large", ["alt", "rctrl"]], ["forge", ["alt", "rctrl"]],   // ar/or r-controlled + soft g
+  ["urge", ["alt", "rctrl"]], ["merge", ["alt", "rctrl"]],
+  ["gorge", ["alt", "rctrl"]], ["surge", ["alt", "rctrl"]],   // onset g stays HARD; only final g is soft
+  ["charge", ["alt", "digraph", "rctrl"]],                // ch digraph + ar + soft g
+  ["change", ["alt", "blend", "digraph"]],                // ch + a + n+g /nj/ blend + soft g
+  ["range", ["alt", "blend"]], ["hinge", ["alt", "blend"]],   // "-nge" = n + soft g, not the /ŋ/ digraph
+  ["strange", ["alt", "blend"]], ["plunge", ["alt", "blend"]],
+  ["sponge", ["alt", "blend"]], ["fringe", ["alt", "blend"]],
+  ["orange", ["alt", "blend", "rctrl"]],                  // or + a + n+g blend + soft g
+  ["pages", ["alt", "endings", "magice"]],                // soft g composes with a plural -s
 
   // --- doubled consonants = ONE sound, never a blend (roadmap #2 hardening).
   //     A doubled letter (bb tt nn pp dd gg mm rr…) marks the short vowel and is
@@ -245,29 +245,31 @@ const DECODABLE = [
   ["muddy", ["double", "team"]], ["foggy", ["double", "team"]],
   ["baby", ["team"]], ["lady", ["team"]], ["pony", ["team"]],  // single medial cons, no blend
   ["very", ["rctrl", "team"]], ["every", ["rctrl", "team"]],   // er r-controlled + y
-  // soft c + final y (both advanced/long-vowel code) — the city residue, fixed:
-  ["city", ["adv", "team"]], ["icy", ["adv", "team"]],
-  ["fancy", ["adv", "syll", "team"]],                             // soft c + y; fan·cy — n|c is a syllable split
-  ["spicy", ["adv", "blend", "team"]],                    // sp blend + soft c + y
-  ["mercy", ["adv", "rctrl", "team"]],                   // er r-controlled + soft c + y
+  // soft c + final y (alternative + long-vowel code) — the city residue, fixed:
+  ["city", ["alt", "team"]], ["icy", ["alt", "team"]],
+  ["fancy", ["alt", "syll", "team"]],                             // soft c + y; fan·cy — n|c is a syllable split
+  ["spicy", ["alt", "blend", "team"]],                    // sp blend + soft c + y
+  ["mercy", ["alt", "rctrl", "team"]],                   // er r-controlled + soft c + y
 
   // --- medial y = a VOWEL too (roadmap #2 hardening). Consonant y only ever
   //     starts a syllable before a vowel (yes, beyond, canyon, lawyer), so a
   //     bare y with a CONSONANT after it is a vowel. When it is the word's
   //     first vowel it spells /ĭ/ (gym, myth) or, with a split e, /ī/ (type,
-  //     style) — advanced code. Before this fix it sat in CONS and chained into
-  //     a spurious blend (myth m+y, type t+y+p), so Year 1 groups (blends
-  //     taught, advanced code not) were told these were decodable: false greens.
-  ["gym", ["adv"]], ["myth", ["adv", "digraph"]], ["gyms", ["adv", "endings"]],
-  ["pyramid", ["adv"]], ["typical", ["adv"]], ["lyric", ["adv"]],
-  ["nylon", ["adv"]], ["syrup", ["adv"]], ["symbol", ["adv"]],
-  ["python", ["adv", "digraph"]], ["physics", ["adv", "digraph", "endings"]],
-  ["system", ["adv", "blend"]], ["crystal", ["adv", "blend"]],   // real s+t / c+r blends stay
-  ["gymnast", ["adv", "blend", "syll"]], ["hydrant", ["adv", "blend"]],
+  //     style) — an alternative pronunciation (`alt`). Before this fix it sat in
+  //     CONS and chained into a spurious blend (myth m+y, type t+y+p), so groups
+  //     with blends but no y-as-a-vowel were told these were decodable.
+  //     symbol keeps `adv` too: the greedy "mb" grapheme reads its m|b as a
+  //     silent b — stricter than true, never a false green.
+  ["gym", ["alt"]], ["myth", ["alt", "digraph"]], ["gyms", ["alt", "endings"]],
+  ["pyramid", ["alt"]], ["typical", ["alt"]], ["lyric", ["alt"]],
+  ["nylon", ["alt"]], ["syrup", ["alt"]], ["symbol", ["adv", "alt"]],
+  ["python", ["alt", "digraph"]], ["physics", ["alt", "digraph", "endings"]],
+  ["system", ["alt", "blend"]], ["crystal", ["alt", "blend"]],   // real s+t / c+r blends stay
+  ["gymnast", ["alt", "blend", "syll"]], ["hydrant", ["alt", "blend"]],
   //     y-e split digraph: a medial y takes a silent e exactly like i-e (/ī/).
-  ["type", ["adv", "magice"]], ["byte", ["adv", "magice"]], ["hype", ["adv", "magice"]],
-  ["tyre", ["adv", "magice"]], ["style", ["adv", "blend", "magice"]],  // st blend; not -le
-  ["thyme", ["adv", "digraph", "magice"]],
+  ["type", ["alt", "magice"]], ["byte", ["alt", "magice"]], ["hype", ["alt", "magice"]],
+  ["tyre", ["alt", "magice"]], ["style", ["alt", "blend", "magice"]],  // st blend; not -le
+  ["thyme", ["alt", "digraph", "magice"]],
   //     A medial y AFTER an earlier vowel closes that syllable (every·thing,
   //     any·way, ba·by·sit, la·dy·bird) — final y's /ē/, so final y's `team`
   //     bucket. This keeps compounds exactly as decodable as their head word.
@@ -304,7 +306,7 @@ const DECODABLE = [
   ["tumble", ["adv"]],
   //     -le composes with the code around it:
   ["purple", ["adv", "rctrl"]], ["turtle", ["adv", "rctrl"]],   // ur/tle
-  ["marble", ["adv", "rctrl"]], ["circle", ["adv", "rctrl"]],   // soft-c 'cir' + -le
+  ["marble", ["adv", "rctrl"]], ["circle", ["adv", "alt", "rctrl"]],   // soft-c 'cir' + -le
   ["twinkle", ["adv", "blend"]], ["sprinkle", ["adv", "blend"]],// tw/spr blend + -le
   ["stumble", ["adv", "blend"]], ["cradle", ["adv", "blend"]],
   ["sparkle", ["adv", "blend", "rctrl"]],                       // sp blend + ar + -le
@@ -327,8 +329,8 @@ const DECODABLE = [
   ["winter", ["rctrl", "syll"]], ["under", ["rctrl", "syll"]], ["doctor", ["rctrl", "syll"]],
   ["candy", ["syll", "team"]], ["window", ["syll", "team"]], ["sixty", ["syll", "team"]],
   ["pancake", ["magice", "syll"]], ["reptile", ["magice", "syll"]], ["inside", ["magice", "syll"]],
-  ["cancel", ["adv", "syll"]],                                      // can·cel, soft c
-  ["success", ["adv", "double", "syll"]],                           // suc·cess: /k/|/s/, not a blend
+  ["cancel", ["alt", "syll"]],                                      // can·cel, soft c
+  ["success", ["alt", "double", "syll"]],                           // suc·cess: /k/|/s/, not a blend
   //     guards — each KEEPS its blend:
   ["basket", ["blend"]], ["mister", ["blend", "rctrl"]],     // s+stop is a legal onset: ambiguous, stay strict
   ["secret", ["blend"]],                                    // se·cret: cr really is an onset blend
@@ -339,34 +341,34 @@ const DECODABLE = [
   ["else", ["blend"]], ["rinse", ["blend"]],                // final e is silent: ls/ns is a final cluster
   ["hand", ["blend"]], ["stop", ["blend"]],                 // word-edge pairs are true blends
 
-  // --- long vowels in closed syllables = advanced code (roadmap #2 hardening).
+  // --- long vowels in closed syllables = alternative pronunciations (roadmap #2).
   //     kind/find/child/old/cold/most/roll have a LONG vowel in a closed
   //     syllable — UFLI's "closed syllable exceptions" (-ild -ind -old -olt
   //     -ost -oll), UK Phase 5's i=/igh/ (find) and o=/oa/ (cold). The engine
   //     read them as short CVC + blend: a FALSE green for any group with
-  //     blends but no advanced code. The final nd/ld/lt/st IS a real blend,
+  //     blends but no alternative pronunciations. The final nd/ld/lt/st IS a real blend,
   //     so it still counts; roll's ll still scores as a double.
-  ["kind", ["adv", "blend"]], ["find", ["adv", "blend"]], ["mind", ["adv", "blend"]],
-  ["blind", ["adv", "blend"]], ["behind", ["adv", "blend"]], ["remind", ["adv", "blend"]],
-  ["wild", ["adv", "blend"]], ["mild", ["adv", "blend"]], ["child", ["adv", "blend", "digraph"]],
-  ["old", ["adv", "blend"]], ["cold", ["adv", "blend"]], ["gold", ["adv", "blend"]],
-  ["told", ["adv", "blend"]], ["hold", ["adv", "blend"]], ["scold", ["adv", "blend"]],
-  ["bolt", ["adv", "blend"]], ["colt", ["adv", "blend"]], ["jolt", ["adv", "blend"]],
-  ["most", ["adv", "blend"]], ["post", ["adv", "blend"]], ["host", ["adv", "blend"]],
-  ["ghost", ["adv", "blend"]],
-  ["roll", ["adv", "double"]], ["troll", ["adv", "blend", "double"]], ["scroll", ["adv", "blend", "double"]],
+  ["kind", ["alt", "blend"]], ["find", ["alt", "blend"]], ["mind", ["alt", "blend"]],
+  ["blind", ["alt", "blend"]], ["behind", ["alt", "blend"]], ["remind", ["alt", "blend"]],
+  ["wild", ["alt", "blend"]], ["mild", ["alt", "blend"]], ["child", ["alt", "blend", "digraph"]],
+  ["old", ["alt", "blend"]], ["cold", ["alt", "blend"]], ["gold", ["alt", "blend"]],
+  ["told", ["alt", "blend"]], ["hold", ["alt", "blend"]], ["scold", ["alt", "blend"]],
+  ["bolt", ["alt", "blend"]], ["colt", ["alt", "blend"]], ["jolt", ["alt", "blend"]],
+  ["most", ["alt", "blend"]], ["post", ["alt", "blend"]], ["host", ["alt", "blend"]],
+  ["ghost", ["alt", "blend"]],
+  ["roll", ["alt", "double"]], ["troll", ["alt", "blend", "double"]], ["scroll", ["alt", "blend", "double"]],
   //     inflected / suffixed forms keep the long vowel:
-  ["finding", ["adv", "blend", "endings"]], ["kinds", ["adv", "blend", "endings"]],
-  ["holding", ["adv", "blend", "endings"]], ["bolted", ["adv", "blend", "endings"]],
-  ["rolled", ["adv", "double", "endings"]], ["posts", ["adv", "blend", "endings"]],
-  ["kindness", ["adv", "blend", "double"]], ["wildest", ["adv", "blend", "syll"]],
-  ["golden", ["adv", "syll"]], ["colder", ["adv", "rctrl", "syll"]], ["mostly", ["adv", "blend", "team"]],
+  ["finding", ["alt", "blend", "endings"]], ["kinds", ["alt", "blend", "endings"]],
+  ["holding", ["alt", "blend", "endings"]], ["bolted", ["alt", "blend", "endings"]],
+  ["rolled", ["alt", "double", "endings"]], ["posts", ["alt", "blend", "endings"]],
+  ["kindness", ["alt", "blend", "double"]], ["wildest", ["alt", "blend", "syll"]],
+  ["golden", ["alt", "syll"]], ["colder", ["alt", "rctrl", "syll"]], ["mostly", ["alt", "blend", "team"]],
   //     silent l (walk, half, calm, folk): the l isn't sounded, so there is
-  //     no lk/lf/lm blend — the a/o + silent l is the advanced pattern.
-  ["walk", ["adv"]], ["talk", ["adv"]], ["chalk", ["adv", "digraph"]], ["stalk", ["adv", "blend"]],
-  ["half", ["adv"]], ["calf", ["adv"]], ["calm", ["adv"]], ["palm", ["adv"]],
-  ["folk", ["adv"]], ["yolk", ["adv"]], ["walked", ["adv", "endings"]],
-  //     guards — each KEEPS its short vowel (no adv):
+  //     no lk/lf/lm blend — the a/o + silent l is the alternative pattern.
+  ["walk", ["alt"]], ["talk", ["alt"]], ["chalk", ["alt", "digraph"]], ["stalk", ["alt", "blend"]],
+  ["half", ["alt"]], ["calf", ["alt"]], ["calm", ["alt"]], ["palm", ["alt"]],
+  ["folk", ["alt"]], ["yolk", ["alt"]], ["walked", ["alt", "endings"]],
+  //     guards — each KEEPS its short vowel (no alt):
   ["wind", ["blend"]],                                      // the noun (a windy day): short i
   ["children", ["blend", "digraph"]],                       // chil·dren: short i
   ["build", ["blend"]],                                     // u+i, not the -ild pattern
@@ -401,41 +403,51 @@ const NEEDS_SKILL = [
   ["ship", "cvc", ["digraph"]],
   ["stop", "cvc", ["blend"]],
   ["jumps", "cvc", ["blend", "endings"]],
-  // Soft c blocked by advanced code (uk-early has no `adv`; blend/double it does)
-  ["cent", "uk-early", ["adv"]],
-  ["cell", "uk-early", ["adv"]],
-  ["cinema", "uk-early", ["adv"]],
-  ["ice", "uk-early", ["adv", "magice"]],   // soft c AND magic-e both untaught
-  ["face", "uk-early", ["adv", "magice"]],
+  // Soft c is an alternative pronunciation (uk-early has no `alt`; blend/double it does)
+  ["cent", "uk-early", ["alt"]],
+  ["cell", "uk-early", ["alt"]],
+  ["cinema", "uk-early", ["alt"]],
+  ["ice", "uk-early", ["alt", "magice"]],   // soft c AND magic-e both untaught
+  ["face", "uk-early", ["alt", "magice"]],
   // Final y = a long vowel, so a CVC/blends group hasn't been taught it yet.
   ["happy", "uk-early", ["team"]],          // double taught, y=/ē/ (team) is not
   ["funny", "uk-early", ["team"]],
   ["cry", "uk-early", ["team"]],            // fl/cr blend taught, y=/ī/ (team) is not
-  ["city", "uk-early", ["adv", "team"]],    // soft c AND y-vowel both untaught
+  ["city", "uk-early", ["alt", "team"]],    // soft c AND y-vowel both untaught
   // Silent-e / y hidden by an inflection: these were FALSE greens (read as
   // short CVC once -ing/-ed/-es was stripped). Endings are taught at
   // Reception, the long-vowel code underneath them is not.
   ["making", "uk-early", ["magice"]],
   ["hoped", "uk-early", ["magice"]],
   ["liked", "uk-early", ["magice"]],
-  ["racing", "uk-early", ["adv", "magice"]],
-  ["raging", "uk-early", ["adv", "magice"]],
+  ["racing", "uk-early", ["alt", "magice"]],
+  ["raging", "uk-early", ["alt", "magice"]],
   ["noses", "uk-early", ["magice"]],
   ["cried", "uk-early", ["team"]],
   ["crying", "uk-early", ["team"]],
   ["giggled", "uk-early", ["adv"]],
-  ["city", "uk-y1", ["adv"]],               // y-vowel now taught; only soft c blocks it
-  // Soft g at word-final "-ge" is advanced code, so a group without `adv` can't
-  // decode it yet. Under uk-y1 (all long-vowel code taught, but NOT advanced)
-  // every "-ge" word is blocked by exactly the soft-g rule — a clean isolation
-  // of the feature; under uk-early the untaught long vowel / r-control shows too.
-  ["page", "uk-early", ["adv", "magice"]],  // soft g AND magic-e both untaught
-  ["large", "uk-early", ["adv", "rctrl"]],  // soft g AND r-controlled both untaught
-  ["change", "uk-early", ["adv"]],          // blend + digraph taught; only soft g blocks it
-  ["page", "uk-y1", ["adv"]],               // long a taught; only soft g blocks it
-  ["huge", "uk-y1", ["adv"]],
-  ["large", "uk-y1", ["adv"]],              // r-control taught; only soft g blocks it
-  ["orange", "uk-y1", ["adv"]],
+  ["city", "sor-g1", ["alt"]],              // y-vowel taught; only soft c blocks it
+  // Soft g at word-final "-ge" is an alternative pronunciation (`alt`), so a
+  // group without it can't decode it yet. Under sor-g1 (long-vowel code taught,
+  // but no alternatives) a "-ge" word is blocked by exactly the soft-g rule —
+  // a clean isolation of the feature; under uk-early the untaught long vowel /
+  // r-control shows too. (uk-y1 and ufli-g1 now teach `alt`: DECODABLE_UNDER.)
+  ["page", "uk-early", ["alt", "magice"]],  // soft g AND magic-e both untaught
+  ["large", "uk-early", ["alt", "rctrl"]],  // soft g AND r-controlled both untaught
+  ["change", "uk-early", ["alt"]],          // blend + digraph taught; only soft g blocks it
+  ["page", "sor-g1", ["alt"]],              // long a taught; only soft g blocks it
+  ["huge", "sor-g1", ["alt"]],
+  ["large", "sor-g1", ["alt", "rctrl"]],    // sor-g1 has no r-control either
+  ["orange", "sor-g1", ["alt", "rctrl"]],
+  // The split itself: Year 1 / Grade 1 now read the alternatives, but the truly
+  // advanced code left in `adv` (kn wr mb -dge -le) still blocks them.
+  ["knot", "uk-y1", ["adv"]],
+  ["wrap", "ufli-g1", ["adv"]],
+  ["lamb", "uk-y1", ["adv"]],
+  ["badge", "uk-y1", ["adv"]],
+  ["bridge", "ufli-g1", ["adv"]],
+  ["circle", "uk-y1", ["adv"]],             // soft c taught (alt); only the -le blocks it
+  ["circle", "sor-g1", ["adv", "alt", "rctrl"]],
   // Consonant-le (-le) is advanced code — a group without `adv` can't decode it
   // yet, even when the rest of the word is basic (the old false blend is gone).
   ["little", "uk-early", ["adv"]],          // double taught; only the -le blocks it
@@ -461,34 +473,45 @@ const NEEDS_SKILL = [
   ["napkin", "sor-k", ["syll"]],
   ["winter", "sor-k", ["rctrl", "syll"]],
   ["dentist", "sor-k", ["syll"]],           // blend taught; the n|t split is not
-  // Medial y (y as the first vowel) is advanced code. Under uk-y1 these were
-  // FALSE GREENS (the y read as a blend, and blends are taught) — now each is
-  // blocked by exactly the y-vowel.
-  ["gym", "uk-y1", ["adv"]],
-  ["myth", "uk-y1", ["adv"]],
-  ["type", "uk-y1", ["adv"]],               // magic-e taught; only y-e's y blocks it
-  ["style", "uk-y1", ["adv"]],
-  ["system", "uk-y1", ["adv"]],
-  ["crystal", "uk-y1", ["adv"]],
-  ["type", "uk-early", ["adv", "magice"]],  // y-vowel AND magic-e both untaught
-  ["gym", "cvc", ["adv"]],                  // no spurious blend: only the y blocks it
-  // Long vowels in closed syllables + silent l are advanced code. Each of these
+  // Medial y (y as the first vowel) is an alternative pronunciation. With
+  // blends taught these were FALSE GREENS (the y read as a blend) — now, under
+  // sor-g1 (no `alt`), each is blocked by exactly the y-vowel.
+  ["gym", "sor-g1", ["alt"]],
+  ["myth", "sor-g1", ["alt"]],
+  ["type", "sor-g1", ["alt"]],              // magic-e taught; only y-e's y blocks it
+  ["style", "sor-g1", ["alt"]],
+  ["system", "sor-g1", ["alt"]],
+  ["crystal", "sor-g1", ["alt"]],
+  ["type", "uk-early", ["alt", "magice"]],  // y-vowel AND magic-e both untaught
+  ["gym", "cvc", ["alt"]],                  // no spurious blend: only the y blocks it
+  // Long vowels in closed syllables + silent l are alternative pronunciations. Each of these
   // was a FALSE GREEN for every preset with blends (read as short CVC + blend):
   // a Reception group was told "kind", "old" and "walk" were decodable.
-  ["kind", "uk-early", ["adv"]],
-  ["find", "uk-early", ["adv"]],
-  ["child", "uk-early", ["adv"]],
-  ["old", "uk-early", ["adv"]],
-  ["cold", "uk-early", ["adv"]],
-  ["most", "uk-early", ["adv"]],
-  ["roll", "uk-early", ["adv"]],
-  ["finding", "uk-early", ["adv"]],         // endings taught; the long i is not
-  ["walk", "uk-early", ["adv"]],
-  ["half", "uk-early", ["adv"]],
-  ["told", "sor-k", ["adv"]],
-  ["walk", "cvc", ["adv"]],                 // no spurious lk blend: only the silent l blocks it
-  ["kind", "ufli-g1", ["adv"]],
-  ["gold", "uk-y1", ["adv"]],
+  ["kind", "uk-early", ["alt"]],
+  ["find", "uk-early", ["alt"]],
+  ["child", "uk-early", ["alt"]],
+  ["old", "uk-early", ["alt"]],
+  ["cold", "uk-early", ["alt"]],
+  ["most", "uk-early", ["alt"]],
+  ["roll", "uk-early", ["alt"]],
+  ["finding", "uk-early", ["alt"]],         // endings taught; the long i is not
+  ["walk", "uk-early", ["alt"]],
+  ["half", "uk-early", ["alt"]],
+  ["told", "sor-k", ["alt"]],
+  ["walk", "cvc", ["alt"]],                 // no spurious lk blend: only the silent l blocks it
+  ["kind", "sor-g1", ["alt"]],
+  ["gold", "sor-g1", ["alt"]],
+  ["walk", "sor-g1", ["alt"]],
+  // `alt` can now be ticked on its own. A Reception group taught the
+  // alternatives but not magic-e must NOT read the y-e words' inflections
+  // (they were scored whole — "typ" had no vowel — and needed only the y).
+  ["typing", "alt-early", ["magice"]],
+  ["typed", "alt-early", ["magice"]],
+  ["types", "alt-early", ["magice"]],
+  ["styled", "alt-early", ["magice"]],
+  ["page", "alt-early", ["magice"]],        // soft g taught; the long a is not
+  ["little", "alt-early", ["adv"]],         // alt never unlocks the -le syllable
+  ["knot", "alt-early", ["adv"]],
 ];
 
 /* A "cvc" convenience preset (cvc + double) used by NEEDS_SKILL and
@@ -497,6 +520,10 @@ const CVC_PRESET = ["cvc", "double"];
 /* CVC + "Two-syllable words": a UK Phase 2 group that reads sunset / picnic
    before any blends are taught. */
 const CVC_SYLL_PRESET = ["cvc", "double", "syll"];
+/* UK Reception + "Alternative pronunciations": a custom group taught soft c,
+   kind/old, walk and gym-type y, but no long-vowel code — the case the `alt`
+   split makes possible. */
+const ALT_EARLY_PRESET = ["cvc", "double", "digraph", "blend", "syll", "endings", "alt"];
 
 /* ---------------------------------------------------------------
    3. DECODABLE UNDER A LIMITED SET — the positive side: these words
@@ -520,8 +547,15 @@ const DECODABLE_UNDER = [
   ["happy", "uk-y1"], ["funny", "uk-y1"], ["cry", "uk-y1"], ["baby", "uk-y1"],
   // consonant-le words decode once advanced code is taught (the `all` preset)
   ["little", "all"], ["gentle", "all"], ["table", "all"], ["purple", "all"],
-  // word-final soft-g "-ge" words decode once advanced code is taught
+  // word-final soft-g "-ge" words decode once alternative pronunciations are
+  // taught — UK Year 1 / UFLI Grade 1 teach them, no advanced code needed
   ["page", "all"], ["huge", "all"], ["large", "all"], ["charge", "all"],
+  ["page", "uk-y1"], ["huge", "uk-y1"], ["large", "uk-y1"], ["orange", "ufli-g1"],
+  // …and so do soft c, medial y, the closed-syllable long vowels and silent l
+  ["city", "uk-y1"], ["ice", "uk-y1"], ["face", "ufli-g1"], ["dance", "uk-y1"],
+  ["kind", "ufli-g1"], ["find", "uk-y1"], ["old", "uk-y1"], ["gold", "uk-y1"],
+  ["most", "ufli-g1"], ["roll", "uk-y1"], ["child", "uk-y1"], ["walk", "uk-y1"],
+  ["half", "ufli-g1"], ["gym", "uk-y1"], ["type", "ufli-g1"], ["crystal", "uk-y1"],
   // drop-e / y->i inflections decode once magic-e + teams are taught (uk-y1)
   ["making", "uk-y1"], ["hoped", "uk-y1"], ["gazed", "uk-y1"], ["noses", "uk-y1"],
   ["cried", "uk-y1"], ["crying", "uk-y1"],
@@ -533,7 +567,7 @@ const DECODABLE_UNDER = [
   ["laptop", "ufli-g1"], ["tomcat", "sor-g1"], ["pencil", "all"],
   ["sunset", "cvc-syll"], ["picnic", "cvc-syll"], ["napkin", "cvc-syll"],
   ["laptop", "cvc-syll"], ["tomcat", "cvc-syll"],
-  // medial-y words decode once advanced code is taught…
+  // medial-y words decode under the everything preset too…
   ["gym", "all"], ["myth", "all"], ["type", "all"], ["system", "all"],
   // …while compounds whose medial y is a head word's final y stay exactly as
   // decodable as the head word (every / any are uk-y1 words)
@@ -625,19 +659,18 @@ const PASSAGE = {
    is visible progress, not a red build.
    --------------------------------------------------------------- */
 const KNOWN_LIMITATIONS = [
-  // Soft c (c=/s/ before e/i/y) is MODELLED as advanced code — see the "soft c"
+  // Soft c (c=/s/ before e/i/y) is MODELLED as an alternative pronunciation
+  // (`alt`) — see the "soft c"
   // block in DECODABLE (cent, ice, race, cell, space…). FINAL y as a vowel is
   // now modelled too — see the "final y = a VOWEL" block in DECODABLE (city,
-  // happy, cry, fancy…), so city is fixed (adv+team) and promoted there.
+  // happy, cry, fancy…), so city is fixed (alt+team) and promoted there.
   // MEDIAL y is modelled too — see the "medial y = a VOWEL" block in DECODABLE
-  // (gym, myth, type, system…), so gym/myth/type are promoted there. One
-  // residue does not change any preset's verdict and stays unlocked: an
-  // inflected y-e word (types, typed, typing) loses its magic-e/endings skills
-  // because the -s/-ed/-ing stripper looks for an a/e/i/o/u vowel in the base.
-  // It still needs `adv`, which only the `all` preset teaches — and that
-  // preset teaches magice/endings too — so it never becomes a false green.
-  // Soft g (g=/j/ before e/i/y). WORD-FINAL "-ge" is now MODELLED as advanced
-  // code — see the "soft g at word-final -ge" block in DECODABLE (page, large,
+  // (gym, myth, type, system…), so gym/myth/type are promoted there. Its old
+  // residue — inflected y-e words (types, typed, typing) losing magic-e and
+  // endings because the stripper wanted an a/e/i/o/u in the base — is FIXED
+  // (it mattered once `alt` could be ticked without magic-e): see SILENT_E.
+  // Soft g (g=/j/ before e/i/y). WORD-FINAL "-ge" is now MODELLED as an
+  // alternative pronunciation (`alt`) — see the "soft g at word-final -ge" block in DECODABLE (page, large,
   // change, orange…). That position is exceptionless, so it's hard-asserted and
   // page/charge/etc. are promoted there. ONSET / MEDIAL soft g stays DELIBERATELY
   // unmodelled: a by-rule guess there is unsafe because hard-g-before-e/i/y is
@@ -646,7 +679,7 @@ const KNOWN_LIMITATIONS = [
   // words as advanced code — and a wrong mark in a phonics tool is worse than a
   // known gap. Reliable onset soft-g detection needs a lexicon, out of scope for
   // the by-rule engine, so gem/giant are locked to current (hard-g) behaviour.
-  // (gym needs BOTH onset soft g and the medial-y vowel; both are `adv`, so the
+  // (gym needs BOTH onset soft g and the medial-y vowel; both are `alt`, so the
   // medial-y rule already scores it correctly and it lives in DECODABLE.)
   { word: "gem", now: [], want: "advanced (onset soft g)", note: "onset g=/j/ unmodelled — shares its slot with get/girl/gift; scored as basic CVC" },
   { word: "giant", now: ["blend"], want: "advanced (onset soft g)", note: "onset g=/j/ unmodelled; the i+a run reads as a spurious blend" },
@@ -827,6 +860,14 @@ const SILENT_E = [
   // consonant + y -> ied
   ["cried", "cry"], ["tried", "try"], ["dried", "dry"], ["spied", "spy"],
   ["carried", "carry"], ["hurried", "hurry"],
+  // y-e (type, style, hype, rhyme): the medial y between consonants is the
+  // base's vowel, so -s/-ed/-ing strip and the dropped e is rebuilt like i-e.
+  // Before, "typ" had no a/e/i/o/u, so typing/typed/types stayed whole and
+  // needed only the y — a false green for a group taught alternatives but
+  // not magic-e. (cycled = cycle + ed: the -le e comes back too.)
+  ["types", "type"], ["typed", "type"], ["typing", "type"], ["hyped", "hype"],
+  ["styles", "style"], ["styled", "style"], ["styling", "style"],
+  ["rhymes", "rhyme"], ["rhymed", "rhyme"], ["bytes", "byte"], ["cycled", "cycle"],
   // consonant + y keeps its y before -ing (crying, flying) — the base has no
   // a/e/i/o/u, so the -ing guard now counts that final y as the vowel
   ["crying", "cry"], ["trying", "try"], ["flying", "fly"], ["frying", "fry"],
@@ -866,6 +907,7 @@ module.exports = {
   NEEDS_SKILL,
   DECODABLE_UNDER,
   CVC_SYLL_PRESET,
+  ALT_EARLY_PRESET,
   HEART,
   KNOWN,
   PASSAGE,

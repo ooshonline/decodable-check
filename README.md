@@ -21,7 +21,7 @@ npm test        # or: node test/engine.test.js
 ```
 
 The corpus runs the **real** engine straight out of `index.html` (no copy to
-drift — a browser-inert test hook exposes it to Node) against ~430 hand-authored,
+drift — a browser-inert test hook exposes it to Node) against ~900 hand-authored,
 phonics-verified cases: decodable words and their exact grapheme→skill
 decomposition, "needs an untaught skill" scenarios per program preset, heart and
 known words, and the sample passage's headline % (92% on UK Reception, 100% with
@@ -65,8 +65,13 @@ The feature loop is closed; the focus now is the engine that everything rests on
    final y's bucket), long vowels in closed syllables ✅ (kind/find/child/old/cold/
    most/roll/bolt read as the long-vowel "closed-syllable exception" — advanced
    code — not short CVC + blend; wind/lost/doll/children keep their short vowel)
-   and silent l ✅ (walk/talk/half/calm/folk — no false lk/lf blend); still to
-   do: onset soft g (gem/giant) (corpus-locked target)
+   and silent l ✅ (walk/talk/half/calm/folk — no false lk/lf blend), and the
+   `adv` catch-all split ✅: soft c, final -ge, medial y, kind/old/most and
+   walk/half are now **Alternative pronunciations** (`alt`) — taught in UK
+   Year 1 / UFLI Grade 1, so those presets read them, while `adv` keeps the
+   truly advanced kn/wr/mb/-dge/-le (saved setups migrate with unchanged
+   verdicts; type/style inflections — typing, styled — now need magic-e too);
+   still to do: onset soft g (gem/giant) (corpus-locked target)
 3. ~~Inflection-aware fix-it — correct `-s/-ing/-ed` swap spellings~~ ✅ (an
    amber `looked`/`cries` now gets same-ending swaps — `spotted`, `watched`,
    `yells` — spelled by rule: double the consonant, drop silent e, y→ies;
