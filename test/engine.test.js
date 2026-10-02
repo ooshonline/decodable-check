@@ -33,10 +33,11 @@ const eqSet = (a, b) => {
 };
 const show = (a) => `[${sorted(a).join(", ")}]`;
 
-/* resolve a preset id (or the pseudo-preset "cvc") to a taught Set */
+/* resolve a preset id (or a pseudo-preset: "cvc", "cvc-syll", "alt-early") to a taught Set */
 function taughtFor(id) {
   if (id === "cvc") return new Set(C.CVC_PRESET);
   if (id === "cvc-syll") return new Set(C.CVC_SYLL_PRESET);
+  if (id === "alt-early") return new Set(C.ALT_EARLY_PRESET);
   const p = PRESETS.find((x) => x.id === id);
   if (!p || !p.skills) throw new Error(`Unknown preset in corpus: ${id}`);
   return new Set(p.skills);
@@ -272,17 +273,44 @@ for (const [form, need] of C.NOT_SILENT_E) {
 
 /* ============================================================
    13. SKILL-SET MIGRATION — sets saved before "Two-syllable words"
-   (syll) existed must keep scoring the same: a legacy preset maps to
+   (syll, v2) or "Alternative pronunciations" (alt, v3) existed must keep
+   scoring the same: a legacy preset maps to
    its current list; a legacy custom set gains syll iff it taught
    blends (VC|CV words used to need blend); current sets are untouched.
    ============================================================ */
 {
   const up = (ids, v) => sorted(upgradeSkills(ids, v));
-  const legacy = (id) => PRESETS.find((p) => p.id === id).skills.filter((s) => s !== "syll");
+  // v2 preset lists = today's minus `alt` (split out of `adv` in v3); v1 = v2 minus `syll`
+  const v2 = (id) => PRESETS.find((p) => p.id === id).skills.filter((s) => s !== "alt");
+  const legacy = (id) => v2(id).filter((s) => s !== "syll");
   for (const id of ["uk-early", "uk-y1", "sor-g1", "ufli-g1", "all", "sor-k"]) {
-    const want = sorted(PRESETS.find((p) => p.id === id).skills);
-    check(`MIGRATE  legacy ${id} -> current ${id}`, eqSet(up(legacy(id), 1), want),
+    // a v1 set lands on its v2 list, plus `alt` exactly when it taught `adv`
+    const want = sorted(v2(id).includes("adv") ? [...v2(id), "alt"] : v2(id));
+    check(`MIGRATE  legacy ${id} -> v3 ${id}`, eqSet(up(legacy(id), 1), want),
       `got ${show(up(legacy(id), 1))} want ${show(want)}`);
+    check(`MIGRATE  v2 ${id} -> v3`, eqSet(up(v2(id), 2), want),
+      `got ${show(up(v2(id), 2))} want ${show(want)}`);
+  }
+  // v3 (alt split): a set that taught `adv` gains `alt`; one without stays as is,
+  // so every saved verdict is unchanged — soft c / kind / walk / gym / page all
+  // needed `adv` before and need `alt` now.
+  check("MIGRATE  v2 custom with adv gains alt",
+    eqSet(up(["cvc", "adv"], 2), ["adv", "alt", "cvc"]));
+  check("MIGRATE  v2 custom without adv unchanged",
+    eqSet(up(["cvc", "blend", "syll", "team"], 2), ["blend", "cvc", "syll", "team"]));
+  check("MIGRATE  v2 set already holding alt is not duplicated",
+    up(["cvc", "adv", "alt"], 2).length === 3);
+  for (const id of ["uk-early", "uk-y1", "sor-g1", "ufli-g1", "all", "sor-k"]) {
+    for (const v of [1, 2]) {
+      const before = v === 2 ? v2(id) : legacy(id);
+      const after = new Set(upgradeSkills(before, v));
+      for (const w of ["city", "page", "gym", "kind", "walk", "knot", "little", "cake"]) {
+        // what the word needed under the pre-split engine: alt was part of adv
+        const need = analyseWord(w, new Set(C.ALL)).need.map((s) => (s === "alt" ? "adv" : s));
+        const wasOk = need.every((s) => s === "cvc" || (s === "syll" && v === 1 && before.includes("blend")) || before.includes(s));
+        check(`MIGRATE  v${v} ${id} keeps "${w}" verdict`, (analyseWord(w, after).cat === "ok") === wasOk);
+      }
+    }
   }
   check("MIGRATE  sor-k stays without syll", !upgradeSkills(legacy("sor-k"), 1).includes("syll"));
   check("MIGRATE  legacy custom with blend gains syll",
