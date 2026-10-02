@@ -35,6 +35,44 @@ The original roadmap 1–4 is **done**, plus two extras. On `main`:
    final `-ge`, `wa`/`ai`, drop-e inflections, VC|CV syllable splits, and a
    **Two-syllable words** skill (`syll`) for those splits. Only onset soft g (gem/giant)
    is still open, and it's deliberately locked (it needs a lexicon).
+8. **Closed-syllable long vowels + silent l (merged 2026-10-02, #35):** kind/old/most/
+   roll and walk/half/calm/folk are `adv` with a "why" tooltip; wind/lost/doll stay
+   short.
+
+## Product direction — delegated (Kyle, 2026-10-02)
+Kyle has handed **product direction** to the nightly maintainer: what to build, in
+what order, and how phonics edge cases are bucketed are your calls. Record each
+decision here so later nights stay consistent. **Merging is NOT delegated.** Every
+change still ships as a PR that Kyle reviews and merges, and you never self-merge.
+
+**Standing decisions (2026-10-02):**
+1. **Engine accuracy beats new surface.** Hunt false greens first. A word marked
+   decodable that a child can't actually decode is the worst bug this tool can have.
+2. **Next build: split `adv` into "Alternative pronunciations" (`alt`).** This new
+   skill covers the patterns UK Phase 5 / Grade 1 teach as other sounds for known
+   letters:
+   - closed-syllable long vowels (kind, old, most, roll)
+   - silent l (walk, half, calm, folk)
+   - soft c
+   - word-final soft g (-ge)
+   - medial y (gym, type)
+
+   `adv` keeps the truly advanced code: kn, wr, mb, -dge, -le, -tion.
+   **Ticked in uk-y1, ufli-g1 and all; not in sor-g1, sor-k or uk-early.** Saved
+   skill sets that include `adv` gain `alt` on load (extend `upgradeSkills`), so no
+   teacher's existing setup gets stricter overnight. Corpus expectations move from
+   `adv` to `alt` for these words, and every preset verdict change gets a NEEDS_SKILL
+   or DECODABLE_UNDER line.
+3. **Then: "-all" (ball, call, tall, fall, small) goes into `alt`.** The a is /aw/,
+   not short a. `-all` is a "glued sound" taught alongside the other alternatives,
+   and filing it in `alt` (not `adv`) keeps it green for Year 1 / G1 groups.
+   Guard the short exceptions: shall, and words where the ll comes after another
+   vowel.
+4. **PR #31 (-eed/-ued/-oed) is approved in direction.** It conflicts with #35 on
+   one README sentence. The next nightly run refreshes it (merge `main` in, fix the
+   sentence, re-run `npm test`) so it's ready for Kyle to merge.
+5. **Out of scope:** onset soft g (gem/giant) stays a locked limitation; it needs a
+   lexicon. Ribbit / Wordlist Wonders stays on hold until Kyle raises it.
 
 ## Roadmap — the next phase (build the highest-priority item not yet done)
 The feature loop (check → rewrite → plan → track → share → back up) is closed. The
