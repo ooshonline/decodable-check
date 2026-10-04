@@ -70,7 +70,10 @@ The feature loop is closed; the focus now is the engine that everything rests on
    walk/half are now **Alternative pronunciations** (`alt`) — taught in UK
    Year 1 / UFLI Grade 1, so those presets read them, while `adv` keeps the
    truly advanced kn/wr/mb/-dge/-le (saved setups migrate with unchanged
-   verdicts; type/style inflections — typing, styled — now need magic-e too);
+   verdicts; type/style inflections — typing, styled — now need magic-e too),
+   and `-all` ✅ (ball/call/tall/small/wall read the a as /aw/ — an alternative
+   pronunciation — not short a; shall stays short, and "all" itself is a heart
+   word, as in Letters and Sounds Phase 3);
    still to do: onset soft g (gem/giant) (corpus-locked target)
 3. ~~Inflection-aware fix-it — correct `-s/-ing/-ed` swap spellings~~ ✅ (an
    amber `looked`/`cries` now gets same-ending swaps — `spotted`, `watched`,

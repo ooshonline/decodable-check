@@ -740,11 +740,12 @@ const PHASES = [
     {id:"rctrl",   n:"R-controlled vowels", ex:"star, corn, bird, her"},
     // `alt` = a letter the child already knows, saying a different sound: soft
     // c (city), word-final soft g (page), y as /ĭ/ /ī/ (gym, type), the long
-    // vowel of kind/old/most/roll and the silent l of walk/half. UK Phase 5 and
+    // vowel of kind/old/most/roll, the silent l of walk/half and the /aw/ of
+    // ball/call/tall. UK Phase 5 and
     // Grade 1 sequences teach these as "alternative pronunciations", well
     // before the truly advanced code left in `adv` (kn wr mb -dge -le), so
     // a Year 1 group can be scored on them without ticking everything.
-    {id:"alt",     n:"Alternative pronunciations", ex:"city, page, gym, kind, walk"},
+    {id:"alt",     n:"Alternative pronunciations", ex:"city, page, gym, kind, walk, ball"},
     {id:"adv",     n:"Advanced patterns", ex:"knee, gentle, badge"},
   ]},
 ];
@@ -772,7 +773,7 @@ const TRICKY = new Set(("the a I to is was said you are they of we he she me be 
   "my by put one two come some were there their where here what who why could would should " +
   "have give live love done gone want your our been they're we're I'm don't can't won't " +
   "does goes only both pull full push many any friend people because school through though " +
-  "eye once upon these those water father mother brother other another over")
+  "eye once upon these those water father mother brother other another over all")
   .toLowerCase().split(/\s+/));
 
 // Inflection spellings that LOOK like a hidden silent e but aren't: buses/gases
@@ -1069,6 +1070,7 @@ function analyseWord(raw, taught){
    wilder vs. bewilder) and -oll + "en" (swollen vs. pollen). The listed
    short exceptions and the ambiguous cases keep their short-vowel reading. */
 const CLOSED_SHORT = new Set(["wind", "doll", "moll", "loll", "gild", "compost"]);
+const ALL_SHORT = new Set(["shall"]);
 function longClosedVowel(core){
   const m = core.match(/^(.*?)(ild|ind)(est|ly|ness|less)?$/)
          || core.match(/^(.*?)(old|olt)(er|est|en|ly|ness)?$/)
@@ -1083,6 +1085,16 @@ function longClosedVowel(core){
   }
   const s = core.match(/^(.*?)(alk|alf|alm|olk)$/);
   if(s) return {at:s[1].length, silentL:true, hint:`the l in "${core}" is silent`};
+  // -all (ball, call, tall, small, wall, football, recall): the a before a
+  // final ll says /aw/, not short a — the "glued sound" UFLI teaches with the
+  // closed-syllable exceptions and UK Phase 5 lists as a for /or/. Matched at
+  // the end of the base, so balls, calling, fallen, taller and smallest are
+  // caught too. The ll itself is still the floss double. Kept short: shall,
+  // and an a that follows another vowel (it would be part of a team), though
+  // qu + all (squall) is the /aw/ pattern.
+  const a = core.match(/^(.*?)(all)(er|est|en)?$/);
+  if(a && !ALL_SHORT.has(a[1]+a[2]) && !/(^|[^q])[aeiou]$/.test(a[1]))
+    return {at:a[1].length, silentL:false, hint:`the a in "${a[1]+a[2]}" says /aw/ (the "all" pattern)`};
   return null;
 }
 

@@ -375,6 +375,27 @@ const DECODABLE = [
   ["doll", ["double"]], ["pollen", ["double"]],             // short o before ll
   ["lost", ["blend"]], ["cost", ["blend"]], ["frost", ["blend"]], // short -ost
   ["milk", ["blend"]], ["help", ["blend"]], ["belt", ["blend"]], // l is sounded: a real blend
+
+  // --- -all (ball, call, tall, small) = alternative pronunciation (roadmap #2).
+  //     The a before a final ll says /aw/, not short a — UFLI's "glued sound",
+  //     UK Phase 5's a for /or/. The engine read it as short a + the floss
+  //     double: a FALSE green for every preset. The ll still scores `double`.
+  ["ball", ["alt", "double"]], ["call", ["alt", "double"]], ["tall", ["alt", "double"]],
+  ["fall", ["alt", "double"]], ["hall", ["alt", "double"]], ["wall", ["alt", "double"]],
+  ["small", ["alt", "blend", "double"]], ["stall", ["alt", "blend", "double"]],
+  ["squall", ["alt", "double"]],                            // qu + all is the pattern too
+  ["recall", ["alt", "double"]], ["install", ["alt", "blend", "double"]],
+  ["football", ["alt", "double", "syll", "team"]], ["waterfall", ["alt", "double", "rctrl"]],
+  //     inflected / suffixed forms keep the /aw/:
+  ["balls", ["alt", "double", "endings"]], ["walls", ["alt", "double", "endings"]],
+  ["calling", ["alt", "double", "endings"]], ["called", ["alt", "double", "endings"]],
+  ["fallen", ["alt", "double"]], ["taller", ["alt", "double", "rctrl"]],
+  ["smallest", ["alt", "blend", "double"]],
+  //     guards — the ll after a short a that isn't the end of the base:
+  ["shall", ["digraph", "double"]],                         // short a: the listed exception
+  ["tally", ["double", "team"]], ["ballet", ["double"]],    // all + more letters: not -all
+  ["alley", ["double", "team"]], ["gallon", ["double"]], ["shallow", ["digraph", "double", "team"]],
+  ["really", ["double", "team"]],                           // ea + ll: no -all at all
 ];
 
 /* ---------------------------------------------------------------
@@ -502,6 +523,16 @@ const NEEDS_SKILL = [
   ["kind", "sor-g1", ["alt"]],
   ["gold", "sor-g1", ["alt"]],
   ["walk", "sor-g1", ["alt"]],
+  // -all: the a says /aw/. Every preset without `alt` was told ball/call/tall
+  // were decodable (short a + the floss double).
+  ["ball", "uk-early", ["alt"]],
+  ["call", "uk-early", ["alt"]],
+  ["small", "uk-early", ["alt"]],
+  ["called", "uk-early", ["alt"]],          // endings taught; the /aw/ is not
+  ["wall", "uk-early", ["alt"]],
+  ["tall", "cvc", ["alt"]],
+  ["fall", "sor-k", ["alt"]],
+  ["ball", "sor-g1", ["alt"]],
   // `alt` can now be ticked on its own. A Reception group taught the
   // alternatives but not magic-e must NOT read the y-e words' inflections
   // (they were scored whole — "typ" had no vowel — and needed only the y).
@@ -556,6 +587,9 @@ const DECODABLE_UNDER = [
   ["kind", "ufli-g1"], ["find", "uk-y1"], ["old", "uk-y1"], ["gold", "uk-y1"],
   ["most", "ufli-g1"], ["roll", "uk-y1"], ["child", "uk-y1"], ["walk", "uk-y1"],
   ["half", "ufli-g1"], ["gym", "uk-y1"], ["type", "ufli-g1"], ["crystal", "uk-y1"],
+  // …and -all (ball, call, small) — a Year 1 / Grade 1 glued sound
+  ["ball", "uk-y1"], ["call", "ufli-g1"], ["small", "uk-y1"], ["calling", "uk-y1"],
+  ["ball", "all"], ["shall", "uk-early"], ["tally", "uk-y1"],
   // drop-e / y->i inflections decode once magic-e + teams are taught (uk-y1)
   ["making", "uk-y1"], ["hoped", "uk-y1"], ["gazed", "uk-y1"], ["noses", "uk-y1"],
   ["cried", "uk-y1"], ["crying", "uk-y1"],
@@ -590,6 +624,10 @@ const HEART = [
   // long vowel /aɪ/ (not the short /ɪ/ a lone `i` grapheme would predict); "I'm"
   // is a contraction. Regressing either back to `ok` (decodable) is a build fail.
   "I", "I'm",
+  // "all" — a Letters and Sounds Phase 3 tricky word, taught whole long before
+  // the -all /aw/ pattern. With -all modelled it would otherwise be amber for
+  // every Reception group, though it's on nearly every early heart-word list.
+  "all",
 ];
 
 /* ---------------------------------------------------------------
@@ -810,9 +848,12 @@ const SUGGEST = [
   { word: "looked",  preset: "uk-early", want: ["spotted", "watched"] },
   { word: "leaped",  preset: "uk-early", want: ["hopped", "jumped", "skipped"] },
   { word: "watched", preset: "uk-early", want: ["spotted"] },
-  { word: "yelled",  preset: "uk-early", want: ["called"] },
+  // (called / calls used to be offered here — FALSE greens: the a of -all is
+  // /aw/, an alternative pronunciation Reception hasn't been taught.)
+  { word: "yelled",  preset: "uk-early", want: [] },
+  { word: "yelled",  preset: "uk-y1",    want: ["called", "cried", "shouted"] },
   // -s swaps (3rd-person / plural), sibilant + ies handled by the generator
-  { word: "cries",   preset: "uk-early", want: ["yells", "calls"] },
+  { word: "cries",   preset: "uk-early", want: ["yells"] },
   // scales with the taught set: teach vowel teams and peek->peeked qualifies
   { word: "looked",  preset: "uk-y1",    want: ["spotted", "watched", "peeked"] },
   // base-word suggestions (ending "") — unchanged behaviour, no regression
