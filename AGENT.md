@@ -38,6 +38,14 @@ The original roadmap 1–4 is **done**, plus two extras. On `main`:
 8. **Closed-syllable long vowels + silent l (merged 2026-10-02, #35):** kind/old/most/
    roll and walk/half/calm/folk are `adv` with a "why" tooltip; wind/lost/doll stay
    short.
+9. **`alt` split + `-all` (merged 2026-10-05, #37/#38).**
+10. **`-eed`/`-ued`/`-oed` false greens (from #31, carried in the 2026-10-05 PR):**
+    seed/need/speed were read as se|ed and glued/toed as glu|ed, which hid the vowel team.
+11. **Syllables + Open syllables (2026-10-05 PR):** only a VC|CV split used to need
+    `syll`, so robot/music/open/lion/radio/station were green even for SoR K. Now any
+    word with 2+ vowel sounds needs `syll`, and a new **Open syllables** skill (`open`)
+    covers VCV (ro·bot, and the ambiguous lem·on), V|V (li·on, gi·ant) and V + C-l/r
+    onset (se·cret, a·pril). `ui` (fruit/suit/build) and `-tion`/`-sion`/`-ssion` are `adv`.
 
 ## Product direction — delegated (Kyle, 2026-10-02)
 Kyle has handed **product direction** to the nightly maintainer: what to build, in
@@ -68,11 +76,25 @@ change still ships as a PR that Kyle reviews and merges, and you never self-merg
    and filing it in `alt` (not `adv`) keeps it green for Year 1 / G1 groups.
    Guard the short exceptions: shall, and words where the ll comes after another
    vowel.
-4. **PR #31 (-eed/-ued/-oed) is approved in direction.** It conflicts with #35 on
-   one README sentence. The next nightly run refreshes it (merge `main` in, fix the
-   sentence, re-run `npm test`) so it's ready for Kyle to merge.
+4. **PR #31 (-eed/-ued/-oed) is approved in direction.** Done 2026-10-05: the nightly
+   branch can only push to its own branch, so #31's commit was cherry-picked onto
+   current `main` (README conflict fixed) and ships in the 2026-10-05 PR. That PR
+   supersedes #31. Close #31 once it merges.
 5. **Out of scope:** onset soft g (gem/giant) stays a locked limitation; it needs a
    lexicon. Ribbit / Wordlist Wonders stays on hold until Kyle raises it.
+
+**Decisions (2026-10-05):**
+6. **Open syllables is its own skill (`open`), in Phase 3 after magic-e.** It's the
+   missing one of the six syllable types (closed, open, VCe, vowel team, r-controlled,
+   C-le). **Ticked in uk-y1, sor-g1, ufli-g1 and all; not in uk-early or sor-k.**
+   Saved sets with `magice` gain `open` on load (SKILLS_V 4). This fix is MEANT to
+   make Reception/K sets stricter, because robot was a false green there.
+7. **VCV is flagged even when the vowel is short (lemon, visit, seven).** Without a
+   lexicon the engine can't tell ro·bot from lem·on, and children are taught to try
+   both ways, so both kinds need `open`. That's a deliberate false amber.
+8. **A split at a medial double stays `double`-only** (rabbit, kitten, button,
+   happy). The `double` skill's own examples list rabbit, and the corpus asserts
+   button is green for SoR K. Revisit only if Kyle wants doubles to need `syll`.
 
 ## Roadmap — the next phase (build the highest-priority item not yet done)
 The feature loop (check → rewrite → plan → track → share → back up) is closed. The
@@ -95,7 +117,13 @@ teacher a text they shouldn't use — so engine trustworthiness comes first.
    stage work on #7. Fix it, add it to the corpus, and record it under Shipped. A false
    green hands a teacher a text they shouldn't use. If you can't fix it that night, write
    it here under **Open false greens** so the next run picks it up.
-   **Open false greens:** none known.
+   **Open false greens** (found by the 2026-10-05 frequency-list hunt, for the next run):
+   - `-aste` (taste, waste, paste, haste): long a + st + silent e, read as short a.
+   - silent letters: often/listen/castle (t), island (s), honest/hour (h), sign/design (g).
+   - `ch` as /k/ (Christmas, chorus, school is a heart word); `-ture` (nature, picture)
+     reads as t + ur + magic-e.
+   - `quiet` (qui·et) reads ie as one team.
+   Also a false AMBER: `mb` mid-word (umbrella, number) is read as the silent mb of lamb.
 3. **Inflection-aware fix-it.** Let swaps handle `-s/-es/-ing/-ed` (`looked`, `running`)
    with **correct** spelling (double-consonant, drop-e, y→ies). Only after the corpus
    exists — a wrong generated spelling in a phonics tool is the worst kind of bug, so

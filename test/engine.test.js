@@ -280,17 +280,34 @@ for (const [form, need] of C.NOT_SILENT_E) {
    ============================================================ */
 {
   const up = (ids, v) => sorted(upgradeSkills(ids, v));
-  // v2 preset lists = today's minus `alt` (split out of `adv` in v3); v1 = v2 minus `syll`
-  const v2 = (id) => PRESETS.find((p) => p.id === id).skills.filter((s) => s !== "alt");
+  // v3 preset lists = today's minus `open` (added in v4); v2 = v3 minus `alt`
+  // (split out of `adv` in v3); v1 = v2 minus `syll`
+  const v3 = (id) => PRESETS.find((p) => p.id === id).skills.filter((s) => s !== "open");
+  const v2 = (id) => v3(id).filter((s) => s !== "alt");
   const legacy = (id) => v2(id).filter((s) => s !== "syll");
   for (const id of ["uk-early", "uk-y1", "sor-g1", "ufli-g1", "all", "sor-k"]) {
-    // a v1 set lands on its v2 list, plus `alt` exactly when it taught `adv`
-    const want = sorted(v2(id).includes("adv") ? [...v2(id), "alt"] : v2(id));
-    check(`MIGRATE  legacy ${id} -> v3 ${id}`, eqSet(up(legacy(id), 1), want),
+    // an older preset list gains `alt` exactly when it taught `adv` and
+    // `open` exactly when it taught magic-e
+    const base = v2(id);
+    const want = sorted([...base, ...(base.includes("adv") ? ["alt"] : []),
+      ...(base.includes("magice") ? ["open"] : [])]);
+    check(`MIGRATE  legacy ${id} -> v4 ${id}`, eqSet(up(legacy(id), 1), want),
       `got ${show(up(legacy(id), 1))} want ${show(want)}`);
-    check(`MIGRATE  v2 ${id} -> v3`, eqSet(up(v2(id), 2), want),
+    check(`MIGRATE  v2 ${id} -> v4`, eqSet(up(v2(id), 2), want),
       `got ${show(up(v2(id), 2))} want ${show(want)}`);
+    const want3 = sorted(PRESETS.find((p) => p.id === id).skills);
+    check(`MIGRATE  v3 ${id} -> v4 ${id}`, eqSet(up(v3(id), 3), want3),
+      `got ${show(up(v3(id), 3))} want ${show(want3)}`);
   }
+  // v4 (open syllables): a set that taught magic-e gains `open`, so a Year 1 /
+  // G1 set keeps robot / music / lion green. A set without magic-e doesn't:
+  // for it robot was a FALSE green, and the fix is meant to show.
+  check("MIGRATE  v3 custom with magice gains open",
+    eqSet(up(["cvc", "magice"], 3), ["cvc", "magice", "open"]));
+  check("MIGRATE  v3 custom without magice unchanged",
+    eqSet(up(["cvc", "blend", "syll"], 3), ["blend", "cvc", "syll"]));
+  check("MIGRATE  v3 uk-y1 still reads robot", analyseWord("robot", new Set(upgradeSkills(v3("uk-y1"), 3))).cat === "ok");
+  check("MIGRATE  v3 uk-early now flags robot", analyseWord("robot", new Set(upgradeSkills(v3("uk-early"), 3))).cat === "new");
   // v3 (alt split): a set that taught `adv` gains `alt`; one without stays as is,
   // so every saved verdict is unchanged — soft c / kind / walk / gym / page all
   // needed `adv` before and need `alt` now.
@@ -306,7 +323,9 @@ for (const [form, need] of C.NOT_SILENT_E) {
       const after = new Set(upgradeSkills(before, v));
       for (const w of ["city", "page", "gym", "kind", "walk", "knot", "little", "cake"]) {
         // what the word needed under the pre-split engine: alt was part of adv
-        const need = analyseWord(w, new Set(C.ALL)).need.map((s) => (s === "alt" ? "adv" : s));
+        // (open didn't exist before v4; every set here that taught magic-e gains it)
+        const need = analyseWord(w, new Set(C.ALL)).need.map((s) => (s === "alt" ? "adv" : s))
+          .filter((s) => s !== "open" || !before.includes("magice"));
         const wasOk = need.every((s) => s === "cvc" || (s === "syll" && v === 1 && before.includes("blend")) || before.includes(s));
         check(`MIGRATE  v${v} ${id} keeps "${w}" verdict`, (analyseWord(w, after).cat === "ok") === wasOk);
       }
