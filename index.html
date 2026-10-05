@@ -738,7 +738,14 @@ const PHASES = [
   ]},
   { num:4, name:"Advanced code", skills:[
     {id:"rctrl",   n:"R-controlled vowels", ex:"star, corn, bird, her"},
-    {id:"adv",     n:"Advanced patterns", ex:"knee, gentle, station"},
+    // `alt` = a letter the child already knows, saying a different sound: soft
+    // c (city), word-final soft g (page), y as /ĭ/ /ī/ (gym, type), the long
+    // vowel of kind/old/most/roll and the silent l of walk/half. UK Phase 5 and
+    // Grade 1 sequences teach these as "alternative pronunciations", well
+    // before the truly advanced code left in `adv` (kn wr mb -dge -le), so
+    // a Year 1 group can be scored on them without ticking everything.
+    {id:"alt",     n:"Alternative pronunciations", ex:"city, page, gym, kind, walk"},
+    {id:"adv",     n:"Advanced patterns", ex:"knee, gentle, badge"},
   ]},
 ];
 
@@ -785,20 +792,26 @@ function analyseWord(raw, taught){
   // sled/shed/bled (e+d) and notes/rides (magic-e + s) as inflected forms.
   let ending = "";
   const hasVowel = s => /[aeiou]/.test(s);
+  // A medial y between consonants is a vowel (gym, type, style — see the
+  // segmenter), so the checks below read it as one: typing/typed/types/styled
+  // are type/style + an ending, not a vowel-less "typ" left whole. Without
+  // this the whole word skipped magic-e and endings and needed only `alt` —
+  // a false green for a group taught alternative pronunciations but not those.
+  const vw = word.replace(/([^aeiou])y(?=[bcdfghjklmnpqrstvwxz])/g, "$1i");
   if(/ing$/.test(word)){
-    const base = word.slice(0, -3);
+    const base = vw.slice(0, -3);
     // jumping->jump (base carries its own vowel); thing/bring/string -> i+ng.
     // crying/flying/trying: the base's final y IS its vowel (cry, fly), so
     // strip too — otherwise cr+y+i+ng read y as a consonant blend.
     if(base.length >= 2 && (hasVowel(base) || /[^aeiou]y$/.test(base))) ending = "ing";
   } else if(/ed$/.test(word)){
-    const base = word.slice(0, -2);
+    const base = vw.slice(0, -2);
     // jumped->jump; sled/shed/bled -> e+d (no vowel left in the base)
     if(base.length >= 2 && hasVowel(base)) ending = "ed";
   } else if(/s$/.test(word)){
     const beforeS = word[word.length - 2];
     if(/es$/.test(word)){
-      const base = word.slice(0, -2), withE = word.slice(0, -1);
+      const base = word.slice(0, -2), withE = vw.slice(0, -1);
       // A one-syllable magic-e base ending in s/z (nose, rose, size, prize,
       // use, close, gaze) takes plain -s; the "es" is NOT a sibilant plural.
       // Checking sibilant first stripped nos|es and read noses as short o — a
@@ -807,7 +820,7 @@ function analyseWord(raw, taught){
         ending = "s";                                   // noses|s, sizes|s (magic-e + s)
       } else if(base.length >= 2 && /(s|x|z|ch|sh)$/.test(base)){
         ending = "es";                                  // boxes, wishes, glasses, buses (sibilant + es)
-      } else if(/[aeiou][bcdfghjklmnpqrstvwxyz]e$/.test(word.slice(0, -1))){
+      } else if(/[aeiou][bcdfghjklmnpqrstvwxyz]e$/.test(withE)){
         ending = "s";                                   // notes|s, rides|s (magic-e + plural s)
       } else if(/(ce|ge|[bcdfgkptz]le)$/.test(withE)){
         ending = "s";                                   // dances|s, changes|s, tables|s (silent-e base)
@@ -844,7 +857,7 @@ function analyseWord(raw, taught){
   if(ending==="ing" || ending==="ed"){
     let base = null;
     if(ending==="ed" && /[^aeiou]i$/.test(core)) base = core.slice(0,-1)+"y";
-    else if(/^[^aeiou]*[aeiou][bcdfgjklmnpqrstvz]$/.test(core.replace(/qu/g,"kw"))
+    else if([core, vw.slice(0, core.length)].some(c=>/^[^aeiou]*[aeiou][bcdfgjklmnpqrstvz]$/.test(c.replace(/qu/g,"kw")))
          || /(dg|[nr]c|[rl]g)$/.test(core)
          || (ending==="ed" && /[bcdfgkptz]l$/.test(core))) base = core+"e";
     if(base && !TRICKY.has(base) && !NO_SILENT_E.has(word)) core = base;
@@ -888,8 +901,9 @@ function analyseWord(raw, taught){
   // rogue) or a bare "-g" (bag, flag, frog), and every hard g-before-e/i/y (get,
   // girl, tiger, finger, begin) sits mid-word — none end in "-ge", so none are
   // touched. "-dge" (badge, bridge) is already its own `adv` grapheme, so it is
-  // excluded here. Modelled as `adv`, matching soft c and -dge. The word-final g
-  // is flagged so the segmenter scores it `adv`: a magic-e -ge (page, cage) keeps
+  // excluded here. Modelled as `alt` (an alternative pronunciation of a known
+  // letter), matching soft c. The word-final g is flagged so the segmenter
+  // scores it `alt`: a magic-e -ge (page, cage) keeps
   // its long vowel (magicE already dropped the silent e), while a non-magic-e -ge
   // (large, charge, change) drops the now-silent e here so it isn't misread as a
   // vowel. The "-nge" case (change, hinge) is handled in the segmenter, where the
@@ -908,7 +922,7 @@ function analyseWord(raw, taught){
     // Word-final "-nge" is soft g (/nj/: change, range, hinge, sponge, plunge),
     // not the /ŋ/ "ng" digraph (sing, ring, long). When soft-ge is in play and
     // the greedy "ng" match sits at the very end of body, drop it so 'n' and the
-    // final soft 'g' are scored separately — n+g reads as a blend, the g as `adv`
+    // final soft 'g' are scored separately — n+g reads as a blend, the g as `alt`
     // (a word-final pair, so the syllable-split rule never applies). Words without the silent e
     // (sing, bang) never set softGe, so their "ng" digraph is untouched.
     if(matched && matched[0]==="ng" && softGe && i+2===body.length) matched=null;
@@ -945,8 +959,8 @@ function analyseWord(raw, taught){
       // consonant right after it cannot be the consonant /y/ — it is the vowel
       // /ĭ/ (gym, myth, system, crystal) or, with a split e, /ī/ (type, style).
       // When the y is the word's FIRST vowel (gym, myth, type, system, crystal,
-      // pyramid) it is an alternative spelling of /ĭ/ or /ī/ — advanced code
-      // (UK Phase 5 teaches y as /i/ and /igh/), never basic CVC. When a vowel
+      // pyramid) it is an alternative spelling of /ĭ/ or /ī/ — `alt` (UK
+      // Phase 5 teaches y as /i/ and /igh/), never basic CVC. When a vowel
       // already came before it, the y almost always closes an earlier syllable
       // of a compound or suffixed word — every·thing, any·way, ba·by·sit,
       // la·dy·bird — the same /ē/ as final y, so it takes final y's `team`
@@ -957,7 +971,7 @@ function analyseWord(raw, taught){
       // Vowel-team y (day, boy, key) is consumed by ay/oy/ey first, and a
       // start-of-word y is left alone (i>0), so neither is touched.
       else if(g==="y" && i>0 && CONS.has(core[i+1]||"")){
-        skill = /[aeiou]/.test(body.slice(0,i)) ? "team" : "adv";
+        skill = /[aeiou]/.test(body.slice(0,i)) ? "team" : "alt";
       }
       // Doubled consonant = ONE sound, never a blend. "rabbit" is rab·bit, not
       // r-a-b-b-it; the doubled letter marks the short vowel and is read once.
@@ -969,26 +983,26 @@ function analyseWord(raw, taught){
       // genuinely two sounds (accent, success = /ks/), so it's left to soft-c.
       else if(g!=="c" && CONS.has(g) && body[i+1]===g){ g=g+g; skill="double"; }
       // Soft c: a 'c' before e, i or y says /s/ (city, cent, ice, race) — that's
-      // advanced code, not the basic /k/ a beginner decodes. The rule is reliable
+      // an alternative pronunciation (`alt`), not the basic /k/ a beginner decodes. The rule is reliable
       // in English, so we model it. Soft g is deliberately NOT modelled: its
       // hard-g exceptions are too common (get, girl, gift, finger, tiger,
       // together…) for a by-rule guess to be safe, and a wrong mark in a phonics
       // tool is worse than a known gap — see test/corpus.js KNOWN_LIMITATIONS.
       // core[i+1] sees the trigger even when it's a magic-e 'e' that body-
       // stripping removed (ice -> body "ic", but core still "ice").
-      else if(g==="c" && /[eiy]/.test(core[i+1]||"")) skill="adv";
+      else if(g==="c" && /[eiy]/.test(core[i+1]||"")) skill="alt";
       // Soft g: the word-final g of a "-ge" spelling says /j/ (see the "Final
       // soft g" note above). Only the last letter of body reaches here as a bare
       // 'g' — an earlier hard g (get, tiger, engage) is never word-final, and a
       // "-dge"/"ng" is consumed as its own grapheme first — so this is the sole,
-      // exceptionless soft-g position. `adv`, like soft c.
-      else if(g==="g" && softGe && i===body.length-1) skill="adv";
+      // exceptionless soft-g position. `alt`, like soft c.
+      else if(g==="g" && softGe && i===body.length-1) skill="alt";
       else if(CONS.has(g)) skill="cvc";
       else if(VOWELS.has(g)) skill="cvc";
       else { g=body[i]; skill=null; } // punctuation/digit — ignore
     }
     if(skill){
-      // Vowel-y (final `team` or medial `adv` above) sits in CONS but is read
+      // Vowel-y (final `team` or medial `alt` above) sits in CONS but is read
       // as a vowel here, so it never chains into a blend.
       const isSingleCons = g.length===1 && CONS.has(g) && !(g==="y" && skill!=="cvc");
       if(skill!=="cvc") need.add(skill);
@@ -998,7 +1012,7 @@ function analyseWord(raw, taught){
   }
   // Long vowels in closed syllables (kind, child, old, most, roll) and the
   // silent l of walk / half / calm / folk — see longClosedVowel() below. The
-  // vowel is re-filed as `adv`; a silent l stops being a consonant, so it can't
+  // vowel is re-filed as `alt`; a silent l stops being a consonant, so it can't
   // chain into a false "lk"/"lf" blend. The nd/ld/lt/st after a long vowel IS
   // a real final blend, so those still count.
   let hint = "";
@@ -1008,9 +1022,9 @@ function analyseWord(raw, taught){
     for(let k=0; k<parts.length; k++){
       const p = parts[k];
       if(lcv.at >= off && lcv.at < off + p.g.length){
-        p.skill = "adv";
-        if(lcv.silentL && parts[k+1] && parts[k+1].g==="l"){ parts[k+1].skill="adv"; parts[k+1].cons=false; }
-        need.add("adv");
+        p.skill = "alt";
+        if(lcv.silentL && parts[k+1] && parts[k+1].g==="l"){ parts[k+1].skill="alt"; parts[k+1].cons=false; }
+        need.add("alt");
         hint = lcv.hint;
         break;
       }
@@ -1041,7 +1055,7 @@ function analyseWord(raw, taught){
    Programs teach these as their own pattern (UFLI's "closed syllable
    exceptions" -ild -ind -old -olt -ost -oll; UK Phase 5 alternative
    pronunciations — i as /igh/ in find, o as /oa/ in cold), after the core
-   code, so they're filed as advanced code (`adv`), like soft c and -dge.
+   code, so they're filed as alternative pronunciations (`alt`), like soft c.
    The silent-l words are the same story: walk, talk, chalk, half, calf, calm,
    palm, folk and yolk have a silent l and an a/o that isn't short — the l
    isn't sounded, so the old "lk"/"lf" blend was wrong too.
@@ -1261,16 +1275,16 @@ const PRESETS = [
   {id:"custom", name:"Custom (your own selection)", desc:"Tick skills by hand below.", skills:null},
   {id:"uk-early", name:"UK Reception - Phases 2-4", desc:"CVC, digraphs, blends and simple endings. No long-vowel code yet.",
     skills:["cvc","double","digraph","blend","syll","endings"]},
-  {id:"uk-y1", name:"UK Year 1 - Phase 5", desc:"Adds long-vowel spellings: magic-e, vowel teams, diphthongs and r-controlled.",
-    skills:["cvc","double","digraph","blend","syll","endings","magice","team","diph","rctrl"]},
+  {id:"uk-y1", name:"UK Year 1 - Phase 5", desc:"Adds long-vowel spellings: magic-e, vowel teams, diphthongs, r-controlled and alternative pronunciations (soft c, kind, walk).",
+    skills:["cvc","double","digraph","blend","syll","endings","magice","team","diph","rctrl","alt"]},
   {id:"sor-k", name:"SoR - Kindergarten", desc:"Foundations: single letters, CVC, double letters, digraphs and early blends.",
     skills:["cvc","double","digraph","blend"]},
   {id:"sor-g1", name:"SoR - Grade 1", desc:"Endings plus the long-vowel patterns most G1 sequences introduce.",
     skills:["cvc","double","digraph","blend","syll","endings","magice","team","diph"]},
-  {id:"ufli-g1", name:"UFLI - through Grade 1", desc:"Broad first-grade code, up to and including r-controlled vowels.",
-    skills:["cvc","double","digraph","blend","syll","endings","magice","team","diph","rctrl"]},
-  {id:"all", name:"Everything (advanced code)", desc:"All skills, including advanced patterns (kn-, -tion, soft c).",
-    skills:["cvc","double","digraph","blend","syll","endings","magice","team","diph","rctrl","adv"]},
+  {id:"ufli-g1", name:"UFLI - through Grade 1", desc:"Broad first-grade code, up to r-controlled vowels and closed-syllable exceptions (kind, old, most).",
+    skills:["cvc","double","digraph","blend","syll","endings","magice","team","diph","rctrl","alt"]},
+  {id:"all", name:"Everything (advanced code)", desc:"All skills, including advanced patterns (kn-, wr-, -dge, -le).",
+    skills:["cvc","double","digraph","blend","syll","endings","magice","team","diph","rctrl","alt","adv"]},
 ];
 
 /* Skill sets saved before "Two-syllable words" (`syll`) existed. Back then a
@@ -1278,15 +1292,26 @@ const PRESETS = [
    way only if it gains `syll` exactly when it taught blends. An old set that
    matched a preset is mapped onto that preset's current list instead, so
    "UK Reception" stays "UK Reception" and "SoR - Kindergarten" (no `syll`)
-   stays itself. Saved state now carries SKILLS_V so this runs only once. */
-const SKILLS_V = 2;
+   stays itself. Saved state now carries SKILLS_V so this runs only once.
+   v3 split "Alternative pronunciations" (`alt`) out of `adv`: soft c, final
+   -ge, medial y, kind/old/most and walk/half used to need `adv`. A set that
+   taught `adv` gains `alt`, and one that didn't stays without it, so every
+   saved passage, shared link and session scores EXACTLY as it did — an
+   upgrade never turns a word green (or amber) behind a teacher's back. */
+const SKILLS_V = 3;
 function upgradeSkills(ids, v){
-  if((Number(v)||0) >= SKILLS_V || ids.includes("syll")) return ids;
-  const set = new Set(ids);
-  const p = PRESETS.find(p=>p.skills && p.skills.filter(x=>x!=="syll").length===set.size
-                            && p.skills.every(x=>x==="syll" || set.has(x)));
-  if(p) return [...p.skills];
-  return set.has("blend") ? [...ids, "syll"] : ids;
+  v = Number(v)||0;
+  if(v >= SKILLS_V) return ids;
+  let out = ids;
+  if(v < 2 && !ids.includes("syll")){
+    // match against the presets as they were at v2 (before `alt`)
+    const set = new Set(ids);
+    const p = PRESETS.find(p=>p.skills && p.skills.filter(x=>x!=="syll" && x!=="alt").length===set.size
+                              && p.skills.every(x=>x==="syll" || x==="alt" || set.has(x)));
+    out = p ? p.skills.filter(x=>x!=="alt") : set.has("blend") ? [...ids, "syll"] : ids;
+  }
+  if(out.includes("adv") && !out.includes("alt")) out = [...out, "alt"];
+  return out;
 }
 
 /* ============================================================
@@ -2116,7 +2141,7 @@ function buildInfo(word,res){
     return "OK|Decodable using: "+(skills.length?skills.join(", "):"basic CVC")+".";
   }
   const miss=res.missing.map(s=>SKILLNAME[s]||s);
-  const why = res.hint && res.missing.includes("adv") ? " — "+res.hint : "";
+  const why = res.hint && res.missing.includes("alt") ? " — "+res.hint : "";
   return "NEW|Needs a skill you haven't ticked: "+miss.join(", ")+why+".";
 }
 
