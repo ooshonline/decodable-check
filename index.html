@@ -733,6 +733,10 @@ const PHASES = [
   ]},
   { num:3, name:"Long vowels", skills:[
     {id:"magice",  n:"Magic-e (split digraph)", ex:"cake, bike, home, cube"},
+    // `open` = a vowel that ends its syllable and says its name (ro·bot,
+    // mu·sic, li·on, ba·by). The "open" of the six syllable types; the
+    // others are cvc (closed), magice, team, rctrl and the -le in `adv`.
+    {id:"open",    n:"Open syllables", ex:"robot, music, lion, baby"},
     {id:"team",    n:"Vowel teams", ex:"rain, beach, boat, night"},
     {id:"diph",    n:"Diphthongs & other vowels", ex:"coin, town, saw, few"},
   ]},
@@ -752,6 +756,7 @@ const PHASES = [
 
 /* ordered longest-first grapheme table -> skill id */
 const GRAPHEMES = [
+  ["ssion","adv"],["tion","adv"],["sion","adv"],
   ["tch","digraph"],["igh","team"],["air","rctrl"],["are","rctrl"],["ear","rctrl"],["ore","rctrl"],["dge","adv"],
   ["sh","digraph"],["ch","digraph"],["th","digraph"],["wh","digraph"],["ph","digraph"],["ck","digraph"],["ng","digraph"],["qu","cvc"],
   ["ai","team"],["ay","team"],["ee","team"],["ea","team"],["oa","team"],["ow","team"],["oe","team"],["ie","team"],["ey","team"],["oo","team"],["ue","team"],["au","diph"],
@@ -807,8 +812,14 @@ function analyseWord(raw, taught){
     if(base.length >= 2 && (hasVowel(base) || /[^aeiou]y$/.test(base))) ending = "ing";
   } else if(/ed$/.test(word)){
     const base = vw.slice(0, -2);
-    // jumped->jump; sled/shed/bled -> e+d (no vowel left in the base)
-    if(base.length >= 2 && hasVowel(base)) ending = "ed";
+    // jumped->jump; sled/shed/bled -> e+d (no vowel left in the base).
+    // "-eed" is the ee vowel team + d, never "-ed" on a base: stripping read
+    // seed/need/feed/speed as se|ed, which needed only `endings`, not `team`.
+    // That was a FALSE green for any group with endings but no vowel teams.
+    // (freed/agreed ARE free+d/agree+d, but can't be told from seed/need
+    // without a lexicon. Leaving the word whole keeps the ee team either way,
+    // and endings is taught before teams in every preset.)
+    if(base.length >= 2 && hasVowel(base) && !/eed$/.test(word)) ending = "ed";
   } else if(/s$/.test(word)){
     const beforeS = word[word.length - 2];
     if(/es$/.test(word)){
@@ -832,6 +843,10 @@ function analyseWord(raw, taught){
     // vowel + s (bus, his, gas) and ss/xs/zs (miss, class) are NOT inflections
   }
   let core = ending ? word.slice(0, word.length-ending.length) : word;
+  // A base ending in the ue/oe vowel team takes a bare -d (glue -> glued,
+  // toe -> toed), so only the d is the ending. Stripping "ed" left glu/to,
+  // read as a short CVC vowel: the same false green as seed/need.
+  if(ending==="ed" && /[uo]ed$/.test(word)) core = word.slice(0, -1);
 
   // Restore the silent e (or final y) that the -ed/-ing spelling removed.
   // English drops a base's silent e before -ed/-ing (make -> making, hope ->
@@ -1016,7 +1031,7 @@ function analyseWord(raw, taught){
   // vowel is re-filed as `alt`; a silent l stops being a consonant, so it can't
   // chain into a false "lk"/"lf" blend. The nd/ld/lt/st after a long vowel IS
   // a real final blend, so those still count.
-  let hint = "";
+  let hint = "", hintSkill = "";
   const lcv = longClosedVowel(core);
   if(lcv){
     let off = 0;
@@ -1026,16 +1041,27 @@ function analyseWord(raw, taught){
         p.skill = "alt";
         if(lcv.silentL && parts[k+1] && parts[k+1].g==="l"){ parts[k+1].skill="alt"; parts[k+1].cons=false; }
         need.add("alt");
-        hint = lcv.hint;
+        hint = lcv.hint; hintSkill = "alt";
         break;
       }
       off += p.g.length;
     }
   }
 
+  const syl = scanSyllables(parts, word);
+  if(syl.open.length || syl.adv.length){
+    for(const k of syl.open) if(parts[k].skill==="cvc") parts[k].skill = "open";
+    for(const k of syl.adv) parts[k].skill = "adv";
+    if(syl.open.length) need.add("open");
+    if(syl.adv.length) need.add("adv");
+    if(!hint){ hint = syl.hint; hintSkill = syl.adv.length ? "adv" : "open"; }
+  }
+  const tion = parts.find(p=>/ion$/.test(p.g));
+  if(tion && !hint){ hint = `"${tion.g}" in "${word}" is read as one chunk (station, vision)`; hintSkill = "adv"; }
+
   const pairs = scanConsonantPairs(parts);
   if(pairs.blend) need.add("blend");
-  if(pairs.split) need.add("syll");
+  if(pairs.split || syl.multi) need.add("syll");
   if(consLe){ need.add("adv"); parts.push({g:leChunk, skill:"adv"}); }
   if(magicE) need.add("magice");
   if(ending) need.add("endings");
@@ -1043,7 +1069,7 @@ function analyseWord(raw, taught){
   // determine decodability
   const missing = [...need].filter(s=>!taught.has(s));
   const cat = missing.length ? "new" : "ok";
-  return {cat, need:[...need], missing, magicE, ending, parts, hint};
+  return {cat, need:[...need], missing, magicE, ending, parts, hint, hintSkill};
 }
 
 /* ---------- long vowels in closed syllables ----------
@@ -1128,6 +1154,78 @@ function isVowelPart(p){
   // a vowel-y (final or medial) is never `cons`, so any y reaching here is a vowel
   return p && !p.cons && (/^(team|diph|rctrl)$/.test(p.skill) || /[aeiouy]/.test(p.g));
 }
+/* ---------- syllables ----------
+   The engine used to need `syll` only for a VC|CV split (sun·set, nap·kin),
+   so every OTHER word of two or more syllables was scored as if it were one
+   short-vowel CVC word. robot, music, open, lemon, lion, giant, radio and
+   fruit were green even for SoR Kindergarten, which hasn't taught two-
+   syllable words at all. Three fixes, each one a FALSE green:
+   - Any word with two or more vowel sounds needs `syll`. A team, an r-vowel
+     or a -tion counts once; a silent final e (else, solve, sense) doesn't
+     count, and neither does a magic-e (already stripped from body). One
+     kept exception: a two-syllable word split at a doubled consonant
+     (rab·bit, kit·ten, but·ton, hap·py) stays with `double`, whose own
+     examples list rabbit. The double already shows where the split goes.
+   - One consonant between two vowels (VCV: ro·bot, o·pen, mu·sic, but also
+     lem·on, vis·it, sev·en). The first vowel can end its syllable and be
+     LONG, or close it and be short, and only knowing the word tells you
+     which. Children are taught to try the long (open) sound first, then
+     the short one, so the first vowel needs Open syllables (`open`), taught
+     with or soon after magic-e. Year 1 / G1 presets read these, while
+     Reception / K flag them. A digraph, x or a
+     doubled letter between the vowels closes the syllable (bish·op, rock·et,
+     tax·i, rab·bit), so those stay short and aren't flagged. So does a
+     consonant before -tion (ques·tion, ac·tion).
+   - Two single vowels side by side that aren't a team (li·on, gi·ant,
+     ra·di·o, ne·on). The first vowel ends its syllable, so it says its name:
+     `open` again. The same holds before a consonant + l / r pair that
+     can start the next syllable (se·cret, a·pril, pro·gram vs. pet·rol).
+     "ui" is the exception: fruit, suit, juice, build, guitar.
+     It's a rare spelling (/oo/ or a silent u), not two syllables, so `adv`. */
+// a consonant + l / r pair can start a syllable, so a vowel before it may be open
+const LR_ONSETS = new Set("bl br cl cr dr fl fr gl gr pl pr tr".split(" "));
+function isSyllableVowel(p){
+  return isVowelPart(p) && p.g!=="qu" && p.g!=="dge";
+}
+function scanSyllables(parts, word){
+  const open = [], adv = [];
+  let hint = "";
+  // silent final e: a bare e after a consonant, with a vowel earlier
+  const last = parts.length - 1;
+  const silentEnd = last >= 2 && parts[last].g==="e" && parts[last].skill==="cvc" &&
+    !isSyllableVowel(parts[last-1]) && parts.slice(0, last-1).some(isSyllableVowel);
+  const vowelAt = k => k < parts.length && !(silentEnd && k===last) && isSyllableVowel(parts[k]);
+  const single = k => parts[k] && parts[k].skill==="cvc" && VOWELS.has(parts[k].g);
+  let count = 0;
+  for(let k=0; k<parts.length; k++) if(vowelAt(k)) count++;
+  for(let k=0; k<parts.length-1; k++){
+    if(!single(k)) continue;
+    const v = parts[k].g, n = parts[k+1];
+    if(single(k+1)){
+      if(v==="u" && n.g==="i"){
+        adv.push(k, k+1);
+        hint = hint || `"ui" in "${word}" is a rare spelling (fruit, build)`;
+        k++;
+      } else if(vowelAt(k+1)){
+        open.push(k);
+        hint = hint || `the ${v} in "${word}" ends its syllable, so it says its name (an open syllable)`;
+      }
+    } else if(n.cons && n.g!=="x" && n.skill==="cvc" && parts[k+2] && parts[k+2].cons &&
+              LR_ONSETS.has(n.g + parts[k+2].g) && vowelAt(k+3)){
+      open.push(k);
+      hint = hint || `the ${v} in "${word}" comes before "${n.g + parts[k+2].g}", which can start the next syllable: it may be long (se·cret) or short (pet·rol)`;
+    } else if(n.cons && n.g!=="x" && n.skill==="cvc" && vowelAt(k+2) && !/[st]ion$/.test(parts[k+2].g)){
+      open.push(k);
+      hint = hint || `one consonant between two vowels in "${word}": the ${v} may be long (ro·bot) or short (lem·on), so it has to be tried both ways`;
+    }
+  }
+  count -= adv.length / 2;   // ui is one vowel sound: fruit, suit, build
+  // split at a medial double (rab·bit, hap·py): the double carries the split
+  const atDouble = count===2 && parts.some((p,k)=>p.skill==="double" && k>0 &&
+    vowelAt(k-1) && vowelAt(k+1));
+  return {multi: count>=2 && !atDouble, open, adv, hint};
+}
+
 function scanConsonantPairs(parts){
   let blend=false, split=false;
   for(let k=1; k<parts.length; k++){
@@ -1287,16 +1385,16 @@ const PRESETS = [
   {id:"custom", name:"Custom (your own selection)", desc:"Tick skills by hand below.", skills:null},
   {id:"uk-early", name:"UK Reception - Phases 2-4", desc:"CVC, digraphs, blends and simple endings. No long-vowel code yet.",
     skills:["cvc","double","digraph","blend","syll","endings"]},
-  {id:"uk-y1", name:"UK Year 1 - Phase 5", desc:"Adds long-vowel spellings: magic-e, vowel teams, diphthongs, r-controlled and alternative pronunciations (soft c, kind, walk).",
-    skills:["cvc","double","digraph","blend","syll","endings","magice","team","diph","rctrl","alt"]},
+  {id:"uk-y1", name:"UK Year 1 - Phase 5", desc:"Adds long-vowel spellings: magic-e, open syllables, vowel teams, diphthongs, r-controlled and alternative pronunciations (soft c, kind, walk).",
+    skills:["cvc","double","digraph","blend","syll","endings","magice","open","team","diph","rctrl","alt"]},
   {id:"sor-k", name:"SoR - Kindergarten", desc:"Foundations: single letters, CVC, double letters, digraphs and early blends.",
     skills:["cvc","double","digraph","blend"]},
   {id:"sor-g1", name:"SoR - Grade 1", desc:"Endings plus the long-vowel patterns most G1 sequences introduce.",
-    skills:["cvc","double","digraph","blend","syll","endings","magice","team","diph"]},
+    skills:["cvc","double","digraph","blend","syll","endings","magice","open","team","diph"]},
   {id:"ufli-g1", name:"UFLI - through Grade 1", desc:"Broad first-grade code, up to r-controlled vowels and closed-syllable exceptions (kind, old, most).",
-    skills:["cvc","double","digraph","blend","syll","endings","magice","team","diph","rctrl","alt"]},
+    skills:["cvc","double","digraph","blend","syll","endings","magice","open","team","diph","rctrl","alt"]},
   {id:"all", name:"Everything (advanced code)", desc:"All skills, including advanced patterns (kn-, wr-, -dge, -le).",
-    skills:["cvc","double","digraph","blend","syll","endings","magice","team","diph","rctrl","alt","adv"]},
+    skills:["cvc","double","digraph","blend","syll","endings","magice","open","team","diph","rctrl","alt","adv"]},
 ];
 
 /* Skill sets saved before "Two-syllable words" (`syll`) existed. Back then a
@@ -1309,8 +1407,13 @@ const PRESETS = [
    -ge, medial y, kind/old/most and walk/half used to need `adv`. A set that
    taught `adv` gains `alt`, and one that didn't stays without it, so every
    saved passage, shared link and session scores EXACTLY as it did — an
-   upgrade never turns a word green (or amber) behind a teacher's back. */
-const SKILLS_V = 3;
+   upgrade never turns a word green (or amber) behind a teacher's back.
+   v4 added "Open syllables" (`open`). It fixes FALSE greens (robot, music
+   and lion were scored as short-vowel CVC), so unlike v3 it's meant to make
+   some words amber. A set that taught magic-e gains `open`: every program
+   teaches open syllables alongside or soon after magic-e, so a Year 1 / G1
+   set keeps robot green, while a Reception / K set now flags it. */
+const SKILLS_V = 4;
 function upgradeSkills(ids, v){
   v = Number(v)||0;
   if(v >= SKILLS_V) return ids;
@@ -1318,11 +1421,13 @@ function upgradeSkills(ids, v){
   if(v < 2 && !ids.includes("syll")){
     // match against the presets as they were at v2 (before `alt`)
     const set = new Set(ids);
-    const p = PRESETS.find(p=>p.skills && p.skills.filter(x=>x!=="syll" && x!=="alt").length===set.size
-                              && p.skills.every(x=>x==="syll" || x==="alt" || set.has(x)));
-    out = p ? p.skills.filter(x=>x!=="alt") : set.has("blend") ? [...ids, "syll"] : ids;
+    const later = x => x==="syll" || x==="alt" || x==="open";
+    const p = PRESETS.find(p=>p.skills && p.skills.filter(x=>!later(x)).length===set.size
+                              && p.skills.every(x=>later(x) || set.has(x)));
+    out = p ? p.skills.filter(x=>x!=="alt" && x!=="open") : set.has("blend") ? [...ids, "syll"] : ids;
   }
   if(out.includes("adv") && !out.includes("alt")) out = [...out, "alt"];
+  if(v < 4 && out.includes("magice") && !out.includes("open")) out = [...out, "open"];
   return out;
 }
 
@@ -2153,7 +2258,7 @@ function buildInfo(word,res){
     return "OK|Decodable using: "+(skills.length?skills.join(", "):"basic CVC")+".";
   }
   const miss=res.missing.map(s=>SKILLNAME[s]||s);
-  const why = res.hint && res.missing.includes("alt") ? " — "+res.hint : "";
+  const why = res.hint && res.missing.includes(res.hintSkill) ? " — "+res.hint : "";
   return "NEW|Needs a skill you haven't ticked: "+miss.join(", ")+why+".";
 }
 
