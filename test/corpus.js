@@ -266,11 +266,10 @@ const DECODABLE = [
   //     style) — an alternative pronunciation (`alt`). Before this fix it sat in
   //     CONS and chained into a spurious blend (myth m+y, type t+y+p), so groups
   //     with blends but no y-as-a-vowel were told these were decodable.
-  //     symbol keeps `adv` too: the greedy "mb" grapheme reads its m|b as a
-  //     silent b — stricter than true, never a false green.
+  //     symbol's b is sounded (sym·bol), so it needs no `adv`: see the mb block.
   ["gym", ["alt"]], ["myth", ["alt", "digraph"]], ["gyms", ["alt", "endings"]],
   ["pyramid", ["alt", "open", "syll"]], ["typical", ["alt", "open", "syll"]], ["lyric", ["alt", "syll"]],
-  ["nylon", ["alt", "syll"]], ["syrup", ["alt", "syll"]], ["symbol", ["adv", "alt", "syll"]],
+  ["nylon", ["alt", "syll"]], ["syrup", ["alt", "syll"]], ["symbol", ["alt", "syll"]],
   ["python", ["alt", "digraph", "syll"]], ["physics", ["alt", "digraph", "endings", "syll"]],
   ["system", ["alt", "blend", "syll"]], ["crystal", ["alt", "blend", "syll"]],   // real s+t / c+r blends stay
   ["gymnast", ["alt", "blend", "syll"]], ["hydrant", ["alt", "blend", "syll"]],
@@ -434,6 +433,46 @@ const DECODABLE = [
   ["lunchbox", ["digraph", "syll"]], ["hotdog", ["syll"]],
   //     a silent final e is not a syllable
   ["sense", ["blend"]], ["solve", ["blend"]], ["twelve", ["blend"]],
+  // --- the 2026-10-06 false greens (roadmap #2). Each was green for a group
+  //     taught only blends / magic-e / r-control, but a child sounding it
+  //     out letter by letter says the wrong word.
+  // -aste: the e reaches back across st, so the a is long (alt, like most/post)
+  ["taste", ["alt", "blend"]], ["waste", ["alt", "blend"]], ["paste", ["alt", "blend"]],
+  ["haste", ["alt", "blend"]], ["tasted", ["alt", "blend", "endings"]],
+  ["wasting", ["alt", "blend", "endings"]], ["tastes", ["alt", "blend", "endings"]],
+  ["tasty", ["alt", "blend", "syll", "team"]],
+  // …while their short-a neighbours keep a short a
+  ["past", ["blend"]], ["fasted", ["blend", "endings"]], ["lasting", ["blend", "endings"]],
+  ["nasty", ["blend", "syll", "team"]], ["vast", ["blend"]],
+  // silent t (-sten / -ften), silent g (gn at a word edge), silent h / s
+  ["listen", ["adv", "syll"]], ["listening", ["adv", "endings", "syll"]],
+  ["fasten", ["adv", "syll"]], ["often", ["adv", "syll"]], ["soften", ["adv", "syll"]],
+  ["hasten", ["adv", "alt", "syll"]],
+  ["sign", ["adv"]], ["signs", ["adv", "endings"]], ["gnat", ["adv"]], ["gnome", ["adv", "magice"]],
+  ["design", ["adv", "open", "syll"]],
+  ["hour", ["adv", "diph"]], ["hours", ["adv", "diph", "endings"]], ["island", ["adv", "blend", "syll"]],
+  ["honest", ["adv", "blend", "open", "syll"]],
+  // a gn in the middle of a word is sounded: no silent letter
+  ["signal", ["syll"]], ["magnet", ["syll"]],
+  // ch as /k/: chr- / chl- at the start, and a short list of common words
+  ["christmas", ["adv", "blend", "syll"]], ["chris", ["adv"]], ["chrome", ["adv", "magice"]],
+  ["chorus", ["adv", "rctrl", "syll"]], ["echo", ["adv", "syll"]], ["ache", ["adv"]],
+  ["aches", ["adv", "endings"]], ["anchor", ["adv", "rctrl", "syll"]],
+  // …and an ordinary ch, including before a consonant in a compound, stays /ch/
+  ["chin", ["digraph"]], ["lunchbox", ["digraph", "syll"]], ["chop", ["digraph"]],
+  // -ture is one chunk, /cher/; the vowel before it is open only when nothing comes between
+  ["picture", ["adv", "syll"]], ["pictures", ["adv", "endings", "syll"]], ["pictured", ["adv", "endings", "syll"]],
+  ["mixture", ["adv", "syll"]], ["adventure", ["adv", "syll"]],
+  ["nature", ["adv", "open", "syll"]], ["future", ["adv", "open", "syll"]],
+  ["creature", ["adv", "blend", "syll", "team"]],
+  // quiet / diet: i·e is two vowels, not the ie team
+  ["quiet", ["open", "syll"]], ["diet", ["open", "syll"]], ["quietly", ["open", "syll", "team"]],
+  ["field", ["blend", "team"]], ["pie", ["team"]],
+  // mb: silent at the end of a word or word part, sounded between vowels and before l / r
+  ["lamb", ["adv"]], ["climb", ["adv", "blend"]], ["climbing", ["adv", "blend", "endings"]],
+  ["climber", ["adv", "blend", "rctrl", "syll"]], ["thumbnail", ["adv", "digraph", "syll", "team"]],
+  ["number", ["rctrl", "syll"]], ["timber", ["rctrl", "syll"]], ["member", ["rctrl", "syll"]],
+  ["umbrella", ["blend", "double", "syll"]],
 ];
 
 /* ---------------------------------------------------------------
@@ -518,6 +557,20 @@ const NEEDS_SKILL = [
   ["knot", "uk-y1", ["adv"]],
   ["wrap", "ufli-g1", ["adv"]],
   ["lamb", "uk-y1", ["adv"]],
+  // 2026-10-06 false greens: each of these was green for the group named
+  ["taste", "uk-early", ["alt"]],           // was short a + st: "tast"
+  ["wasted", "sor-g1", ["alt"]],
+  ["listen", "uk-early", ["adv"]],          // was a false s+t blend: "lis-ten"
+  ["often", "uk-y1", ["adv"]],
+  ["sign", "uk-early", ["adv"]],            // was a false g+n blend
+  ["hour", "uk-y1", ["adv"]],
+  ["island", "uk-y1", ["adv"]],
+  ["christmas", "uk-early", ["adv"]],       // was ch = /ch/: "chris-mas"
+  ["echo", "uk-y1", ["adv"]],
+  ["picture", "uk-y1", ["adv"]],            // was t + ur + magic-e: "pic-tyoor"
+  ["nature", "ufli-g1", ["adv"]],
+  ["quiet", "uk-early", ["open"]],          // was the ie team: one syllable
+  ["diet", "sor-k", ["open", "syll"]],
   ["badge", "uk-y1", ["adv"]],
   ["bridge", "ufli-g1", ["adv"]],
   ["circle", "uk-y1", ["adv"]],             // soft c taught (alt); only the -le blocks it
@@ -663,6 +716,14 @@ const DECODABLE_UNDER = [
   ["robot", "uk-y1"], ["music", "sor-g1"], ["lion", "ufli-g1"], ["lemon", "sor-g1"],
   // a digraph / x / double between the vowels keeps the vowel short: Reception reads it
   ["bishop", "uk-early"], ["rocket", "uk-early"], ["taxi", "uk-early"], ["hotdog", "uk-early"],
+  // -aste words decode once alternative pronunciations are taught (Year 1 / G1)
+  ["taste", "uk-y1"], ["waste", "ufli-g1"], ["tasty", "uk-y1"],
+  // the mb between vowels was a false AMBER: both letters are sounded
+  ["number", "uk-y1"], ["umbrella", "uk-early"], ["member", "uk-y1"],
+  // quiet / diet are open syllables, read once open syllables are taught
+  ["quiet", "uk-y1"], ["diet", "sor-g1"],
+  // and everything new decodes under the everything preset
+  ["listen", "all"], ["sign", "all"], ["christmas", "all"], ["picture", "all"], ["hour", "all"],
 ];
 
 /* ---------------------------------------------------------------
@@ -1004,8 +1065,31 @@ const NOT_SILENT_E = [
   ["during", ["rctrl", "endings"]],
 ];
 
+/* ---------------------------------------------------------------
+   13. WHY-HINTS — [word, hint skill, text the hint must contain]. When a
+   word is amber, the tooltip says WHY ("the t in listen is silent"). Each
+   reason below names the rule that made the word advanced, so a teacher
+   sees the real gap, not just a skill name.
+   --------------------------------------------------------------- */
+const HINTS = [
+  ["listen", "adv", "the t in \"listen\" is silent"],
+  ["often", "adv", "the t in \"often\" is silent"],
+  ["sign", "adv", "the g in \"sign\" is silent"],
+  ["hour", "adv", "the h in \"hour\" is silent"],
+  ["island", "adv", "the s in \"island\" is silent"],
+  ["lamb", "adv", "the b in \"lamb\" is silent"],
+  ["knee", "adv", "the k in \"knee\" is silent"],
+  ["wrap", "adv", "the w in \"wrap\" is silent"],
+  ["Christmas", "adv", "the ch in \"Christmas\" says /k/"],
+  ["picture", "adv", "\"ture\" in \"picture\" is read as one chunk"],
+  ["hasten", "adv", "the t in \"hasten\" is silent"],    // adv wins over the long a
+  ["taste", "alt", "the a in \"taste\" says its name"],
+  ["quiet", "open", "the i in \"quiet\" ends its syllable"],
+];
+
 module.exports = {
   ALL,
+  HINTS,
   CVC_PRESET,
   DECODABLE,
   NEEDS_SKILL,

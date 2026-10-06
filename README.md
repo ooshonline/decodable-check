@@ -80,7 +80,15 @@ The feature loop is closed; the focus now is the engine that everything rests on
    syllables** skill covers ro·bot, mu·sic, li·on, se·cret and the ambiguous
    lem·on/vis·it, where the first vowel may be long or short; `ui` (fruit,
    build) and `-tion`/`-sion` are advanced code; robot/music/station were
-   green even for SoR Kindergarten before);
+   green even for SoR Kindergarten before), and the last open false greens ✅:
+   `-aste` (taste/waste/paste: the e reaches back across st, so the long a is an
+   alternative pronunciation), silent letters (lis·ten, of·ten, sign, gnat, hour,
+   island: advanced code, and no false st/gn blend), `ch` as /k/ (Christmas,
+   chrome, chorus, echo, stomach), `-ture` as one /cher/ chunk (picture, nature)
+   and qui·et/di·et as two vowels, not the ie team. `mb` is silent only at the end
+   of a word or word part (lamb, climb·ing, thumb·nail), so num·ber, mem·ber and
+   um·brel·la are no longer a false amber. Amber words now say which letter is
+   silent (kn/wr/mb too);
    still to do: onset soft g (gem/giant) (corpus-locked target)
 3. ~~Inflection-aware fix-it — correct `-s/-ing/-ed` swap spellings~~ ✅ (an
    amber `looked`/`cries` now gets same-ending swaps — `spotted`, `watched`,

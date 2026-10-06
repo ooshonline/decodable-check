@@ -836,6 +836,8 @@ function analyseWord(raw, taught){
         ending = "s";                                   // notes|s, rides|s (magic-e + plural s)
       } else if(/(ce|ge|[bcdfgkptz]le)$/.test(withE)){
         ending = "s";                                   // dances|s, changes|s, tables|s (silent-e base)
+      } else if(ASTE.test(withE)){
+        ending = "s";                                   // tastes|s, wastes|s (-aste base)
       }                                                 // sees/goes/toes: leave whole (root vowel team)
     } else if(word.length - 1 >= 2 && CONS.has(beforeS) && !"sxz".includes(beforeS)){
       ending = "s";                                     // jumps, hands, cats (consonant + s)
@@ -875,6 +877,7 @@ function analyseWord(raw, taught){
     if(ending==="ed" && /[^aeiou]i$/.test(core)) base = core.slice(0,-1)+"y";
     else if([core, vw.slice(0, core.length)].some(c=>/^[^aeiou]*[aeiou][bcdfgjklmnpqrstvz]$/.test(c.replace(/qu/g,"kw")))
          || /(dg|[nr]c|[rl]g)$/.test(core)
+         || /.tur$/.test(core)                       // pictured, capturing (-ture)
          || (ending==="ed" && /[bcdfgkptz]l$/.test(core))) base = core+"e";
     if(base && !TRICKY.has(base) && !NO_SILENT_E.has(word)) core = base;
   }
@@ -890,6 +893,15 @@ function analyseWord(raw, taught){
   // the double still scores as `double`. A vowel before -le (pale, role, while)
   // is magic-e, and 'y' before -le (style) is the y-vowel/magic-e pattern — both
   // excluded, so only a true consonant-le reaches here.
+  // -ture (picture, nature, adventure, future, mixture): a word-final "ture"
+  // says /cher/. Read letter by letter it was t + ur + a magic-e, so a group
+  // taught magic-e and r-controlled vowels was told "picture" was decodable
+  // when a child sounding it out says /pic-tyoor/: a FALSE green. "ture" is
+  // read as one chunk, like -tion, and filed as advanced code. Peeled here,
+  // before magic-e detection, so its e is never taken for a split digraph.
+  let ture = false;
+  if(core.length>4 && /ture$/.test(core)){ ture = true; core = core.slice(0,-4); }
+
   let consLe=false, leChunk="";
   if(core.length>=3 && /[bcdfghjklmnpqrstvwxz]le$/.test(core)){
     consLe=true;
@@ -927,6 +939,7 @@ function analyseWord(raw, taught){
   const softGe = core.length>=3 && /ge$/.test(core) && !/dge$/.test(core);
   if(softGe && !magicE){ body = core.slice(0,-1); }
 
+  const chK = /^ch[rl]/.test(core) || [word, core, core+"e"].some(w=>CH_K.has(w));
   const need = new Set();            // required skills
   const parts = [];                  // {g, skill}
   let i=0;
@@ -953,8 +966,26 @@ function analyseWord(raw, taught){
     // "ay" (way, sway) already resolves to the same `team` via the final-y rule,
     // and "wa" + consonant (wash, swan, swap, want) keeps its current scoring.
     if(matched && matched[0]==="wa" && body[i+2]==="i") matched=null;
+    // "mb" is a silent b only at the end of a word or a word part (lamb,
+    // climb, thumb·nail, lamb·skin) and in climber / plumber / bomber. Between
+    // two vowels, or before l / r, both letters are sounded: num·ber,
+    // tim·ber, mem·ber, Novem·ber, um·brel·la. Reading those as the silent mb
+    // of lamb made them need advanced code: a false AMBER that hid easy words.
+    if(matched && matched[0]==="mb" && !MB_SILENT.test(core) &&
+       body.length > i+2 && !(CONS.has(body[i+2]) && !/[lr]/.test(body[i+2]))) matched=null;
+    // "ie" before a final t is two vowels, not the ie team: qui·et, di·et,
+    // qui·et·ly, di·et·er. No English word has an ie team before a final t,
+    // so splitting it is safe. The i then ends its syllable (open, li·on).
+    if(matched && matched[0]==="ie" && /^iet(s|ly|er|ers|est|ness)?$/.test(body.slice(i))) matched=null;
     let g, skill;
-    if(matched){ [g,skill]=matched; }
+    if(matched){
+      [g,skill]=matched;
+      // ch as /k/ (Christmas, chrome, chorus, echo, stomach): a "ch" before
+      // r or l at the start of a word is always /k/, and a short list covers
+      // the common Greek-origin words. A child taught ch = /ch/ reads
+      // "Christmas" as /chris-mas/, so it is advanced code, not a digraph.
+      if(g==="ch" && chK) skill="adv";
+    }
     else {
       g = body[i];
       // Final y = a VOWEL, never a consonant. At the end of a word 'y' spells a
@@ -1032,7 +1063,34 @@ function analyseWord(raw, taught){
   // chain into a false "lk"/"lf" blend. The nd/ld/lt/st after a long vowel IS
   // a real final blend, so those still count.
   let hint = "", hintSkill = "";
-  const lcv = longClosedVowel(core);
+  if(ture){ parts.push({g:"ture", skill:"adv", cons:false}); need.add("adv"); }
+
+  // Silent letters (listen, often, sign, gnat, hour, island): the letter is
+  // written but not sounded, so it is advanced code (like kn / wr / mb) and
+  // stops being a consonant, which also drops the false "st"/"ft"/"gn"
+  // blend it used to form. Before this, listen / often / sign / hour were
+  // green for any group taught blends: a FALSE green.
+  //  - t in a final -sten / -ften (listen, fasten, glisten, hasten, often,
+  //    soften), and their -s / -ed / -ing forms. (-stle, castle / whistle,
+  //    already needs `adv` for its -le.)
+  //  - g in a gn at the start or end of a word (gnat, gnome, sign, design,
+  //    align, reign). A gn in the middle is sounded (sig·nal, mag·net).
+  //  - a few common one-offs: the h of hour / honest / honour / heir and
+  //    the s of island / isle.
+  let silentHint = "";
+  const silentAt = [];
+  if(/[sf]ten$/.test(core)) silentAt.push(core.length-3);
+  if(/^gn/.test(core)) silentAt.push(0);
+  if(/.gn$/.test(core)) silentAt.push(core.length-2);
+  if(SILENT_ONE.has(core)) silentAt.push(SILENT_ONE.get(core));
+  for(const at of silentAt){
+    const p = partAt(parts, at);
+    if(!p || p.g.length!==1 || !CONS.has(p.g)) continue;
+    p.skill = "adv"; p.cons = false; need.add("adv");
+    silentHint = silentHint || `the ${p.g} in "${raw}" is silent`;
+  }
+
+  const lcv = longClosedVowel(core) || longAste(word);
   if(lcv){
     let off = 0;
     for(let k=0; k<parts.length; k++){
@@ -1058,6 +1116,15 @@ function analyseWord(raw, taught){
   }
   const tion = parts.find(p=>/ion$/.test(p.g));
   if(tion && !hint){ hint = `"${tion.g}" in "${word}" is read as one chunk (station, vision)`; hintSkill = "adv"; }
+  // An advanced-code reason wins over every other hint: `adv` is taught last,
+  // so when it is missing it is the real gap (hasten: silent t over long a).
+  // kn / wr / mb are silent-letter graphemes too, so they get the same reason
+  const kwm = parts.find(p=>p.skill==="adv" && /^(kn|wr|mb)$/.test(p.g));
+  if(kwm && !silentHint) silentHint = `the ${kwm.g[kwm.g==="mb"?1:0]} in "${raw}" is silent`;
+  const advHint = silentHint ||
+    (ture ? `"ture" in "${raw}" is read as one chunk, /cher/ (picture, nature)` : "") ||
+    (chK && parts.some(p=>p.g==="ch") ? `the ch in "${raw}" says /k/ (Christmas, echo)` : "");
+  if(advHint){ hint = advHint; hintSkill = "adv"; }
 
   const pairs = scanConsonantPairs(parts);
   if(pairs.blend) need.add("blend");
@@ -1095,6 +1162,41 @@ function analyseWord(raw, taught){
    Ambiguous cases stay as before: -ind/-ild + "er" (finder vs. hinder,
    wilder vs. bewilder) and -oll + "en" (swollen vs. pollen). The listed
    short exceptions and the ambiguous cases keep their short-vowel reading. */
+/* ---------- silent letters, ch as /k/, -aste ----------
+   Small, closed lists for spellings no rule can catch. Each is a word a
+   child taught only the basic code would mis-read, so each was a false green
+   (or, for mb, a false amber). Matched on the base word, so the -s / -ed /
+   -ing forms come along (hours, aches, climbers). */
+// silent h / s: the letter's position in the word
+const SILENT_ONE = new Map([["hour",0],["honest",0],["honesty",0],["honour",0],["honor",0],
+  ["heir",0],["island",1],["isle",1]]);
+// ch = /k/ beyond the rule-based chr- / chl- (Christmas, chrome, chlorine)
+const CH_K = new Set(("ache echo anchor stomach chorus chord chemist chemistry chemical " +
+  "character orchestra mechanic monarch chaos scheme schedule").split(" "));
+// -mber words whose b IS silent (climb + er); every other mb between vowels is sounded
+const MB_SILENT = /^(climb|plumb|bomb|comb|thumb|lamb)(er|ers)$/;
+// the part that covers letter `at` of the word
+function partAt(parts, at){
+  let off = 0;
+  for(const p of parts){ if(at >= off && at < off + p.g.length) return p; off += p.g.length; }
+  return null;
+}
+/* -aste (taste, waste, paste, haste, chaste, baste): the silent e reaches back
+   across the "st" and makes the a long. Read letter by letter it was short
+   a + an st blend + a stray e, so "taste" was green for any group taught
+   blends: a FALSE green. It is the same long-vowel-before-st story as most /
+   post / host, so it is filed with them as an alternative pronunciation.
+   The forms that drop the e (tasted, wasting, pasted, tasty, hasten) are
+   matched as whole words: "fasted"/"lasting"/"nasty" keep their short a, and
+   so do the bare stems past / bast / hast, and the ambiguous "pasty". */
+const ASTE = /^(t|w|p|h|ch|b)(ast)(e|es|ed|ing|er|ers|eful|y|ily|ier|iest|en|ens|ened|ening)$/;
+function longAste(word){
+  const m = word.match(ASTE);
+  if(!m || word==="pasty") return null;
+  return {at:m[1].length, silentL:false,
+    hint:`the a in "${word}" says its name: the e of "${m[1]}aste" reaches back across the st`};
+}
+
 const CLOSED_SHORT = new Set(["wind", "doll", "moll", "loll", "gild", "compost"]);
 const ALL_SHORT = new Set(["shall"]);
 function longClosedVowel(core){
@@ -1214,7 +1316,12 @@ function scanSyllables(parts, word){
               LR_ONSETS.has(n.g + parts[k+2].g) && vowelAt(k+3)){
       open.push(k);
       hint = hint || `the ${v} in "${word}" comes before "${n.g + parts[k+2].g}", which can start the next syllable: it may be long (se·cret) or short (pet·rol)`;
-    } else if(n.cons && n.g!=="x" && n.skill==="cvc" && vowelAt(k+2) && !/[st]ion$/.test(parts[k+2].g)){
+    } else if(n.g==="ture"){
+      // na·ture, fu·ture: "ture" starts with its own consonant, so a single
+      // vowel right before it ends its syllable (pic·ture, mix·ture are closed)
+      open.push(k);
+      hint = hint || `the ${v} in "${word}" ends its syllable, so it says its name (na·ture)`;
+    } else if(n.cons && n.g!=="x" && n.skill==="cvc" && vowelAt(k+2) && !/[st]ion$|^ture$/.test(parts[k+2].g)){
       open.push(k);
       hint = hint || `one consonant between two vowels in "${word}": the ${v} may be long (ro·bot) or short (lem·on), so it has to be tried both ways`;
     }
