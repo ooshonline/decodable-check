@@ -271,6 +271,16 @@ for (const [form, need] of C.NOT_SILENT_E) {
   );
 }
 
+freshKnown();
+for (const [word, skill, text] of C.HINTS) {
+  const r = analyseWord(word, ALL);
+  check(
+    `HINT       "${word}"`,
+    r.hintSkill === skill && (r.hint || "").includes(text),
+    `expected ${skill}: …${text}… · got ${r.hintSkill || "-"}: ${r.hint || "(none)"}`
+  );
+}
+
 /* ============================================================
    13. SKILL-SET MIGRATION — sets saved before "Two-syllable words"
    (syll, v2) or "Alternative pronunciations" (alt, v3) existed must keep

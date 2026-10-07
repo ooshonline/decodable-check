@@ -47,6 +47,16 @@ The original roadmap 1–4 is **done**, plus two extras. On `main`:
     covers VCV (ro·bot, and the ambiguous lem·on), V|V (li·on, gi·ant) and V + C-l/r
     onset (se·cret, a·pril). `ui` (fruit/suit/build) and `-tion`/`-sion`/`-ssion` are `adv`.
 
+12. **Open false greens cleared (2026-10-06 PR):** `-aste` is `alt` (taste/waste/paste,
+    tasted/tasty/hasten matched as whole words so fasted/nasty/past stay short);
+    silent t in `-sten`/`-ften`, silent g in a word-edge `gn`, and silent h/s in a
+    short list (hour, honest, honour, heir, island, isle) are `adv`; `ch` = /k/ is
+    `adv` for chr-/chl- plus a short list (ache, echo, anchor, stomach, chorus,
+    chemist, character…); `-ture` is one `adv` chunk; `iet` (quiet, diet) is two
+    vowels (`open`). `mb` is silent only at a word or word-part end and in
+    climber/plumber/bomber; between vowels or before l/r it's sounded (number,
+    umbrella: the old false amber). Silent-letter amber words carry a "why" hint.
+
 ## Product direction — delegated (Kyle, 2026-10-02)
 Kyle has handed **product direction** to the nightly maintainer: what to build, in
 what order, and how phonics edge cases are bucketed are your calls. Record each
@@ -117,13 +127,10 @@ teacher a text they shouldn't use — so engine trustworthiness comes first.
    stage work on #7. Fix it, add it to the corpus, and record it under Shipped. A false
    green hands a teacher a text they shouldn't use. If you can't fix it that night, write
    it here under **Open false greens** so the next run picks it up.
-   **Open false greens** (found by the 2026-10-05 frequency-list hunt, for the next run):
-   - `-aste` (taste, waste, paste, haste): long a + st + silent e, read as short a.
-   - silent letters: often/listen/castle (t), island (s), honest/hour (h), sign/design (g).
-   - `ch` as /k/ (Christmas, chorus, school is a heart word); `-ture` (nature, picture)
-     reads as t + ur + magic-e.
-   - `quiet` (qui·et) reads ie as one team.
-   Also a false AMBER: `mb` mid-word (umbrella, number) is read as the silent mb of lamb.
+   **Open false greens:** none known. The 2026-10-05 list (-aste, silent letters, ch
+   as /k/, -ture, quiet, and the mb false amber) was fixed 2026-10-06. Next hunt:
+   run a frequency list (e.g. the top 2,000 words of children's books) through the
+   engine and read every green word with 2+ syllables or an unusual spelling.
 3. **Inflection-aware fix-it.** Let swaps handle `-s/-es/-ing/-ed` (`looked`, `running`)
    with **correct** spelling (double-consonant, drop-e, y→ies). Only after the corpus
    exists — a wrong generated spelling in a phonics tool is the worst kind of bug, so
