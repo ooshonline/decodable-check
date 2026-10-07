@@ -57,6 +57,15 @@ The original roadmap 1–4 is **done**, plus two extras. On `main`:
     climber/plumber/bomber; between vowels or before l/r it's sounded (number,
     umbrella: the old false amber). Silent-letter amber words carry a "why" hint.
 
+13. **Heart word + ending (2026-10-07 PR):** coming/having/giving/lived/loved, going/
+    doing/being, pulled/pushed/wanted/putting, friends/eyes/ones/schools/others were
+    sounded out as short-vowel CVC (c-o-m-ing) and green for every group taught endings.
+    `heartInflection()` finds a TRICKY base under -s/-es/-ing/-ed (rebuilding a dropped
+    e or undoing a doubled final), so the word is tricky once endings are ticked and
+    amber ("needs endings") before that. Guards: one-letter bases (as, is), silent e
+    only with a vowel before it (thing, shed), bare -d only on 3+ letter bases (bed),
+    no undoubling of ff/ll/ss/zz (offing).
+
 ## Product direction — delegated (Kyle, 2026-10-02)
 Kyle has handed **product direction** to the nightly maintainer: what to build, in
 what order, and how phonics edge cases are bucketed are your calls. Record each
@@ -127,10 +136,16 @@ teacher a text they shouldn't use — so engine trustworthiness comes first.
    stage work on #7. Fix it, add it to the corpus, and record it under Shipped. A false
    green hands a teacher a text they shouldn't use. If you can't fix it that night, write
    it here under **Open false greens** so the next run picks it up.
-   **Open false greens:** none known. The 2026-10-05 list (-aste, silent letters, ch
-   as /k/, -ture, quiet, and the mb false amber) was fixed 2026-10-06. Next hunt:
-   run a frequency list (e.g. the top 2,000 words of children's books) through the
-   engine and read every green word with 2+ syllables or an unusual spelling.
+   **Open false greens (found 2026-10-07 by a ~1,200-word children's-book scan):**
+   - **`gh` is read as a g+h blend.** gh as /f/ (laugh, cough, rough, enough, tough),
+     silent gh in ough/augh (thought, bought, caught, daughter, naughty), eigh as
+     /ay/ (eight, weight, neighbour; eight even counts as two syllables) and onset gh
+     (ghost) all go green with only blend + diph/team. Fix next: `adv` graphemes for
+     ough/augh/eigh/gh with a "why" hint. Do this first.
+   - **oh** needs nothing (o + h as CVC) and **into** needs only `syll`.
+   - Lower priority (alternative pronunciations of known vowel teams, a bigger
+     design call): ea as /e/ (bread, head), ou as /oo/ or /u/ (soup, touch, young),
+     oo as /u/ (blood). Decide whether these go in `alt` before building.
 3. **Inflection-aware fix-it.** Let swaps handle `-s/-es/-ing/-ed` (`looked`, `running`)
    with **correct** spelling (double-consonant, drop-e, y→ies). Only after the corpus
    exists — a wrong generated spelling in a phonics tool is the worst kind of bug, so

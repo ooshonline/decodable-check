@@ -271,6 +271,37 @@ for (const [form, need] of C.NOT_SILENT_E) {
   );
 }
 
+/* ============================================================
+   12b. HEART WORD + ENDING — coming/lived/pulled are heart words plus a
+   taught ending (tricky), never a short-vowel CVC word (false green)
+   ============================================================ */
+freshKnown();
+const SOR_K = taughtFor("sor-k");
+for (const [word, base, ending] of C.HEART_INFLECTED) {
+  for (const id of ["uk-early", "uk-y1", "sor-g1", "ufli-g1", "all"]) {
+    const r = analyseWord(word, taughtFor(id));
+    check(
+      `HEART+END  "${word}" @ ${id}`,
+      r.cat === "tricky" && r.base === base && r.ending === ending && (r.reason || "").includes(`"${base}"`),
+      `expected tricky (${base} + ${ending}) · got ${r.cat} base=${r.base || "-"} ending=${r.ending || "-"}`
+    );
+  }
+  const k = analyseWord(word, SOR_K);
+  check(
+    `HEART+END  "${word}" @ sor-k (no endings)`,
+    k.cat === "new" && eqSet(k.missing, ["endings"]) && k.hintSkill === "endings" && (k.hint || "").includes(`"${base}"`),
+    `expected new missing=[endings] · got ${k.cat} missing=${show(k.missing || [])}`
+  );
+}
+for (const [word, need] of C.NOT_HEART_INFLECTED) {
+  const r = analyseWord(word, ALL);
+  check(
+    `NOT-HEART+END "${word}"`,
+    r.cat === "ok" && eqSet(r.need, need),
+    `expected ok need=${show(need)} · got ${r.cat} need=${show(r.need || [])}`
+  );
+}
+
 freshKnown();
 for (const [word, skill, text] of C.HINTS) {
   const r = analyseWord(word, ALL);
