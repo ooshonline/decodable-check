@@ -8,6 +8,21 @@ improvement, and open a **pull request**. **Never push to `main`** — every cha
 as a PR that **Kyle reviews and merges**, weekdays and weekends alike (see
 **Availability & weekend review** for the weekend cadence).
 
+## Where it lives (hosting changed 2026-10-08)
+Decodable Check still deploys to GitHub Pages from `main`
+(https://ooshonline.github.io/decodable-check/), and Kyle's webstore now also serves it at
+**https://ribbitpond.com/decodable-check/** through a Vercel rewrite (the browser only sees
+ribbitpond.com). That's the address teachers get from now on. It stays **completely free: no login, no
+gates, no ads, no analytics, no third-party network calls.** What that means for the code:
+- **Relative paths only.** The app runs under a subpath, so never use a root-absolute URL
+  (`href="/..."`, `fetch("/...")`). Share links already build from `location.origin + location.pathname`.
+  Keep it that way and never hard-code a host.
+- **Shared localStorage.** The webstore, the Ribbit Reading App and Wordlist Wonders share this origin
+  and its ~5 MB quota. Keep Decodable Check's own key names, never call `localStorage.clear()`, and
+  never read or write another app's keys.
+- When Kyle checks a merged PR live, he'll use ribbitpond.com/decodable-check/ (add `?cb=<anything>`
+  to skip Vercel's ~10-minute cache), with github.io as the backup check.
+
 ## Orient first (before writing any code)
 1. Read `README.md` and `index.html` fully. The whole app is **one self-contained
    `index.html`** — no build step, no dependencies, no framework. Keep it that way.
@@ -100,7 +115,8 @@ change still ships as a PR that Kyle reviews and merges, and you never self-merg
    current `main` (README conflict fixed) and ships in the 2026-10-05 PR. That PR
    supersedes #31. Close #31 once it merges.
 5. **Out of scope:** onset soft g (gem/giant) stays a locked limitation; it needs a
-   lexicon. Ribbit / Wordlist Wonders stays on hold until Kyle raises it.
+   lexicon. ~~Ribbit / Wordlist Wonders stays on hold until Kyle raises it.~~ Kyle lifted
+   the hold on 2026-10-08; see roadmap item 6.
 
 **Decisions (2026-10-05):**
 6. **Open syllables is its own skill (`open`), in Phase 3 after magic-e.** It's the
@@ -154,9 +170,22 @@ teacher a text they shouldn't use — so engine trustworthiness comes first.
    multi-skill mini-plan ("teach these 2 and the whole text works").
 5. **Backup-everything export.** Fold the *Known words* list (and any other per-group
    state) into the library export so it's a true full backup, not passages only.
-6. **Tie-in with Kyle's Ribbit Reading App & Wordlist Wonders** — **ON HOLD (Kyle,
-   2026-09-28):** Kyle plans something bigger here and wants to hold off. **Do not build
-   or propose it** until Kyle raises it again.
+6. **Tie-in with Kyle's Ribbit Reading App & Wordlist Wonders: no longer on hold (Kyle,
+   2026-10-08).** The bigger plan was the consolidation: all three apps now live on
+   ribbitpond.com (`/read/`, `/wordlist-wonders/`, `/decodable-check/`) next to Kyle's webstore.
+   A tie-in is now fair game as a normal night's increment, but it ranks **below** open false
+   greens and engine accuracy. Rules:
+   - Link with plain `<a href="/wordlist-wonders/">` style links (full page load, trailing slash).
+     These are the one allowed kind of root-absolute URL, because they point at sibling apps on
+     the same domain.
+   - Hand data over only through the other app's own import (a file it already accepts, or a link
+     it already understands). Never write into another app's localStorage.
+   - Decodable Check stays free with no login. Don't gate anything behind the Reading App's
+     subscription, and don't describe the Reading App's paid features as part of this tool.
+   - Describe the other apps only by features they actually have. If unsure, keep the copy
+     generic ("make games from this word list in Wordlist Wonders").
+   - Note: on github.io the sibling links won't resolve (different host). That's fine once teachers
+     use ribbitpond.com, but don't ship a tie-in that breaks the core tool on github.io.
 7. **Passage maker — IN PROGRESS, spec approved (Kyle delegated the call, 2026-09-28).**
    **Stage 1 built** (generator + "Make a passage" modal + "New passage" reshuffle, with
    corpus tests generating ~1,000 passages across every preset — all 100%).
@@ -217,6 +246,9 @@ always a valid night's work to improve the engine, add tests, or fix a rough edg
 rather than ship a new feature. Don't add surface for the sake of shipping something.
 
 ## Quality bar
+- **American English in UI copy** (Kyle, 2026-10-08): labels, tooltips, help text, PR walkthroughs.
+  Never "correct" phonics data, though. UK-preset words such as neighbour and honour are real test
+  words, not typos.
 - Match the existing design system exactly: **Fraunces** (display), **Public Sans**
   (UI), **Andika** (passage text); paper `#F5F2EA` / ink `#22273A` / accent `#E4572E`;
   the semantic highlighter palette; full light **and** dark themes.
