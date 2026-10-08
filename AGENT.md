@@ -246,6 +246,9 @@ always a valid night's work to improve the engine, add tests, or fix a rough edg
 rather than ship a new feature. Don't add surface for the sake of shipping something.
 
 ## Quality bar
+- **American English in UI copy** (Kyle, 2026-10-08): labels, tooltips, help text, PR walkthroughs.
+  Never "correct" phonics data, though. UK-preset words such as neighbour and honour are real test
+  words, not typos.
 - Match the existing design system exactly: **Fraunces** (display), **Public Sans**
   (UI), **Andika** (passage text); paper `#F5F2EA` / ink `#22273A` / accent `#E4572E`;
   the semantic highlighter palette; full light **and** dark themes.
