@@ -89,7 +89,11 @@ The feature loop is closed; the focus now is the engine that everything rests on
    of a word or word part (lamb, climb·ing, thumb·nail), so num·ber, mem·ber and
    um·brel·la are no longer a false amber. Amber words now say which letter is
    silent (kn/wr/mb too);
-   still to do: onset soft g (gem/giant) (corpus-locked target)
+   Heart words with an ending ✅: coming, having, lived, pulled, wanted, going,
+   friends and eyes stay heart words (heart word + a taught ending) rather than
+   being sounded out as short-vowel CVC words (c-o-m-ing);
+   still to do: onset soft g (gem/giant) (corpus-locked target), `gh` (laugh,
+   thought, eight)
 3. ~~Inflection-aware fix-it — correct `-s/-ing/-ed` swap spellings~~ ✅ (an
    amber `looked`/`cries` now gets same-ending swaps — `spotted`, `watched`,
    `yells` — spelled by rule: double the consonant, drop silent e, y→ies;

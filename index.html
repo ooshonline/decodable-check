@@ -787,10 +787,63 @@ const SHORT_SES = new Set(["buses", "gases"]);
 const NO_SILENT_E = new Set(["during"]);
 
 /* ---------- word analysis ---------- */
+/* The heart word under an inflected form, or null: coming -> come + ing,
+   lived -> live + d, putting -> put + ing, pushes -> push + es, wants ->
+   want + s. Each candidate base must be on the TRICKY list. Guards keep real
+   words out: a one-letter base never counts (as, is: a/I), a rebuilt silent
+   e needs a vowel before it (thing is not the + ing, shed is not she + d),
+   a bare -d needs a base of 3+ letters (bed, wed are not be/we + d), and a
+   doubled final is undone only where English doubles to add an ending
+   (putting -> put), never for ff/ll/ss/zz (offing is not of + ing). */
+function heartInflection(word){
+  const hasV = s => /[aeiouy]/.test(s);
+  const hit = (base, ending) => base.length >= 2 && TRICKY.has(base) ? {base, ending} : null;
+  const silentE = core => hasV(core) ? hit(core+"e", null) : null;
+  let m;
+  if((m = word.match(/^(.+)ing$/))){
+    const c = m[1];
+    const r = hit(c) || silentE(c) || (/([^aeiouflsz])\1$/.test(c) ? hit(c.slice(0,-1)) : null);
+    return r && {base:r.base, ending:"ing"};
+  }
+  if((m = word.match(/^(.+)ed$/))){
+    const c = m[1];
+    const r = (c.length >= 3 ? hit(c) : null)
+      || (c.length >= 2 && /e$/.test(word.slice(0,-1)) && hasV(word.slice(0,-2)) ? hit(word.slice(0,-1)) : null)
+      || (/([^aeiouflsz])\1$/.test(c) ? hit(c.slice(0,-1)) : null);
+    return r && {base:r.base, ending:"ed"};
+  }
+  if((m = word.match(/^(.+)es$/)) && /(s|x|z|ch|sh)$/.test(m[1])){
+    const r = hit(m[1]);
+    if(r) return {base:r.base, ending:"es"};
+  }
+  if((m = word.match(/^(.+[^s])s$/))){
+    const r = hit(m[1]);
+    if(r) return {base:r.base, ending:"s"};
+  }
+  return null;
+}
+
 function analyseWord(raw, taught){
   const word = raw.toLowerCase();
   if(known.has(word)) return {cat:"known", reason:"Marked as known for this group — a name or a word you've taught."};
   if(TRICKY.has(word)) return {cat:"tricky", reason:"On the heart-word list — taught as a whole word."};
+  // A heart word with an inflectional ending (coming, having, lived, pulled,
+  // wants, friends, going, doing) is still a heart word: the irregular part
+  // doesn't become regular when -s/-ing/-ed is added. Sounded out, these read
+  // as short-vowel CVC words (c-o-m-ing, l-i-v-ed, p-u-ll-ed), so every group
+  // taught endings was told they were decodable: a FALSE green on some of the
+  // most common words in early reading books. The word is a heart word plus a
+  // taught ending, so it scores as tricky once endings are ticked, and as
+  // needing endings until then.
+  const hi = heartInflection(word);
+  if(hi){
+    const label = `"${hi.base}" is a heart word`;
+    if(taught.has("endings")) return {cat:"tricky", base:hi.base, ending:hi.ending,
+      reason:`${label}, plus the -${hi.ending} ending — taught as a whole word.`};
+    return {cat:"new", need:["endings"], missing:["endings"], magicE:false, ending:hi.ending,
+      parts:[{g:word, skill:"endings"}], base:hi.base,
+      hint:`${label}; "${word}" adds the -${hi.ending} ending`, hintSkill:"endings"};
+  }
 
   // Strip at most one inflectional ending — but only when the suffix is a
   // genuine inflection, not root letters that merely look like one. A greedy
@@ -870,8 +923,8 @@ function analyseWord(raw, taught){
   //    suffix (duckling, dumpling, sibling) would be misread.
   //  - consonant + i before -ed (cried, tried, carried) -> y.
   // A rebuilt base that is a heart word (come, have, give, live, love) is
-  // left alone: coming/having keep their current reading rather than borrow
-  // a magic-e the whole word never had.
+  // never given a magic-e it doesn't have. Those words don't get this far:
+  // heartInflection() scores coming/having as heart word + ending above.
   if(ending==="ing" || ending==="ed"){
     let base = null;
     if(ending==="ed" && /[^aeiou]i$/.test(core)) base = core.slice(0,-1)+"y";

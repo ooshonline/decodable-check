@@ -1048,7 +1048,8 @@ const SILENT_E = [
    Short-vowel bases double (hopped) or never double (x/w: boxed, snowed),
    multi-syllable bases (opened, visited) are ambiguous, -ng can't be
    told apart (hang/sing vs change), -ling is a noun suffix (duckling),
-   heart-word bases keep their reading (coming, having), and buses/gases/
+   heart-word bases are not rebuilt either (coming, having: see
+   HEART_INFLECTED), and buses/gases/
    during are listed exceptions. */
 const NOT_SILENT_E = [
   ["hopped", ["double", "endings"]], ["hopping", ["double", "endings"]],
@@ -1058,11 +1059,42 @@ const NOT_SILENT_E = [
   ["opened", ["endings", "open", "syll"]], ["visited", ["endings", "open", "syll"]],   // o·pen, vis·it: VCV
   ["hanging", ["digraph", "endings"]], ["singing", ["digraph", "endings"]],
   ["duckling", ["digraph", "endings"]], ["dumpling", ["blend", "endings"]],
-  ["coming", ["endings"]], ["having", ["endings"]], ["giving", ["endings"]],
-  ["living", ["endings"]],
   ["buses", ["endings"]], ["gases", ["endings"]], ["boxes", ["endings"]],
   ["wishes", ["digraph", "endings"]], ["kisses", ["double", "endings"]],
   ["during", ["rctrl", "endings"]],
+];
+
+/* ---------------------------------------------------------------
+   12b. HEART WORD + ENDING — [word, heart-word base, ending]. A heart word
+   stays irregular when -s/-es/-ing/-ed is added: sounded out, coming/lived/
+   pulled read as short-vowel CVC (c-o-m-ing), a FALSE green for any group
+   taught endings. Asserted: tricky (excluded from the %) when endings are
+   taught; amber, missing only endings, when they are not (SoR K).
+   --------------------------------------------------------------- */
+const HEART_INFLECTED = [
+  ["coming", "come", "ing"], ["comes", "come", "s"], ["having", "have", "ing"],
+  ["giving", "give", "ing"], ["gives", "give", "s"], ["living", "live", "ing"],
+  ["lived", "live", "ed"], ["loved", "love", "ed"], ["loves", "love", "s"],
+  ["loving", "love", "ing"], ["going", "go", "ing"], ["doing", "do", "ing"],
+  ["being", "be", "ing"], ["pulled", "pull", "ed"], ["pulling", "pull", "ing"],
+  ["pulls", "pull", "s"], ["pushed", "push", "ed"], ["pushes", "push", "es"],
+  ["pushing", "push", "ing"], ["wanted", "want", "ed"], ["wants", "want", "s"],
+  ["wanting", "want", "ing"], ["putting", "put", "ing"], ["puts", "put", "s"],
+  ["friends", "friend", "s"], ["eyes", "eye", "s"], ["ones", "one", "s"],
+  ["schools", "school", "s"], ["others", "other", "s"], ["mothers", "mother", "s"],
+  ["brothers", "brother", "s"], ["watered", "water", "ed"],
+];
+
+/* Look-alikes that must NOT read as heart word + ending: [word, exact need].
+   One-letter bases never count (as, is), a rebuilt silent e needs a vowel
+   before it (thing is not the+ing, shed is not she+d), a bare -d needs a
+   3+ letter base (bed is not be+d), and ff/ll/ss/zz are never undoubled
+   (offing is not of+ing). */
+const NOT_HEART_INFLECTED = [
+  ["as", []], ["thing", ["digraph"]], ["things", ["digraph", "endings"]],
+  ["shed", ["digraph"]], ["sheds", ["digraph", "endings"]], ["bed", []],
+  ["wed", []], ["offing", ["double", "endings"]], ["dotted", ["double", "endings"]],
+  ["wing", ["digraph"]],
 ];
 
 /* ---------------------------------------------------------------
@@ -1106,4 +1138,6 @@ module.exports = {
   INFLECTION_DETECT,
   SILENT_E,
   NOT_SILENT_E,
+  HEART_INFLECTED,
+  NOT_HEART_INFLECTED,
 };
