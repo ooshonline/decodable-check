@@ -17,6 +17,9 @@ gates, no ads, no analytics, no third-party network calls.** What that means for
 - **Relative paths only.** The app runs under a subpath, so never use a root-absolute URL
   (`href="/..."`, `fetch("/...")`). Share links already build from `location.origin + location.pathname`.
   Keep it that way and never hard-code a host.
+- **One file only, on purpose.** ribbitpond.com serves just `index.html` from this repo (the
+  README, AGENT.md, tests and package.json redirect back to the app). Don't make the app load any
+  other file; it would work on github.io and break on ribbitpond.com.
 - **Shared localStorage.** The webstore, the Ribbit Reading App and Wordlist Wonders share this origin
   and its ~5 MB quota. Keep Decodable Check's own key names, never call `localStorage.clear()`, and
   never read or write another app's keys.
