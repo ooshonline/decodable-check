@@ -26,6 +26,22 @@ gates, no ads, no analytics, no third-party network calls.** What that means for
 - When Kyle checks a merged PR live, he'll use ribbitpond.com/decodable-check/ (add `?cb=<anything>`
   to skip Vercel's ~10-minute cache), with github.io as the backup check.
 
+## Size, bandwidth and merging (lessons from 2026-10-08/09)
+- **Your PRs never create Vercel deployments.** This repo deploys to GitHub Pages, so the webstore's
+  Vercel storage cap isn't affected, and Vercel housekeeping belongs to the webstore's own routine.
+  Never run the Vercel CLI (`vercel curl` once created a stray Vercel project) and never touch the
+  webstore repo.
+- **Bandwidth is shared.** Teachers load this page through ribbitpond.com, which means through Kyle's
+  Vercel Hobby plan: about 100 GB/month of transfer, shared by the webstore and all three apps. Going
+  over can pause the whole project. `index.html` was 191 KB on 2026-10-09. Keep it under ~300 KB:
+  data tables over megabytes of word lists, no embedded images or fonts as base64, no new libraries.
+  Say in the PR body if a change adds more than ~20 KB.
+- **Merging.** You never merge (unchanged). When Kyle asks a Claude session to merge for him, the
+  practice is `gh pr merge <n> --squash --delete-branch` on his explicit OK for that PR, then a live
+  check at ribbitpond.com/decodable-check/?cb=<timestamp>. A stale page within ~10 minutes is Vercel's
+  cache, not a failed deploy. Keep nightly branches tidy: if an open PR you'd duplicate already exists,
+  update it rather than opening a second one.
+
 ## Orient first (before writing any code)
 1. Read `README.md` and `index.html` fully. The whole app is **one self-contained
    `index.html`** — no build step, no dependencies, no framework. Keep it that way.
