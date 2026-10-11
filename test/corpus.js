@@ -362,7 +362,7 @@ const DECODABLE = [
   ["told", ["alt", "blend"]], ["hold", ["alt", "blend"]], ["scold", ["alt", "blend"]],
   ["bolt", ["alt", "blend"]], ["colt", ["alt", "blend"]], ["jolt", ["alt", "blend"]],
   ["most", ["alt", "blend"]], ["post", ["alt", "blend"]], ["host", ["alt", "blend"]],
-  ["ghost", ["alt", "blend"]],
+  ["ghost", ["adv", "alt", "blend"]],   // + the silent h of onset gh (see the gh block)
   ["roll", ["alt", "double"]], ["troll", ["alt", "blend", "double"]], ["scroll", ["alt", "blend", "double"]],
   //     inflected / suffixed forms keep the long vowel:
   ["finding", ["alt", "blend", "endings"]], ["kinds", ["alt", "blend", "endings"]],
@@ -473,6 +473,29 @@ const DECODABLE = [
   ["climber", ["adv", "blend", "rctrl", "syll"]], ["thumbnail", ["adv", "digraph", "syll", "team"]],
   ["number", ["rctrl", "syll"]], ["timber", ["rctrl", "syll"]], ["member", ["rctrl", "syll"]],
   ["umbrella", ["blend", "double", "syll"]],
+
+  // --- gh spellings: one advanced chunk, never a g + h blend ---
+  //     Read letter by letter, laugh / thought / caught were a short vowel
+  //     team + a "gh" blend, and eight / weigh were e + the igh team (and two
+  //     syllables). All were green for any group taught blends and vowel teams:
+  //     FALSE greens on some of the commonest words in early books. ough, augh,
+  //     eigh and aigh are matched whole and filed as advanced code; onset gh
+  //     (ghost) is /g/ with a silent h.
+  ["laugh", ["adv"]], ["laughed", ["adv", "endings"]], ["laughing", ["adv", "endings"]],
+  ["laughter", ["adv", "rctrl", "syll"]],
+  ["cough", ["adv"]], ["rough", ["adv"]], ["tough", ["adv"]], ["dough", ["adv"]],
+  ["enough", ["adv", "open", "syll"]],
+  ["thought", ["adv", "digraph"]], ["bought", ["adv"]], ["fought", ["adv"]],
+  ["ought", ["adv"]], ["brought", ["adv", "blend"]], ["thoughts", ["adv", "digraph", "endings"]],
+  ["caught", ["adv"]], ["taught", ["adv"]],
+  ["daughter", ["adv", "rctrl", "syll"]], ["naughty", ["adv", "syll", "team"]],
+  ["eight", ["adv"]], ["weight", ["adv"]], ["weigh", ["adv"]], ["height", ["adv"]],
+  ["sleigh", ["adv", "blend"]], ["eighteen", ["adv", "syll", "team"]],
+  ["neighbour", ["adv", "diph", "syll"]], ["straight", ["adv", "blend"]],
+  ["ghosts", ["adv", "alt", "blend", "endings"]],
+  //     igh is still the vowel team (it isn't eigh), and a compound gh is g + h
+  ["night", ["team"]], ["high", ["team"]], ["sigh", ["team"]], ["fight", ["team"]],
+  ["foghorn", ["rctrl", "syll"]],
 ];
 
 /* ---------------------------------------------------------------
@@ -649,6 +672,18 @@ const NEEDS_SKILL = [
   ["page", "alt-early", ["magice"]],        // soft g taught; the long a is not
   ["little", "alt-early", ["adv"]],         // alt never unlocks the -le syllable
   ["knot", "alt-early", ["adv"]],
+  // gh spellings were read as a team + a g + h blend: false greens for
+  // every preset with blends and vowel teams (and eight as two syllables)
+  ["laugh", "uk-y1", ["adv"]],
+  ["thought", "uk-y1", ["adv"]],
+  ["caught", "ufli-g1", ["adv"]],
+  ["enough", "sor-g1", ["adv"]],
+  ["eight", "uk-y1", ["adv"]],
+  ["weight", "sor-g1", ["adv"]],
+  ["eight", "uk-early", ["adv"]],           // was e + igh: team + syll, never adv
+  ["straight", "ufli-g1", ["adv"]],
+  ["ghost", "uk-y1", ["adv"]],              // alt (long o) is taught; the silent h is not
+  ["naughty", "uk-y1", ["adv"]],
 ];
 
 /* A "cvc" convenience preset (cvc + double) used by NEEDS_SKILL and
@@ -724,6 +759,11 @@ const DECODABLE_UNDER = [
   ["quiet", "uk-y1"], ["diet", "sor-g1"],
   // and everything new decodes under the everything preset
   ["listen", "all"], ["sign", "all"], ["christmas", "all"], ["picture", "all"], ["hour", "all"],
+  ["laugh", "all"], ["thought", "all"], ["caught", "all"], ["eight", "all"], ["ghost", "all"],
+  // gh is never a g + h blend, but the igh team (night, high) stays a Year 1 team
+  ["night", "uk-y1"], ["high", "uk-y1"], ["light", "sor-g1"],
+  // a gh across a compound boundary is still g + h (dog·house)
+  ["foghorn", "uk-y1"],
 ];
 
 /* ---------------------------------------------------------------
@@ -746,6 +786,10 @@ const HEART = [
   // the -all /aw/ pattern. With -all modelled it would otherwise be amber for
   // every Reception group, though it's on nearly every early heart-word list.
   "all",
+  // "oh" is a Letters and Sounds Phase 4 tricky word (o + a silent h, read as
+  // o + h CVC before), and into / onto end in the heart word "to" (they were
+  // in + to, needing only two-syllable words).
+  "oh", "into", "onto",
 ];
 
 /* ---------------------------------------------------------------
@@ -1117,6 +1161,12 @@ const HINTS = [
   ["hasten", "adv", "the t in \"hasten\" is silent"],    // adv wins over the long a
   ["taste", "alt", "the a in \"taste\" says its name"],
   ["quiet", "open", "the i in \"quiet\" ends its syllable"],
+  ["ghost", "adv", "the h in \"ghost\" is silent"],    // adv wins over the long o
+  ["thought", "adv", "\"ough\" in \"thought\""],
+  ["laugh", "adv", "\"augh\" in \"laugh\""],
+  ["eight", "adv", "\"eigh\" in \"eight\""],
+  ["height", "adv", "/igh/ in height"],
+  ["straight", "adv", "\"aigh\" in \"straight\""],
 ];
 
 module.exports = {
