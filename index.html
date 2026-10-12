@@ -745,11 +745,12 @@ const PHASES = [
     // `alt` = a letter the child already knows, saying a different sound: soft
     // c (city), word-final soft g (page), y as /ĭ/ /ī/ (gym, type), the long
     // vowel of kind/old/most/roll, the silent l of walk/half and the /aw/ of
-    // ball/call/tall. UK Phase 5 and
+    // ball/call/tall, and a vowel team saying its other sound (head, soup,
+    // four, chief: see ALT_VOWEL). UK Phase 5 and
     // Grade 1 sequences teach these as "alternative pronunciations", well
     // before the truly advanced code left in `adv` (kn wr mb -dge -le), so
     // a Year 1 group can be scored on them without ticking everything.
-    {id:"alt",     n:"Alternative pronunciations", ex:"city, page, gym, kind, walk, ball"},
+    {id:"alt",     n:"Alternative pronunciations", ex:"city, page, kind, walk, ball, head"},
     {id:"adv",     n:"Advanced patterns", ex:"knee, gentle, badge"},
   ]},
 ];
@@ -956,6 +957,7 @@ function analyseWord(raw, taught){
   // when a child sounding it out says /pic-tyoor/: a FALSE green. "ture" is
   // read as one chunk, like -tion, and filed as advanced code. Peeled here,
   // before magic-e detection, so its e is never taken for a split digraph.
+  const whole = core;               // the base word before -ture / -le are peeled
   let ture = false;
   if(core.length>4 && /ture$/.test(core)){ ture = true; core = core.slice(0,-4); }
 
@@ -1173,6 +1175,18 @@ function analyseWord(raw, taught){
     }
   }
 
+  // A vowel team saying its OTHER sound (head, great, soup, touch, four,
+  // blood, door, chief, bear, learn), and the -ous suffix (famous): see
+  // ALT_VOWEL below. Re-filed from team / diph / rctrl to `alt` (or `adv` for
+  // -ous); the team's own skill is dropped when no other part still needs it,
+  // because the child isn't using that sound here.
+  for(const av of altVowels(whole, parts)){
+    av.part.skill = av.skill; need.add(av.skill);
+    if(!parts.some(p=>p.skill===av.was)) need.delete(av.was);
+    if(av.rctrl) need.add("rctrl");
+    if(!hint){ hint = av.hint; hintSkill = av.skill; }
+  }
+
   const syl = scanSyllables(parts, word);
   if(syl.open.length || syl.adv.length){
     for(const k of syl.open) if(parts[k].skill==="cvc") parts[k].skill = "open";
@@ -1269,6 +1283,66 @@ function longAste(word){
   if(!m || word==="pasty") return null;
   return {at:m[1].length, silentL:false,
     hint:`the a in "${word}" says its name: the e of "${m[1]}aste" reaches back across the st`};
+}
+
+/* ---------- vowel teams with a second sound ----------
+   The engine read every vowel team with its first sound: ea as /ē/ (team),
+   ou as /ow/ (out), oo as /oo/ (moon), ie, ey and ear as in pie, key, ear.
+   So head, bread, great, soup, touch, young, four, blood, door, chief, bear
+   and learn were green for any group taught vowel teams, though a child who
+   knows ea = /ē/ reads "head" as /heed/ and "four" as /fowr/: FALSE greens
+   on some of the commonest words in early books. These are the other sounds
+   UK Phase 5 and Grade 1 teach as alternative pronunciations (ea in head,
+   ou in you / shoulder, ie in chief, ey in grey), so they are filed as `alt`.
+   The ending forms come along because the list is matched on the base
+   word (heads, spreading, touched, poured). The team's own skill drops out
+   (head needs `alt`, not ea = /ē/), but an r sound (bear, learn, four,
+   door) still needs `rctrl`.
+   Which sound a team makes can't be told from the spelling (bead / bread,
+   out / soup), so these are short CLOSED lists of common words, like
+   CH_K. A team that genuinely reads both ways (read, lead, tear, wound,
+   bow) is left with its first sound. The -ous suffix (famous, nervous,
+   jealous) is a rule instead: its ou is a weak /ŭs/, never /ow/, and it is
+   a suffix taught late, so it is `adv`. */
+const ALT_VOWEL = [
+  ["ea", "/ĕ/ (head, bread)", "head heads ahead forehead bread dead deaf death breath health healthy " +
+    "wealth wealthy sweat sweater sweaty threat thread spread instead ready already steady heavy " +
+    "heavier heaviest heaven weather feather leather meant dreamt pleasant pleasure measure " +
+    "treasure breakfast meadow jealous"],
+  ["ea", "/ā/ (great, break)", "great greater greatest break steak"],
+  ["ear", "/air/ (bear, wear)", "bear pear wear swear"],
+  ["ear", "/er/ (learn, earth)", "learn earn earth early earlier earliest heard search pearl yearn"],
+  ["ou", "/oo/ (soup, group)", "soup group youth coupon routine"],
+  ["ou", "/ŭ/ (touch, young)", "touch young younger youngest country cousin couple double trouble southern"],
+  ["ou", "/ō/ (shoulder, soul)", "shoulder boulder soul mould poultry"],
+  ["ou", "/or/ (four, pour)", "four fourth fourteen pour course court source mourn"],
+  ["ou", "/er/ (journey)", "journey journal"],
+  ["oo", "/ŭ/ (blood, flood)", "blood flood"],
+  ["oo", "/or/ (door, floor)", "door floor poor indoor indoors outdoor outdoors"],
+  ["ie", "/ē/ (chief, field)", "chief field thief piece niece shield priest believe achieve " +
+    "yield brief grief shriek relief movie movies cookie cookies brownie brownies"],
+  ["ey", "/ā/ (grey, obey)", "grey obey prey"],
+];
+const ALT_VOWEL_MAP = new Map();
+for(const [g, sound, words] of ALT_VOWEL)
+  for(const w of words.split(" ")) ALT_VOWEL_MAP.set(w, {g, sound:sound.split(" ")[0], ex:sound.replace(/^\S+ \((.*)\)$/, "$1")});
+// the vowel parts of `parts` to re-file for `whole` (the base word)
+function altVowels(whole, parts){
+  const out = [];
+  const e = ALT_VOWEL_MAP.get(whole);
+  if(e){
+    const p = partAt(parts, whole.indexOf(e.g));
+    // an r sound (bear, learn, four, door, journey) is still an r-controlled
+    // vowel: the child needs that skill AND the alternative spelling
+    if(p && p.g===e.g) out.push({part:p, was:p.skill, skill:"alt", rctrl:/r\/$/.test(e.sound),
+      hint:`the ${e.g} in "${whole}" says ${e.sound}, not its first sound (${e.ex})`});
+  }
+  if(/[aeiouy][^aeiou]*ous$/.test(whole)){
+    const p = partAt(parts, whole.length-3);
+    if(p && p.g==="ou") out.push({part:p, was:p.skill, skill:"adv",
+      hint:`"-ous" in "${whole}" is a suffix, read /us/ (famous, nervous)`});
+  }
+  return out;
 }
 
 const CLOSED_SHORT = new Set(["wind", "doll", "moll", "loll", "gild", "compost"]);
