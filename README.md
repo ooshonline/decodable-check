@@ -92,8 +92,10 @@ The feature loop is closed; the focus now is the engine that everything rests on
    Heart words with an ending ✅: coming, having, lived, pulled, wanted, going,
    friends and eyes stay heart words (heart word + a taught ending) rather than
    being sounded out as short-vowel CVC words (c-o-m-ing);
-   still to do: onset soft g (gem/giant) (corpus-locked target), `gh` (laugh,
-   thought, eight)
+   `gh` spellings ✅: ough, augh, eigh and aigh (thought, enough, caught, laugh,
+   eight, straight) are one advanced-code chunk and onset gh (ghost) has a silent
+   h, not a short vowel + a g+h blend; oh, into and onto are heart words;
+   still to do: onset soft g (gem/giant) (corpus-locked target)
 3. ~~Inflection-aware fix-it — correct `-s/-ing/-ed` swap spellings~~ ✅ (an
    amber `looked`/`cries` now gets same-ending swaps — `spotted`, `watched`,
    `yells` — spelled by rule: double the consonant, drop silent e, y→ies;

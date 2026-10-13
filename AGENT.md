@@ -84,6 +84,15 @@ The original roadmap 1–4 is **done**, plus two extras. On `main`:
     only with a vowel before it (thing, shed), bare -d only on 3+ letter bases (bed),
     no undoubling of ff/ll/ss/zz (offing).
 
+14. **`gh` spellings (2026-10-11 PR):** ough/augh/eigh/aigh are whole `adv` graphemes
+    (thought, enough, cough, dough, caught, laugh, eight, weigh, height, straight) and a
+    word-initial gh is `adv` (ghost: silent h), each with a "why" hint. They were a
+    vowel team + a false g+h blend (and eight was e + igh, two syllables). igh stays the
+    `team` (night); a gh across a compound (dog·house, fog·horn) stays g + h. **oh**,
+    **into** and **onto** joined `TRICKY` (oh is a Phase 4 tricky word; into/onto end in
+    the heart word "to"). Not modelled: medial gh = /g/ (spaghetti), which can't be told
+    from dog·house without a lexicon.
+
 ## Product direction — delegated (Kyle, 2026-10-02)
 Kyle has handed **product direction** to the nightly maintainer: what to build, in
 what order, and how phonics edge cases are bucketed are your calls. Record each
@@ -156,12 +165,7 @@ teacher a text they shouldn't use — so engine trustworthiness comes first.
    green hands a teacher a text they shouldn't use. If you can't fix it that night, write
    it here under **Open false greens** so the next run picks it up.
    **Open false greens (found 2026-10-07 by a ~1,200-word children's-book scan):**
-   - **`gh` is read as a g+h blend.** gh as /f/ (laugh, cough, rough, enough, tough),
-     silent gh in ough/augh (thought, bought, caught, daughter, naughty), eigh as
-     /ay/ (eight, weight, neighbour; eight even counts as two syllables) and onset gh
-     (ghost) all go green with only blend + diph/team. Fix next: `adv` graphemes for
-     ough/augh/eigh/gh with a "why" hint. Do this first.
-   - **oh** needs nothing (o + h as CVC) and **into** needs only `syll`.
+   - ~~`gh` read as a g+h blend; oh; into~~ fixed in the 2026-10-11 PR (Shipped #14).
    - Lower priority (alternative pronunciations of known vowel teams, a bigger
      design call): ea as /e/ (bread, head), ou as /oo/ or /u/ (soup, touch, young),
      oo as /u/ (blood). Decide whether these go in `alt` before building.

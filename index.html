@@ -756,6 +756,9 @@ const PHASES = [
 
 /* ordered longest-first grapheme table -> skill id */
 const GRAPHEMES = [
+  // gh spellings (see "gh" in analyseWord): one advanced chunk each, listed
+  // before ou / au / ai / igh so the greedy match takes the whole spelling
+  ["ough","adv"],["augh","adv"],["eigh","adv"],["aigh","adv"],
   ["ssion","adv"],["tion","adv"],["sion","adv"],
   ["tch","digraph"],["igh","team"],["air","rctrl"],["are","rctrl"],["ear","rctrl"],["ore","rctrl"],["dge","adv"],
   ["sh","digraph"],["ch","digraph"],["th","digraph"],["wh","digraph"],["ph","digraph"],["ck","digraph"],["ng","digraph"],["qu","cvc"],
@@ -778,7 +781,8 @@ const TRICKY = new Set(("the a I to is was said you are they of we he she me be 
   "my by put one two come some were there their where here what who why could would should " +
   "have give live love done gone want your our been they're we're I'm don't can't won't " +
   "does goes only both pull full push many any friend people because school through though " +
-  "eye once upon these those water father mother brother other another over all")
+  "eye once upon these those water father mother brother other another over all " +
+  "oh into onto")
   .toLowerCase().split(/\s+/));
 
 // Inflection spellings that LOOK like a hidden silent e but aren't: buses/gases
@@ -1030,6 +1034,16 @@ function analyseWord(raw, taught){
     // qui·et·ly, di·et·er. No English word has an ie team before a final t,
     // so splitting it is safe. The i then ends its syllable (open, li·on).
     if(matched && matched[0]==="ie" && /^iet(s|ly|er|ers|est|ness)?$/.test(body.slice(i))) matched=null;
+    // gh: in English it is never a g + h blend. After a vowel it is part of
+    // ough / augh / eigh / aigh (thought, enough, caught, laugh, eight,
+    // straight: matched as whole chunks in GRAPHEMES) or the igh team (night);
+    // at the start of a word it is /g/ with a silent h (ghost, ghastly).
+    // Read letter by letter, laugh / thought / caught were short vowel + a
+    // "gh" blend and green for any group taught blends, and eight was e + igh,
+    // two syllables: FALSE greens on very common words. All of these are
+    // advanced code. (A gh across a compound, dog·house, fog·horn, is left
+    // as g + h.)
+    if(!matched && i===0 && body.startsWith("gh")) matched=["gh","adv"];
     let g, skill;
     if(matched){
       [g,skill]=matched;
@@ -1174,7 +1188,14 @@ function analyseWord(raw, taught){
   // kn / wr / mb are silent-letter graphemes too, so they get the same reason
   const kwm = parts.find(p=>p.skill==="adv" && /^(kn|wr|mb)$/.test(p.g));
   if(kwm && !silentHint) silentHint = `the ${kwm.g[kwm.g==="mb"?1:0]} in "${raw}" is silent`;
-  const advHint = silentHint ||
+  const gh = parts.find(p=>/gh$/.test(p.g) && p.skill==="adv");
+  const ghHint = !gh ? "" :
+    gh.g==="gh" ? `the h in "${raw}" is silent: gh says /g/ (ghost)` :
+    gh.g==="ough" ? `"ough" in "${raw}" is a rare spelling with several sounds (thought, enough, cough, dough)` :
+    gh.g==="augh" ? `"augh" in "${raw}" says /aw/ (caught) or /af/ (laugh)` :
+    gh.g==="aigh" ? `"aigh" in "${raw}" is a rare spelling of /ay/ (straight)` :
+    `"eigh" in "${raw}" is a rare spelling: /ay/ in eight and weigh, /igh/ in height`;
+  const advHint = silentHint || ghHint ||
     (ture ? `"ture" in "${raw}" is read as one chunk, /cher/ (picture, nature)` : "") ||
     (chK && parts.some(p=>p.g==="ch") ? `the ch in "${raw}" says /k/ (Christmas, echo)` : "");
   if(advHint){ hint = advHint; hintSkill = "adv"; }
