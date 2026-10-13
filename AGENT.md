@@ -99,8 +99,7 @@ The original roadmap 1–4 is **done**, plus two extras. On `main`:
     journey), oo /ŭ/ /or/ (blood, door), ie /ē/ (chief, field, movie), ey /ā/ (grey),
     ear /air/ /er/ (bear, learn). The team part becomes `alt` and its first-sound skill
     drops out; an r sound keeps `rctrl`. `-ous` (famous, nervous) is an `adv` suffix,
-    by rule. Ambiguous words (read, lead, tear, wound, bow) keep the first sound. Built
-    on top of #45 (the gh PR): merge #45 first.
+    by rule. Ambiguous words (read, lead, tear, wound, bow) keep the first sound.
 
 ## Product direction — delegated (Kyle, 2026-10-02)
 Kyle has handed **product direction** to the nightly maintainer: what to build, in
