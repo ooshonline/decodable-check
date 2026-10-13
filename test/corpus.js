@@ -467,7 +467,7 @@ const DECODABLE = [
   ["creature", ["adv", "blend", "syll", "team"]],
   // quiet / diet: i·e is two vowels, not the ie team
   ["quiet", ["open", "syll"]], ["diet", ["open", "syll"]], ["quietly", ["open", "syll", "team"]],
-  ["field", ["blend", "team"]], ["pie", ["team"]],
+  ["field", ["alt", "blend"]], ["pie", ["team"]],
   // mb: silent at the end of a word or word part, sounded between vowels and before l / r
   ["lamb", ["adv"]], ["climb", ["adv", "blend"]], ["climbing", ["adv", "blend", "endings"]],
   ["climber", ["adv", "blend", "rctrl", "syll"]], ["thumbnail", ["adv", "digraph", "syll", "team"]],
@@ -496,6 +496,34 @@ const DECODABLE = [
   //     igh is still the vowel team (it isn't eigh), and a compound gh is g + h
   ["night", ["team"]], ["high", ["team"]], ["sigh", ["team"]], ["fight", ["team"]],
   ["foghorn", ["rctrl", "syll"]],
+
+  // --- a vowel team saying its OTHER sound: `alt`, and the team's own skill
+  //     drops out (the child isn't using ea = /ē/ in head). Closed lists in
+  //     ALT_VOWEL; ending forms come along via the base word. ---
+  ["head", ["alt"]], ["bread", ["alt", "blend"]], ["heads", ["alt", "endings"]],
+  ["spreading", ["alt", "blend", "endings"]], ["ready", ["alt", "syll", "team"]],
+  ["instead", ["alt", "blend", "syll"]], ["breakfast", ["alt", "blend", "syll"]],
+  ["great", ["alt", "blend"]], ["break", ["alt", "blend"]], ["steak", ["alt", "blend"]],
+  ["bear", ["alt", "rctrl"]], ["wear", ["alt", "rctrl"]], ["learn", ["alt", "rctrl"]], ["heard", ["alt", "rctrl"]],
+  ["earth", ["alt", "digraph", "rctrl"]], ["search", ["alt", "digraph", "rctrl"]], ["learning", ["alt", "endings", "rctrl"]],
+  ["soup", ["alt"]], ["group", ["alt", "blend"]], ["groups", ["alt", "blend", "endings"]],
+  ["touch", ["alt", "digraph"]], ["touched", ["alt", "digraph", "endings"]],
+  ["young", ["alt", "digraph"]], ["cousin", ["alt", "syll"]],
+  ["four", ["alt", "rctrl"]], ["pour", ["alt", "rctrl"]], ["poured", ["alt", "endings", "rctrl"]], ["course", ["alt", "blend", "rctrl"]],
+  ["shoulder", ["alt", "digraph", "rctrl", "syll"]], ["journey", ["alt", "rctrl", "syll", "team"]],
+  ["blood", ["alt", "blend"]], ["flood", ["alt", "blend"]],
+  ["door", ["alt", "rctrl"]], ["floor", ["alt", "blend", "rctrl"]], ["floors", ["alt", "blend", "endings", "rctrl"]], ["poor", ["alt", "rctrl"]],
+  ["chief", ["alt", "digraph"]], ["thief", ["alt", "digraph"]], ["shield", ["alt", "blend", "digraph"]],
+  ["movie", ["alt", "open", "syll"]], ["cookies", ["alt", "syll", "team"]],
+  ["grey", ["alt", "blend"]], ["obey", ["alt", "open", "syll"]],
+  // -ous is a suffix (/us/), not the ou of out: advanced code
+  ["famous", ["adv", "open", "syll"]], ["nervous", ["adv", "rctrl", "syll"]],
+  ["jealous", ["adv", "alt", "syll"]],
+  // the first sound of each team is untouched (and needs only its own skill)
+  ["bead", ["team"]], ["team", ["team"]], ["read", ["team"]], ["out", ["diph"]],
+  ["mouth", ["diph", "digraph"]], ["flour", ["blend", "diph"]], ["sour", ["diph"]],
+  ["moon", ["team"]], ["food", ["team"]], ["pies", ["team"]], ["key", ["team"]],
+  ["hear", ["rctrl"]], ["near", ["rctrl"]], ["beard", ["rctrl"]],
 ];
 
 /* ---------------------------------------------------------------
@@ -684,6 +712,24 @@ const NEEDS_SKILL = [
   ["straight", "ufli-g1", ["adv"]],
   ["ghost", "uk-y1", ["adv"]],              // alt (long o) is taught; the silent h is not
   ["naughty", "uk-y1", ["adv"]],
+  // vowel teams with a second sound were read with their first: false greens
+  // for every preset taught vowel teams but not alternative pronunciations
+  ["head", "sor-g1", ["alt"]],
+  ["bread", "sor-g1", ["alt"]],
+  ["great", "sor-g1", ["alt"]],
+  ["soup", "sor-g1", ["alt"]],
+  ["touch", "sor-g1", ["alt"]],
+  ["young", "sor-g1", ["alt"]],
+  ["four", "sor-g1", ["alt", "rctrl"]],
+  ["blood", "sor-g1", ["alt"]],
+  ["door", "sor-g1", ["alt", "rctrl"]],
+  ["four", "uk-early", ["alt", "rctrl"]],    // was "needs diph": the wrong gap (ou + r read as /ow/ + r)
+  ["chief", "sor-g1", ["alt"]],
+  ["field", "sor-g1", ["alt"]],
+  ["grey", "sor-g1", ["alt"]],
+  ["head", "uk-early", ["alt"]],            // no team needed either: it's not ea = /ē/
+  ["bear", "sor-g1", ["alt", "rctrl"]],
+  ["famous", "ufli-g1", ["adv"]],
 ];
 
 /* A "cvc" convenience preset (cvc + double) used by NEEDS_SKILL and
@@ -764,6 +810,12 @@ const DECODABLE_UNDER = [
   ["night", "uk-y1"], ["high", "uk-y1"], ["light", "sor-g1"],
   // a gh across a compound boundary is still g + h (dog·house)
   ["foghorn", "uk-y1"],
+  // the alternative vowel sounds decode for Year 1 / Grade 1 groups taught `alt`
+  ["head", "uk-y1"], ["great", "ufli-g1"], ["soup", "uk-y1"], ["touch", "ufli-g1"],
+  ["four", "uk-y1"], ["blood", "uk-y1"], ["door", "ufli-g1"], ["chief", "uk-y1"],
+  ["bear", "uk-y1"], ["learn", "ufli-g1"], ["famous", "all"],
+  // and the first sound of each team stays a plain team for SoR G1
+  ["bead", "sor-g1"], ["out", "sor-g1"], ["moon", "sor-g1"], ["pie", "sor-g1"], ["key", "sor-g1"],
 ];
 
 /* ---------------------------------------------------------------
@@ -1167,6 +1219,12 @@ const HINTS = [
   ["eight", "adv", "\"eigh\" in \"eight\""],
   ["height", "adv", "/igh/ in height"],
   ["straight", "adv", "\"aigh\" in \"straight\""],
+  ["head", "alt", "the ea in \"head\" says /ĕ/"],
+  ["four", "alt", "the ou in \"four\" says /or/"],
+  ["blood", "alt", "the oo in \"blood\" says /ŭ/"],
+  ["bear", "alt", "the ear in \"bear\" says /air/"],
+  ["touched", "alt", "the ou in \"touch\" says /ŭ/"],    // named on the base word
+  ["famous", "adv", "\"-ous\" in \"famous\" is a suffix"],
 ];
 
 module.exports = {

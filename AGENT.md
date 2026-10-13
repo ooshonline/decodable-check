@@ -93,6 +93,14 @@ The original roadmap 1–4 is **done**, plus two extras. On `main`:
     the heart word "to"). Not modelled: medial gh = /g/ (spaghetti), which can't be told
     from dog·house without a lexicon.
 
+15. **Vowel teams with a second sound (2026-10-12 PR):** `ALT_VOWEL` is a closed list
+    of common words whose team says its other sound: ea /ĕ/ (head, bread, ready, weather),
+    ea /ā/ (great, break, steak), ou /oo/ /ŭ/ /ō/ /or/ /er/ (soup, touch, shoulder, four,
+    journey), oo /ŭ/ /or/ (blood, door), ie /ē/ (chief, field, movie), ey /ā/ (grey),
+    ear /air/ /er/ (bear, learn). The team part becomes `alt` and its first-sound skill
+    drops out; an r sound keeps `rctrl`. `-ous` (famous, nervous) is an `adv` suffix,
+    by rule. Ambiguous words (read, lead, tear, wound, bow) keep the first sound.
+
 ## Product direction — delegated (Kyle, 2026-10-02)
 Kyle has handed **product direction** to the nightly maintainer: what to build, in
 what order, and how phonics edge cases are bucketed are your calls. Record each
@@ -166,9 +174,12 @@ teacher a text they shouldn't use — so engine trustworthiness comes first.
    it here under **Open false greens** so the next run picks it up.
    **Open false greens (found 2026-10-07 by a ~1,200-word children's-book scan):**
    - ~~`gh` read as a g+h blend; oh; into~~ fixed in the 2026-10-11 PR (Shipped #14).
-   - Lower priority (alternative pronunciations of known vowel teams, a bigger
-     design call): ea as /e/ (bread, head), ou as /oo/ or /u/ (soup, touch, young),
-     oo as /u/ (blood). Decide whether these go in `alt` before building.
+   - ~~ea as /e/, ou as /oo/ or /u/, oo as /u/~~ fixed in the 2026-10-12 PR
+     (Shipped #15). **Decision (2026-10-12):** they go in `alt`, as closed word lists.
+     When a new one turns up in a scan, add the word to `ALT_VOWEL` and the corpus.
+   - Still open (lower priority, not yet seen in a scan as a green that matters):
+     `house`/`mouse` claim a false magic-e (stricter, not a false green), and
+     `piece`/`niece` likewise.
 3. **Inflection-aware fix-it.** Let swaps handle `-s/-es/-ing/-ed` (`looked`, `running`)
    with **correct** spelling (double-consonant, drop-e, y→ies). Only after the corpus
    exists — a wrong generated spelling in a phonics tool is the worst kind of bug, so
