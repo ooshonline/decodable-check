@@ -101,6 +101,18 @@ The original roadmap 1–4 is **done**, plus two extras. On `main`:
     drops out; an r sound keeps `rctrl`. `-ous` (famous, nervous) is an `adv` suffix,
     by rule. Ambiguous words (read, lead, tear, wound, bow) keep the first sound.
 
+16. **Single vowels with another sound (2026-10-13 PR):** a fresh scan of common
+    early-reader words found son, won, ton, front, month green for SoR K (CVC only),
+    wash/watch/swan/wasp green for UK Reception, and word/work/world read as or = /or/.
+    `ALT_VOWEL` now also lists o = /ŭ/ (son, front, month, money, honey, cover, oven,
+    glove, above, nothing), a = /ŏ/ after w or qu (wash, watch, swan, swap, wand,
+    squash, quality) and or = /er/ after w (word, work, world, worm, worth). Closed
+    lists, same `alt` bucket: wag/wax/swam/quack keep short a, dove is ambiguous and
+    left alone. A final e on these (glove, above) isn't a magic e, and a vowel known
+    to be /ŭ/ isn't also flagged as an open syllable (money, cover). Lookups also try
+    the whole word (nothing) and an undoubled base (swapped). Fix-it no longer offers
+    "watched" to a Reception group.
+
 ## Product direction — delegated (Kyle, 2026-10-02)
 Kyle has handed **product direction** to the nightly maintainer: what to build, in
 what order, and how phonics edge cases are bucketed are your calls. Record each
@@ -177,6 +189,14 @@ teacher a text they shouldn't use — so engine trustworthiness comes first.
    - ~~ea as /e/, ou as /oo/ or /u/, oo as /u/~~ fixed in the 2026-10-12 PR
      (Shipped #15). **Decision (2026-10-12):** they go in `alt`, as closed word lists.
      When a new one turns up in a scan, add the word to `ALT_VOWEL` and the corpus.
+   - ~~o as /ŭ/ (son, front), wa as /wŏ/ (wash, swan), wor as /wer/ (work)~~ fixed in
+     the 2026-10-13 PR (Shipped #16).
+   - **Found 2026-10-13, not yet fixed** (rarer in early texts, so lower priority):
+     move/lose (o = /oo/ + magic e), whole/whose/whom (wh = /h/), sure/sugar (s = /sh/),
+     bye/dye/rye (green with only blends: y + e read as consonant + short e),
+     clothes (o-e across th, scored as two syllables), pint (long i), guard/tongue
+     (silent u), vein/rein/beige (ei), tissue/issue (ss = /sh/), machine (ch = /sh/),
+     busy/business (u = /ĭ/). bye/dye is the most surprising one; take it next.
    - Still open (lower priority, not yet seen in a scan as a green that matters):
      `house`/`mouse` claim a false magic-e (stricter, not a false green), and
      `piece`/`niece` likewise.

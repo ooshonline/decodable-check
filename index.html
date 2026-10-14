@@ -746,11 +746,12 @@ const PHASES = [
     // c (city), word-final soft g (page), y as /ĭ/ /ī/ (gym, type), the long
     // vowel of kind/old/most/roll, the silent l of walk/half and the /aw/ of
     // ball/call/tall, and a vowel team saying its other sound (head, soup,
-    // four, chief: see ALT_VOWEL). UK Phase 5 and
+    // four, chief) or a single vowel saying another sound (son, wash, work:
+    // see ALT_VOWEL). UK Phase 5 and
     // Grade 1 sequences teach these as "alternative pronunciations", well
     // before the truly advanced code left in `adv` (kn wr mb -dge -le), so
     // a Year 1 group can be scored on them without ticking everything.
-    {id:"alt",     n:"Alternative pronunciations", ex:"city, page, kind, walk, ball, head"},
+    {id:"alt",     n:"Alternative pronunciations", ex:"city, page, kind, walk, ball, head, son, wash"},
     {id:"adv",     n:"Advanced patterns", ex:"knee, gentle, badge"},
   ]},
 ];
@@ -1180,14 +1181,17 @@ function analyseWord(raw, taught){
   // ALT_VOWEL below. Re-filed from team / diph / rctrl to `alt` (or `adv` for
   // -ous); the team's own skill is dropped when no other part still needs it,
   // because the child isn't using that sound here.
-  for(const av of altVowels(whole, parts)){
+  for(const av of altVowels(whole, parts, word)){
     av.part.skill = av.skill; need.add(av.skill);
     if(!parts.some(p=>p.skill===av.was)) need.delete(av.was);
     if(av.rctrl) need.add("rctrl");
+    if(av.single) magicE = false;     // glove, above: the final e isn't a magic e
     if(!hint){ hint = av.hint; hintSkill = av.skill; }
   }
 
   const syl = scanSyllables(parts, word);
+  // a vowel known to say another sound (mon·ey, cov·er) isn't an open syllable
+  syl.open = syl.open.filter(k=>parts[k].skill!=="alt");
   if(syl.open.length || syl.adv.length){
     for(const k of syl.open) if(parts[k].skill==="cvc") parts[k].skill = "open";
     for(const k of syl.adv) parts[k].skill = "adv";
@@ -1301,7 +1305,15 @@ function longAste(word){
    Which sound a team makes can't be told from the spelling (bead / bread,
    out / soup), so these are short CLOSED lists of common words, like
    CH_K. A team that genuinely reads both ways (read, lead, tear, wound,
-   bow) is left with its first sound. The -ous suffix (famous, nervous,
+   bow) is left with its first sound.
+   Single vowels get the same treatment (2026-10-13): o as /ŭ/ (son, front,
+   month, money, glove), a as /ŏ/ after w or qu (wash, watch, swan, squash)
+   and or as /er/ after w (word, work, world). Each was green for a group
+   taught only CVC (or r-controlled vowels), though "son" sounded out is
+   /sŏn/. They are closed lists too: wag, wax, swam and quack keep their
+   short a, and dove (the bird, or dived) is left alone. A silent final e
+   on these words (glove, above) is not a magic e, so it isn't asked for.
+   The -ous suffix (famous, nervous,
    jealous) is a rule instead: its ou is a weak /ŭs/, never /ow/, and it is
    a suffix taught late, so it is `adv`. */
 const ALT_VOWEL = [
@@ -1322,20 +1334,31 @@ const ALT_VOWEL = [
   ["ie", "/ē/ (chief, field)", "chief field thief piece niece shield priest believe achieve " +
     "yield brief grief shriek relief movie movies cookie cookies brownie brownies"],
   ["ey", "/ā/ (grey, obey)", "grey obey prey"],
+  ["o", "/ŭ/ (son, month)", "son won ton front month monkey honey money wonder wonderful monday " +
+    "nothing among above glove shove oven dozen cover govern onion comfort compass sponge smother"],
+  ["a", "/ŏ/ (wash, swan)", "wash watch wasp swan swap swamp swat wand wander wallet waddle " +
+    "wallow swallow squash squat squad squabble quality quantity"],
+  ["or", "/er/ (word, work)", "word work world worm worth worse worst worship worthy"],
 ];
 const ALT_VOWEL_MAP = new Map();
 for(const [g, sound, words] of ALT_VOWEL)
   for(const w of words.split(" ")) ALT_VOWEL_MAP.set(w, {g, sound:sound.split(" ")[0], ex:sound.replace(/^\S+ \((.*)\)$/, "$1")});
 // the vowel parts of `parts` to re-file for `whole` (the base word)
-function altVowels(whole, parts){
+function altVowels(whole, parts, word){
   const out = [];
-  const e = ALT_VOWEL_MAP.get(whole);
+  // nothing keeps its th, so its base isn't rebuilt: look up the word itself;
+  // swapped / squatting keep the doubled letter: look up swap / squat
+  const undoubled = /([bdgmnprt])\1$/.test(whole) ? whole.slice(0,-1) : "";
+  const key = [whole, word, undoubled].find(k=>k && ALT_VOWEL_MAP.has(k)) || whole;
+  const e = ALT_VOWEL_MAP.get(key);
   if(e){
-    const p = partAt(parts, whole.indexOf(e.g));
+    const p = partAt(parts, key.indexOf(e.g));
     // an r sound (bear, learn, four, door, journey) is still an r-controlled
-    // vowel: the child needs that skill AND the alternative spelling
-    if(p && p.g===e.g) out.push({part:p, was:p.skill, skill:"alt", rctrl:/r\/$/.test(e.sound),
-      hint:`the ${e.g} in "${whole}" says ${e.sound}, not its first sound (${e.ex})`});
+    // vowel: the child needs that skill AND the alternative spelling.
+    // The a of wash/swan sits inside the "wa" grapheme.
+    if(p && (p.g===e.g || (e.g==="a" && p.g==="wa"))) out.push({part:p, was:p.skill, skill:"alt",
+      rctrl:/r\/$/.test(e.sound), single:e.g.length===1,
+      hint:`the ${e.g} in "${key}" says ${e.sound}, not its first sound (${e.ex})`});
   }
   if(/[aeiouy][^aeiou]*ous$/.test(whole)){
     const p = partAt(parts, whole.length-3);
