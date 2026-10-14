@@ -150,7 +150,7 @@ const DECODABLE = [
   ["dark", ["rctrl"]], ["card", ["rctrl"]], ["herd", ["rctrl"]],
   ["arm", ["rctrl"]], ["art", ["rctrl"]], ["for", ["rctrl"]],
   ["fur", ["rctrl"]], ["curl", ["rctrl"]], ["burn", ["rctrl"]],
-  ["form", ["rctrl"]], ["cord", ["rctrl"]], ["word", ["rctrl"]],
+  ["form", ["rctrl"]], ["cord", ["rctrl"]], ["word", ["alt", "rctrl"]],   // w + or = /er/ (see ALT_VOWEL)
   ["dirt", ["rctrl"]], ["hard", ["rctrl"]], ["park", ["rctrl"]],
   ["yarn", ["rctrl"]],
   ["star", ["blend", "rctrl"]], ["chirp", ["digraph", "rctrl"]],
@@ -344,7 +344,7 @@ const DECODABLE = [
   ["dentist", ["blend", "syll"]],                                   // den·tist, but -st is a real final blend
   ["insect", ["blend", "syll"]],                                    // in·sect, but -ct is a real final blend
   ["hamster", ["blend", "rctrl", "syll"]], ["pumpkin", ["blend", "syll"]],  // run of 3: a real blend on one side
-  ["monkey", ["blend", "syll", "team"]],                            // glued "nk" /ŋk/ stays flagged
+  ["monkey", ["alt", "blend", "syll", "team"]],                     // o = /ŭ/; glued "nk" /ŋk/ stays flagged
   ["else", ["blend"]], ["rinse", ["blend"]],                // final e is silent: ls/ns is a final cluster
   ["hand", ["blend"]], ["stop", ["blend"]],                 // word-edge pairs are true blends
 
@@ -524,6 +524,27 @@ const DECODABLE = [
   ["mouth", ["diph", "digraph"]], ["flour", ["blend", "diph"]], ["sour", ["diph"]],
   ["moon", ["team"]], ["food", ["team"]], ["pies", ["team"]], ["key", ["team"]],
   ["hear", ["rctrl"]], ["near", ["rctrl"]], ["beard", ["rctrl"]],
+
+  // --- single vowels saying another sound (2026-10-13): o = /ŭ/, a = /ŏ/
+  //     after w or qu, or = /er/ after w. Closed lists in ALT_VOWEL. A
+  //     final e (glove) isn't a magic e, and a vowel known to say /ŭ/
+  //     (money, cover) isn't asked to be an open syllable too. ---
+  ["son", ["alt"]], ["won", ["alt"]], ["front", ["alt", "blend"]], ["month", ["alt", "digraph"]],
+  ["months", ["alt", "digraph", "endings"]], ["money", ["alt", "syll", "team"]], ["honey", ["alt", "syll", "team"]],
+  ["wonder", ["alt", "rctrl", "syll"]], ["cover", ["alt", "rctrl", "syll"]], ["covered", ["alt", "endings", "rctrl", "syll"]],
+  ["oven", ["alt", "syll"]], ["dozen", ["alt", "syll"]], ["glove", ["alt", "blend"]], ["gloves", ["alt", "blend", "endings"]],
+  ["shove", ["alt", "digraph"]], ["above", ["alt", "open", "syll"]], ["nothing", ["alt", "digraph", "endings"]],
+  ["monday", ["alt", "syll", "team"]], ["sponge", ["alt", "blend"]],
+  ["wash", ["alt", "digraph"]], ["washing", ["alt", "digraph", "endings"]], ["watch", ["alt", "digraph"]],
+  ["watched", ["alt", "digraph", "endings"]], ["swan", ["alt"]], ["swap", ["alt"]], ["swapped", ["alt", "double", "endings"]],
+  ["wasp", ["alt", "blend"]], ["wand", ["alt", "blend"]], ["wander", ["alt", "rctrl", "syll"]],
+  ["swallow", ["alt", "double", "team"]], ["squash", ["alt", "digraph"]], ["squad", ["alt"]],
+  ["quality", ["alt", "open", "syll", "team"]],
+  ["work", ["alt", "rctrl"]], ["worked", ["alt", "endings", "rctrl"]], ["world", ["alt", "blend", "rctrl"]],
+  ["worm", ["alt", "rctrl"]], ["worth", ["alt", "digraph", "rctrl"]], ["worst", ["alt", "blend", "rctrl"]],
+  // the short neighbours keep their first sound
+  ["wag", []], ["wax", []], ["swam", []], ["quack", ["digraph"]], ["sock", ["digraph"]],
+  ["fork", ["rctrl"]], ["dove", ["magice"]], ["hope", ["magice"]], ["pond", ["blend"]],
 ];
 
 /* ---------------------------------------------------------------
@@ -544,6 +565,17 @@ const NEEDS_SKILL = [
   ["station", "uk-y1", ["adv"]],
   ["fruit", "uk-y1", ["adv"]],
   ["wait", "uk-early", ["team"]],   // was a false green (wa|i|t); now w + ai + t
+  // single vowels saying another sound were false greens for CVC groups
+  ["son", "sor-k", ["alt"]],
+  ["front", "sor-k", ["alt"]],
+  ["month", "sor-k", ["alt"]],
+  ["wash", "sor-k", ["alt"]],
+  ["swan", "uk-early", ["alt"]],
+  ["watch", "uk-early", ["alt"]],
+  ["glove", "uk-early", ["alt"]],
+  ["money", "sor-g1", ["alt"]],
+  ["word", "sor-g1", ["alt", "rctrl"]],
+  ["work", "uk-early", ["alt", "rctrl"]],
   // -eed / -ued / -oed were stripped as "-ed", hiding the vowel team: false greens
   ["seed", "uk-early", ["team"]],
   ["need", "uk-early", ["team"]],
@@ -755,6 +787,9 @@ const DECODABLE_UNDER = [
   ["children", "uk-early"], ["kind", "all"], ["walk", "all"], ["roll", "all"],
   ["jumps", "uk-early"], ["duck", "uk-early"], ["glad", "uk-early"],
   ["off", "uk-early"], ["fast", "uk-early"],
+  // alternative pronunciations are taught in UK Year 1 / UFLI G1
+  ["son", "uk-y1"], ["wash", "uk-y1"], ["money", "uk-y1"], ["work", "ufli-g1"],
+  ["swam", "sor-k"], ["wag", "sor-k"], ["dog", "sor-k"],
   ["cat", "cvc"], ["hen", "cvc"], ["sun", "cvc"], ["bell", "cvc"],
   ["cake", "uk-y1"], ["rain", "uk-y1"], ["star", "uk-y1"], ["her", "uk-y1"],
   // medial doubles are decodable as soon as the `double` skill is taught —
@@ -1065,7 +1100,9 @@ const SUGGEST = [
   // (gazed/cried used to be offered here — FALSE greens: the engine read the
   // drop-e / y->i forms as short CVC. They now need magic-e / y-as-a-vowel, so
   // a Reception group is no longer offered swaps it can't decode.)
-  { word: "looked",  preset: "uk-early", want: ["spotted", "watched"] },
+  // (watched was offered here too until 2026-10-13: wa = /wŏ/ is an
+  // alternative pronunciation, so a Reception group can't sound it out)
+  { word: "looked",  preset: "uk-early", want: ["spotted"] },
   { word: "leaped",  preset: "uk-early", want: ["hopped", "jumped", "skipped"] },
   { word: "watched", preset: "uk-early", want: ["spotted"] },
   // (called / calls used to be offered here — FALSE greens: the a of -all is
@@ -1212,6 +1249,9 @@ const HINTS = [
   ["picture", "adv", "\"ture\" in \"picture\" is read as one chunk"],
   ["hasten", "adv", "the t in \"hasten\" is silent"],    // adv wins over the long a
   ["taste", "alt", "the a in \"taste\" says its name"],
+  ["son", "alt", "the o in \"son\" says /ŭ/"],
+  ["swan", "alt", "the a in \"swan\" says /ŏ/"],
+  ["work", "alt", "the or in \"work\" says /er/"],
   ["quiet", "open", "the i in \"quiet\" ends its syllable"],
   ["ghost", "adv", "the h in \"ghost\" is silent"],    // adv wins over the long o
   ["thought", "adv", "\"ough\" in \"thought\""],

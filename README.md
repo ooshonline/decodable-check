@@ -101,7 +101,10 @@ The feature loop is closed; the focus now is the engine that everything rests on
    pronunciations**, not the team's first sound (short closed word lists, so
    bead/out/moon/pie keep their usual team; read/lead/tear/wound can go either
    way and stay as they were). The `-ous` suffix (famous, nervous) is advanced
-   code, not the ou of out;
+   code, not the ou of out; single vowels saying another sound ✅: son/front/
+   month/money/glove (o = /ŭ/), wash/watch/swan/squash (a = /ŏ/ after w or qu)
+   and word/work/world (or = /er/) are **Alternative pronunciations** too
+   (closed lists, so wag/swam/quack/fork keep their usual sound);
    still to do: onset soft g (gem/giant) (corpus-locked target)
 3. ~~Inflection-aware fix-it — correct `-s/-ing/-ed` swap spellings~~ ✅ (an
    amber `looked`/`cries` now gets same-ending swaps — `spotted`, `watched`,
