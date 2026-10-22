@@ -879,6 +879,7 @@ function analyseWord(raw, taught){
     // without a lexicon. Leaving the word whole keeps the ee team either way,
     // and endings is taught before teams in every preset.)
     if(base.length >= 2 && hasVowel(base) && !/eed$/.test(word)) ending = "ed";
+    else if(/[bcdfghjklmnpqrstvwxz]yed$/.test(word)) ending = "ed";   // dyed, byed: dye + d
   } else if(/s$/.test(word)){
     const beforeS = word[word.length - 2];
     if(/es$/.test(word)){
@@ -893,6 +894,8 @@ function analyseWord(raw, taught){
         ending = "es";                                  // boxes, wishes, glasses, buses (sibilant + es)
       } else if(/[aeiou][bcdfghjklmnpqrstvwxyz]e$/.test(withE)){
         ending = "s";                                   // notes|s, rides|s (magic-e + plural s)
+      } else if(/[bcdfghjklmnpqrstvwxz]ye$/.test(withE)){
+        ending = "s";                                   // byes|s, dyes|s (-ye base)
       } else if(/(ce|ge|[bcdfgkptz]le)$/.test(withE)){
         ending = "s";                                   // dances|s, changes|s, tables|s (silent-e base)
       } else if(ASTE.test(withE)){
@@ -907,7 +910,7 @@ function analyseWord(raw, taught){
   // A base ending in the ue/oe vowel team takes a bare -d (glue -> glued,
   // toe -> toed), so only the d is the ending. Stripping "ed" left glu/to,
   // read as a short CVC vowel: the same false green as seed/need.
-  if(ending==="ed" && /[uo]ed$/.test(word)) core = word.slice(0, -1);
+  if(ending==="ed" && (/[uo]ed$/.test(word) || /[bcdfghjklmnpqrstvwxz]yed$/.test(word))) core = word.slice(0, -1);
 
   // Restore the silent e (or final y) that the -ed/-ing spelling removed.
   // English drops a base's silent e before -ed/-ing (make -> making, hope ->
@@ -972,7 +975,7 @@ function analyseWord(raw, taught){
   }
 
   // magic-e detection: vowel + single cons + silent e at end of core
-  let body = core, magicE=false;
+  let body = core, magicE=false, yeEnd=false;
   const me = core.match(/^(.*[aeiou][bcdfghjklmnpqrstvwxyz])e$/);
   if(me && !VOWELS.has(core[core.length-2])){ magicE = true; body = core.slice(0,-1); }
   // y-e split digraph (type, style, byte, rhyme, enzyme): a medial vowel y —
@@ -980,6 +983,12 @@ function analyseWord(raw, taught){
   // final e exactly like i-e does, giving /ī/. Requiring a CONSONANT before the
   // y keeps the vowel teams (ay/oy/ey + cons + e) out of this path.
   else if(/[bcdfghjklmnpqrstvwxz]y[bcdfghjklmnpqrstvwxz]e$/.test(core)){ magicE = true; body = core.slice(0,-1); }
+  // Consonant + "ye" at the end (bye, dye, rye, lye, goodbye): the y is the
+  // vowel /ī/ and the e is silent, the same pattern as i-e with no consonant
+  // between. The old path read y as a consonant and e as a short vowel, so
+  // bye scored as a plain blend: a FALSE green for CVC-only groups. Filed
+  // like type/style: y as /ī/ is `alt`, the silent e is magic-e.
+  else if(/[bcdfghjklmnpqrstvwxz]ye$/.test(core)){ magicE = true; yeEnd = true; body = core.slice(0,-1); }
 
   // Final soft g: a word-final "ge" spells /j/ (age, page, cage, huge, large,
   // charge, change, orange, sponge). Unlike ONSET soft g (gem, giant, magic —
@@ -1070,7 +1079,7 @@ function analyseWord(raw, taught){
       // Only a BARE final y reaches here: start-of-word y (yes, you) is not at
       // the end, and a vowel-team y (day, boy, key) is consumed by ay/oy/ey
       // earlier, so neither is touched.
-      if(g==="y" && i===body.length-1 && body.length>1){ skill="team"; }
+      if(g==="y" && i===body.length-1 && body.length>1){ skill = yeEnd ? "alt" : "team"; }
       // Medial y = a VOWEL too. Consonant y only ever begins a syllable before a
       // vowel (yes, beyond, canyon, lawyer, backyard), so a bare y with a
       // consonant right after it cannot be the consonant /y/ — it is the vowel
