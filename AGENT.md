@@ -113,6 +113,11 @@ The original roadmap 1–4 is **done**, plus two extras. On `main`:
     the whole word (nothing) and an undoubled base (swapped). Fix-it no longer offers
     "watched" to a Reception group.
 
+17. **Consonant + `ye` (2026-10-22 PR):** bye/dye/rye/lye (and byes, dyed, goodbye) were read as
+    consonant + y + short e, so they were a plain blend: green for CVC-only groups. Now y is /ī/
+    (`alt`) with a silent e (`magice`), filed like type/style; the -s/-d endings strip the base
+    "-ye" whole. `eye` stays a heart word.
+
 ## Product direction — delegated (Kyle, 2026-10-02)
 Kyle has handed **product direction** to the nightly maintainer: what to build, in
 what order, and how phonics edge cases are bucketed are your calls. Record each
@@ -193,10 +198,10 @@ teacher a text they shouldn't use — so engine trustworthiness comes first.
      the 2026-10-13 PR (Shipped #16).
    - **Found 2026-10-13, not yet fixed** (rarer in early texts, so lower priority):
      move/lose (o = /oo/ + magic e), whole/whose/whom (wh = /h/), sure/sugar (s = /sh/),
-     bye/dye/rye (green with only blends: y + e read as consonant + short e),
+     ~~bye/dye/rye~~ (fixed 2026-10-22, Shipped #17),
      clothes (o-e across th, scored as two syllables), pint (long i), guard/tongue
      (silent u), vein/rein/beige (ei), tissue/issue (ss = /sh/), machine (ch = /sh/),
-     busy/business (u = /ĭ/). bye/dye is the most surprising one; take it next.
+     busy/business (u = /ĭ/). Next: move/lose, whole/whose, sure/sugar.
    - Still open (lower priority, not yet seen in a scan as a green that matters):
      `house`/`mouse` claim a false magic-e (stricter, not a false green), and
      `piece`/`niece` likewise.

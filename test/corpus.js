@@ -529,6 +529,10 @@ const DECODABLE = [
   //     after w or qu, or = /er/ after w. Closed lists in ALT_VOWEL. A
   //     final e (glove) isn't a magic e, and a vowel known to say /ŭ/
   //     (money, cover) isn't asked to be an open syllable too. ---
+  // --- consonant + ye (2026-10-22): y is /ī/ (alt), the e is silent (magic-e).
+  //     bye/dye/rye were green for CVC groups (read as b + y + short e). ---
+  ["bye", ["alt", "magice"]], ["dye", ["alt", "magice"]], ["rye", ["alt", "magice"]],
+  ["lye", ["alt", "magice"]], ["byes", ["alt", "magice", "endings"]], ["dyes", ["alt", "magice", "endings"]], ["dyed", ["alt", "magice", "endings"]],
   ["son", ["alt"]], ["won", ["alt"]], ["front", ["alt", "blend"]], ["month", ["alt", "digraph"]],
   ["months", ["alt", "digraph", "endings"]], ["money", ["alt", "syll", "team"]], ["honey", ["alt", "syll", "team"]],
   ["wonder", ["alt", "rctrl", "syll"]], ["cover", ["alt", "rctrl", "syll"]], ["covered", ["alt", "endings", "rctrl", "syll"]],
@@ -566,6 +570,8 @@ const NEEDS_SKILL = [
   ["fruit", "uk-y1", ["adv"]],
   ["wait", "uk-early", ["team"]],   // was a false green (wa|i|t); now w + ai + t
   // single vowels saying another sound were false greens for CVC groups
+  ["bye", "sor-k", ["alt", "magice"]],
+  ["dye", "uk-early", ["alt", "magice"]],
   ["son", "sor-k", ["alt"]],
   ["front", "sor-k", ["alt"]],
   ["month", "sor-k", ["alt"]],
