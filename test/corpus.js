@@ -533,6 +533,15 @@ const DECODABLE = [
   //     bye/dye/rye were green for CVC groups (read as b + y + short e). ---
   ["bye", ["alt", "magice"]], ["dye", ["alt", "magice"]], ["rye", ["alt", "magice"]],
   ["lye", ["alt", "magice"]], ["byes", ["alt", "magice", "endings"]], ["dyes", ["alt", "magice", "endings"]], ["dyed", ["alt", "magice", "endings"]],
+  // --- more irregular spellings (2026-10-24): pint, busy, guess/guard, tongue,
+  //     issue/tissue, machine/chef. Closed lists in ALT_VOWEL. ---
+  ["pint", ["alt", "blend"]], ["pints", ["alt", "blend", "endings"]], ["mint", ["blend"]],
+  ["tongue", ["alt", "digraph", "syll", "team"]], ["busy", ["alt", "syll", "team"]],
+  ["business", ["alt", "double", "open", "syll"]],
+  ["guess", ["alt", "double"]], ["guest", ["alt", "blend"]], ["guard", ["alt", "rctrl", "syll"]],
+  ["issue", ["alt", "syll", "team"]], ["tissue", ["alt", "syll", "team"]],
+  ["machine", ["alt", "magice", "syll"]], ["chef", ["alt"]], ["chute", ["alt", "magice"]],
+  ["bus", []], ["chin", ["digraph"]], ["mess", ["double"]],
   ["son", ["alt"]], ["won", ["alt"]], ["front", ["alt", "blend"]], ["month", ["alt", "digraph"]],
   ["months", ["alt", "digraph", "endings"]], ["money", ["alt", "syll", "team"]], ["honey", ["alt", "syll", "team"]],
   ["wonder", ["alt", "rctrl", "syll"]], ["cover", ["alt", "rctrl", "syll"]], ["covered", ["alt", "endings", "rctrl", "syll"]],
@@ -572,6 +581,11 @@ const NEEDS_SKILL = [
   // single vowels saying another sound were false greens for CVC groups
   ["bye", "sor-k", ["alt", "magice"]],
   ["dye", "uk-early", ["alt", "magice"]],
+  ["pint", "sor-k", ["alt"]],
+  ["guess", "sor-k", ["alt"]],
+  ["busy", "sor-k", ["alt", "syll", "team"]],
+  ["tissue", "sor-g1", ["alt"]],
+  ["chef", "uk-early", ["alt"]],
   ["son", "sor-k", ["alt"]],
   ["front", "sor-k", ["alt"]],
   ["month", "sor-k", ["alt"]],
