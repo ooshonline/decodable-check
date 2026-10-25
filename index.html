@@ -764,7 +764,7 @@ const GRAPHEMES = [
   ["ssion","adv"],["tion","adv"],["sion","adv"],
   ["tch","digraph"],["igh","team"],["air","rctrl"],["are","rctrl"],["ear","rctrl"],["ore","rctrl"],["dge","adv"],
   ["sh","digraph"],["ch","digraph"],["th","digraph"],["wh","digraph"],["ph","digraph"],["ck","digraph"],["ng","digraph"],["qu","cvc"],
-  ["ai","team"],["ay","team"],["ee","team"],["ea","team"],["oa","team"],["ow","team"],["oe","team"],["ie","team"],["ey","team"],["oo","team"],["ue","team"],["au","diph"],
+  ["ei","alt"],["ai","team"],["ay","team"],["ee","team"],["ea","team"],["oa","team"],["ow","team"],["oe","team"],["ie","team"],["ey","team"],["oo","team"],["ue","team"],["au","diph"],
   ["oi","diph"],["oy","diph"],["ou","diph"],["aw","diph"],["ew","diph"],
   ["ar","rctrl"],["or","rctrl"],["er","rctrl"],["ir","rctrl"],["ur","rctrl"],
   ["ll","double"],["ss","double"],["ff","double"],["zz","double"],
@@ -1222,6 +1222,11 @@ function analyseWord(raw, taught){
     gh.g==="augh" ? `"augh" in "${raw}" says /aw/ (caught) or /af/ (laugh)` :
     gh.g==="aigh" ? `"aigh" in "${raw}" is a rare spelling of /ay/ (straight)` :
     `"eigh" in "${raw}" is a rare spelling: /ay/ in eight and weigh, /igh/ in height`;
+  const eiPart = parts.find(p=>p.g==="ei" && p.skill==="alt");
+  if(eiPart) magicE = false;           // beige, seize, receive: the final e isn't a magic e
+  if(eiPart && !hint){
+    hint = `the ei in "${raw}" is one vowel sound: /ay/ (vein, beige) or /ee/ (ceiling, seize)`; hintSkill = "alt";
+  }
   const advHint = silentHint || ghHint ||
     (ture ? `"ture" in "${raw}" is read as one chunk, /cher/ (picture, nature)` : "") ||
     (chK && parts.some(p=>p.g==="ch") ? `the ch in "${raw}" says /k/ (Christmas, echo)` : "");

@@ -118,6 +118,14 @@ The original roadmap 1–4 is **done**, plus two extras. On `main`:
     (`alt`) with a silent e (`magice`), filed like type/style; the -s/-d endings strip the base
     "-ye" whole. `eye` stays a heart word.
 
+18. **`ei` as one alternative spelling (2026-10-25 PR):** vein/rein/veil/beige/reign (/ay/) and
+    ceiling/seize/receive/weird (/ee/) were scored as e + i, two vowel sounds, so they needed
+    `open` + `syll` instead of `alt` (and a group with those ticked read "ve-in"). `ei` is now
+    one `alt` grapheme, with a "why" hint, and a final e after it (beige, seize, receive) isn't a
+    magic e. `eigh` and the heart words their/being are unchanged. Not modelled: deity/deicide
+    (a real e|i split), which is rare in early texts. Numbered 18 here because #49 and #50 are
+    still open and add their own entries; renumber at merge if needed.
+
 ## Product direction — delegated (Kyle, 2026-10-02)
 Kyle has handed **product direction** to the nightly maintainer: what to build, in
 what order, and how phonics edge cases are bucketed are your calls. Record each
@@ -200,7 +208,7 @@ teacher a text they shouldn't use — so engine trustworthiness comes first.
      move/lose (o = /oo/ + magic e), whole/whose/whom (wh = /h/), sure/sugar (s = /sh/),
      ~~bye/dye/rye~~ (fixed 2026-10-22, Shipped #17),
      clothes (o-e across th, scored as two syllables), pint (long i), guard/tongue
-     (silent u), vein/rein/beige (ei), tissue/issue (ss = /sh/), machine (ch = /sh/),
+     (silent u), ~~vein/rein/beige (ei)~~ (fixed 2026-10-25, Shipped #18), tissue/issue (ss = /sh/), machine (ch = /sh/),
      busy/business (u = /ĭ/). Next: move/lose, whole/whose, sure/sugar.
    - Still open (lower priority, not yet seen in a scan as a green that matters):
      `house`/`mouse` claim a false magic-e (stricter, not a false green), and
