@@ -539,6 +539,15 @@ const DECODABLE = [
   ["vein", ["alt"]], ["veins", ["alt", "endings"]], ["rein", ["alt"]], ["veil", ["alt"]], ["beige", ["alt"]],
   ["seize", ["alt"]], ["ceiling", ["alt", "endings"]], ["receive", ["alt", "syll"]], ["weird", ["alt", "blend"]],
   ["reign", ["alt", "adv"]],
+  // --- more irregular spellings (2026-10-24): pint, busy, guess/guard, tongue,
+  //     issue/tissue, machine/chef. Closed lists in ALT_VOWEL. ---
+  ["pint", ["alt", "blend"]], ["pints", ["alt", "blend", "endings"]], ["mint", ["blend"]],
+  ["tongue", ["alt", "digraph", "syll", "team"]], ["busy", ["alt", "syll", "team"]],
+  ["business", ["alt", "double", "open", "syll"]],
+  ["guess", ["alt", "double"]], ["guest", ["alt", "blend"]], ["guard", ["alt", "rctrl", "syll"]],
+  ["issue", ["alt", "syll", "team"]], ["tissue", ["alt", "syll", "team"]],
+  ["machine", ["alt", "magice", "syll"]], ["chef", ["alt"]], ["chute", ["alt", "magice"]],
+  ["bus", []], ["chin", ["digraph"]], ["mess", ["double"]],
   // --- 2026-10-26: u/o = /oo/ (bull, bush, wolf), a = /aw/ before l (salt, false, also) and
   //     th + magic-e (bathe, clothes) were green for CVC / Reception groups. ---
   ["wolf", ["alt", "blend"]], ["wolves", ["alt", "blend", "syll"]], ["bull", ["alt", "double"]], ["bush", ["alt", "digraph"]],
@@ -561,6 +570,18 @@ const DECODABLE = [
   // the short neighbours keep their first sound
   ["wag", []], ["wax", []], ["swam", []], ["quack", ["digraph"]], ["sock", ["digraph"]],
   ["fork", ["rctrl"]], ["dove", ["magice"]], ["hope", ["magice"]], ["pond", ["blend"]],
+
+  // --- o + silent e saying /oo/ (move, lose), wh = /h/ (whole, whose), s = /sh/
+  //     (sure, sugar). Closed lists in ALT_VOWEL; the e of move/lose/sure is
+  //     not a magic e. ---
+  ["move", ["alt"]], ["moves", ["alt", "endings"]], ["moved", ["alt", "endings"]], ["moving", ["alt", "endings"]],
+  ["lose", ["alt"]], ["losing", ["alt", "endings"]], ["loser", ["alt", "rctrl", "syll"]],
+  ["prove", ["alt", "blend"]], ["improve", ["alt", "blend", "syll"]], ["remove", ["alt", "open", "syll"]],
+  ["whole", ["alt", "magice"]], ["whose", ["alt", "magice"]], ["whom", ["alt"]],
+  ["sure", ["alt", "rctrl"]], ["sugar", ["alt", "open", "rctrl", "syll"]], ["ensure", ["alt", "rctrl", "syll"]],
+  // look-alikes keep their usual sound
+  ["hole", ["magice"]], ["mole", ["magice"]], ["rose", ["magice"]], ["hope", ["magice"]],
+  ["sun", []], ["sock", ["digraph"]], ["shop", ["digraph"]], ["wham", ["digraph"]],
 ];
 
 /* ---------------------------------------------------------------
@@ -583,6 +604,11 @@ const NEEDS_SKILL = [
   ["wait", "uk-early", ["team"]],   // was a false green (wa|i|t); now w + ai + t
   // single vowels saying another sound were false greens for CVC groups
   ["bye", "sor-k", ["alt", "magice"]],
+  ["move", "sor-g1", ["alt"]],
+  ["lose", "uk-early", ["alt"]],
+  ["whole", "sor-g1", ["alt"]],
+  ["sure", "sor-g1", ["alt", "rctrl"]],
+  ["sugar", "sor-k", ["alt", "open", "rctrl", "syll"]],
   ["dye", "uk-early", ["alt", "magice"]],
   ["vein", "sor-k", ["alt"]],
   ["beige", "uk-early", ["alt"]],
@@ -592,6 +618,11 @@ const NEEDS_SKILL = [
   ["bathe", "sor-k", ["magice"]],
   ["clothes", "uk-early", ["magice"]],
   ["ceiling", "sor-g1", ["alt"]],
+  ["pint", "sor-k", ["alt"]],
+  ["guess", "sor-k", ["alt"]],
+  ["busy", "sor-k", ["alt", "syll", "team"]],
+  ["tissue", "sor-g1", ["alt"]],
+  ["chef", "uk-early", ["alt"]],
   ["son", "sor-k", ["alt"]],
   ["front", "sor-k", ["alt"]],
   ["month", "sor-k", ["alt"]],
@@ -1276,6 +1307,9 @@ const HINTS = [
   ["hasten", "adv", "the t in \"hasten\" is silent"],    // adv wins over the long a
   ["taste", "alt", "the a in \"taste\" says its name"],
   ["son", "alt", "the o in \"son\" says /ŭ/"],
+  ["move", "alt", "the o in \"move\" says /oo/"],
+  ["whole", "alt", "the wh in \"whole\" says /h/, not its usual sound"],
+  ["sure", "alt", "the s in \"sure\" says /sh/, not its usual sound"],
   ["swan", "alt", "the a in \"swan\" says /ŏ/"],
   ["work", "alt", "the or in \"work\" says /er/"],
   ["quiet", "open", "the i in \"quiet\" ends its syllable"],

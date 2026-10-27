@@ -1359,6 +1359,19 @@ const ALT_VOWEL = [
     "pullet cushion butcher"],
   ["a", "/aw/ (salt, halt)", "salt malt halt false also almost always altar alter"],
   ["or", "/er/ (word, work)", "word work world worm worth worse worst worship worthy"],
+  // o + consonant + silent e that says /oo/, not long o (move, lose): the final e isn't a magic e
+  ["o", "/oo/ (move, lose)", "move moved moves moving movement lose loses losing loser prove proved " +
+    "proving improve improved remove removed approve approved"],
+  // consonants with another sound: wh = /h/ and s = /sh/
+  ["wh", "/h/ (whole, whose)", "whole wholly whose whom wholesome"],
+  ["s", "/sh/ (sure, sugar)", "sure surely sugar sugars sugary ensure insure"],
+  ["i", "/ī/ (pint)", "pint"],
+  ["o", "/ŭ/ (tongue)", "tongue tongues"],
+  ["u", "/ĭ/ (busy, business)", "busy busily business businesses"],
+  ["ue", "/ĕ/ (guess, guest)", "guess guest guests"],
+  ["u", "silent (guard, guarantee)", "guard guardian guarantee"],
+  ["ss", "/sh/ (issue, tissue)", "issue tissue"],
+  ["ch", "/sh/ (machine, chef)", "machine chef chute parachute brochure"],
 ];
 const ALT_VOWEL_MAP = new Map();
 for(const [g, sound, words] of ALT_VOWEL)
@@ -1378,7 +1391,8 @@ function altVowels(whole, parts, word){
     // The a of wash/swan sits inside the "wa" grapheme.
     if(p && (p.g===e.g || (e.g==="a" && p.g==="wa"))) out.push({part:p, was:p.skill, skill:"alt",
       rctrl:/r\/$/.test(e.sound), single:e.g.length===1,
-      hint:`the ${e.g} in "${key}" says ${e.sound}, not its first sound (${e.ex})`});
+      hint: e.sound==="silent" ? `the ${e.g} in "${key}" is silent (${e.ex})`
+        : `the ${e.g} in "${key}" says ${e.sound}, not ${/[aeiou]/.test(e.g[0]) ? "its first sound" : "its usual sound"} (${e.ex})`});
   }
   if(/[aeiouy][^aeiou]*ous$/.test(whole)){
     const p = partAt(parts, whole.length-3);
