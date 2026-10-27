@@ -147,6 +147,11 @@ The original roadmap 1–4 is **done**, plus two extras. On `main`:
     so it isn't asked for; whole/whose keep `magice` (their o really is long). Consonant hints say
     "not its usual sound". Groups with `alt` ticked (uk-y1, ufli-g1) see no change.
 
+20. **More irregular spellings (2026-10-24 PR):** from the open false-green list: pint (i = /ī/),
+    busy/business (u = /ĭ/), guess/guest (ue = /ĕ/), guard (silent u), tongue (o = /ŭ/),
+    issue/tissue (ss = /sh/), machine/chef/chute (ch = /sh/) are `alt` via closed `ALT_VOWEL` lists.
+    Not done: clothes (scored as two syllables).
+
 ## Product direction — delegated (Kyle, 2026-10-02)
 Kyle has handed **product direction** to the nightly maintainer: what to build, in
 what order, and how phonics edge cases are bucketed are your calls. Record each
