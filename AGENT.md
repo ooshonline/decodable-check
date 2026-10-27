@@ -139,8 +139,13 @@ The original roadmap 1–4 is **done**, plus two extras. On `main`:
     `open` + `syll` instead of `alt` (and a group with those ticked read "ve-in"). `ei` is now
     one `alt` grapheme, with a "why" hint, and a final e after it (beige, seize, receive) isn't a
     magic e. `eigh` and the heart words their/being are unchanged. Not modelled: deity/deicide
-    (a real e|i split), which is rare in early texts. Numbered 18 here because #49 and #50 are
-    still open and add their own entries; renumber at merge if needed.
+    (a real e|i split), which is rare in early texts.
+
+19. **move/lose, whole/whose, sure/sugar (2026-10-23 PR):** `ALT_VOWEL` gained o = /oo/ with a
+    silent e (move, lose, prove, improve, remove + endings), wh = /h/ (whole, whose, whom) and
+    s = /sh/ (sure, sugar, ensure). All `alt`. The e of move/lose/sure isn't a magic e (like glove),
+    so it isn't asked for; whole/whose keep `magice` (their o really is long). Consonant hints say
+    "not its usual sound". Groups with `alt` ticked (uk-y1, ufli-g1) see no change.
 
 ## Product direction — delegated (Kyle, 2026-10-02)
 Kyle has handed **product direction** to the nightly maintainer: what to build, in
@@ -225,7 +230,8 @@ teacher a text they shouldn't use — so engine trustworthiness comes first.
      ~~bye/dye/rye~~ (fixed 2026-10-22, Shipped #17),
      clothes (o-e across th, scored as two syllables), pint (long i), guard/tongue
      (silent u), ~~vein/rein/beige (ei)~~ (fixed 2026-10-25, Shipped #18), tissue/issue (ss = /sh/), machine (ch = /sh/),
-     busy/business (u = /ĭ/). Next: move/lose, whole/whose, sure/sugar.
+     busy/business (u = /ĭ/). ~~move/lose, whole/whose, sure/sugar~~ fixed 2026-10-23 (Shipped #19).
+     Next: clothes, pint, guard/tongue, tissue/issue, machine, busy.
    - Still open (lower priority, not yet seen in a scan as a green that matters):
      `house`/`mouse` claim a false magic-e (stricter, not a false green), and
      `piece`/`niece` likewise.
