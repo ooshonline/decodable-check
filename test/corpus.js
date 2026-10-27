@@ -533,6 +533,12 @@ const DECODABLE = [
   //     bye/dye/rye were green for CVC groups (read as b + y + short e). ---
   ["bye", ["alt", "magice"]], ["dye", ["alt", "magice"]], ["rye", ["alt", "magice"]],
   ["lye", ["alt", "magice"]], ["byes", ["alt", "magice", "endings"]], ["dyes", ["alt", "magice", "endings"]], ["dyed", ["alt", "magice", "endings"]],
+  // --- ei (2026-10-25): vein/rein/beige say /ay/, ceiling/seize say /ee/. One
+  //     alt chunk (it was e + i, two "syllables"), and a final e after it
+  //     (beige, seize, receive) isn't a magic e. ---
+  ["vein", ["alt"]], ["veins", ["alt", "endings"]], ["rein", ["alt"]], ["veil", ["alt"]], ["beige", ["alt"]],
+  ["seize", ["alt"]], ["ceiling", ["alt", "endings"]], ["receive", ["alt", "syll"]], ["weird", ["alt", "blend"]],
+  ["reign", ["alt", "adv"]],
   ["son", ["alt"]], ["won", ["alt"]], ["front", ["alt", "blend"]], ["month", ["alt", "digraph"]],
   ["months", ["alt", "digraph", "endings"]], ["money", ["alt", "syll", "team"]], ["honey", ["alt", "syll", "team"]],
   ["wonder", ["alt", "rctrl", "syll"]], ["cover", ["alt", "rctrl", "syll"]], ["covered", ["alt", "endings", "rctrl", "syll"]],
@@ -589,6 +595,9 @@ const NEEDS_SKILL = [
   ["sure", "sor-g1", ["alt", "rctrl"]],
   ["sugar", "sor-k", ["alt", "open", "rctrl", "syll"]],
   ["dye", "uk-early", ["alt", "magice"]],
+  ["vein", "sor-k", ["alt"]],
+  ["beige", "uk-early", ["alt"]],
+  ["ceiling", "sor-g1", ["alt"]],
   ["son", "sor-k", ["alt"]],
   ["front", "sor-k", ["alt"]],
   ["month", "sor-k", ["alt"]],

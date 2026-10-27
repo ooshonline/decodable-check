@@ -26,6 +26,22 @@ gates, no ads, no analytics, no third-party network calls.** What that means for
 - When Kyle checks a merged PR live, he'll use ribbitpond.com/decodable-check/ (add `?cb=<anything>`
   to skip Vercel's ~10-minute cache), with github.io as the backup check.
 
+## Size, bandwidth and merging (lessons from 2026-10-08/09)
+- **Your PRs never create Vercel deployments.** This repo deploys to GitHub Pages, so the webstore's
+  Vercel storage cap isn't affected, and Vercel housekeeping belongs to the webstore's own routine.
+  Never run the Vercel CLI (`vercel curl` once created a stray Vercel project) and never touch the
+  webstore repo.
+- **Bandwidth is shared.** Teachers load this page through ribbitpond.com, which means through Kyle's
+  Vercel Hobby plan: about 100 GB/month of transfer, shared by the webstore and all three apps. Going
+  over can pause the whole project. `index.html` was 191 KB on 2026-10-09. Keep it under ~300 KB:
+  data tables over megabytes of word lists, no embedded images or fonts as base64, no new libraries.
+  Say in the PR body if a change adds more than ~20 KB.
+- **Merging.** You never merge (unchanged). When Kyle asks a Claude session to merge for him, the
+  practice is `gh pr merge <n> --squash --delete-branch` on his explicit OK for that PR, then a live
+  check at ribbitpond.com/decodable-check/?cb=<timestamp>. A stale page within ~10 minutes is Vercel's
+  cache, not a failed deploy. Keep nightly branches tidy: if an open PR you'd duplicate already exists,
+  update it rather than opening a second one.
+
 ## Orient first (before writing any code)
 1. Read `README.md` and `index.html` fully. The whole app is **one self-contained
    `index.html`** — no build step, no dependencies, no framework. Keep it that way.
@@ -118,7 +134,14 @@ The original roadmap 1–4 is **done**, plus two extras. On `main`:
     (`alt`) with a silent e (`magice`), filed like type/style; the -s/-d endings strip the base
     "-ye" whole. `eye` stays a heart word.
 
-18. **move/lose, whole/whose, sure/sugar (2026-10-23 PR):** `ALT_VOWEL` gained o = /oo/ with a
+18. **`ei` as one alternative spelling (2026-10-25 PR):** vein/rein/veil/beige/reign (/ay/) and
+    ceiling/seize/receive/weird (/ee/) were scored as e + i, two vowel sounds, so they needed
+    `open` + `syll` instead of `alt` (and a group with those ticked read "ve-in"). `ei` is now
+    one `alt` grapheme, with a "why" hint, and a final e after it (beige, seize, receive) isn't a
+    magic e. `eigh` and the heart words their/being are unchanged. Not modelled: deity/deicide
+    (a real e|i split), which is rare in early texts.
+
+19. **move/lose, whole/whose, sure/sugar (2026-10-23 PR):** `ALT_VOWEL` gained o = /oo/ with a
     silent e (move, lose, prove, improve, remove + endings), wh = /h/ (whole, whose, whom) and
     s = /sh/ (sure, sugar, ensure). All `alt`. The e of move/lose/sure isn't a magic e (like glove),
     so it isn't asked for; whole/whose keep `magice` (their o really is long). Consonant hints say
@@ -206,9 +229,9 @@ teacher a text they shouldn't use — so engine trustworthiness comes first.
      move/lose (o = /oo/ + magic e), whole/whose/whom (wh = /h/), sure/sugar (s = /sh/),
      ~~bye/dye/rye~~ (fixed 2026-10-22, Shipped #17),
      clothes (o-e across th, scored as two syllables), pint (long i), guard/tongue
-     (silent u), vein/rein/beige (ei), tissue/issue (ss = /sh/), machine (ch = /sh/),
-     busy/business (u = /ĭ/). ~~move/lose, whole/whose, sure/sugar~~ fixed 2026-10-23 (Shipped #18).
-     Next: clothes, pint, guard/tongue, vein/beige, tissue/issue, machine, busy.
+     (silent u), ~~vein/rein/beige (ei)~~ (fixed 2026-10-25, Shipped #18), tissue/issue (ss = /sh/), machine (ch = /sh/),
+     busy/business (u = /ĭ/). ~~move/lose, whole/whose, sure/sugar~~ fixed 2026-10-23 (Shipped #19).
+     Next: clothes, pint, guard/tongue, tissue/issue, machine, busy.
    - Still open (lower priority, not yet seen in a scan as a green that matters):
      `house`/`mouse` claim a false magic-e (stricter, not a false green), and
      `piece`/`niece` likewise.
