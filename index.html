@@ -892,7 +892,7 @@ function analyseWord(raw, taught){
         ending = "s";                                   // noses|s, sizes|s (magic-e + s)
       } else if(base.length >= 2 && /(s|x|z|ch|sh)$/.test(base)){
         ending = "es";                                  // boxes, wishes, glasses, buses (sibilant + es)
-      } else if(/[aeiou][bcdfghjklmnpqrstvwxyz]e$/.test(withE)){
+      } else if(/[aeiou](?:th|[bcdfghjklmnpqrstvwxyz])e$/.test(withE)){
         ending = "s";                                   // notes|s, rides|s (magic-e + plural s)
       } else if(/[bcdfghjklmnpqrstvwxz]ye$/.test(withE)){
         ending = "s";                                   // byes|s, dyes|s (-ye base)
@@ -976,8 +976,10 @@ function analyseWord(raw, taught){
 
   // magic-e detection: vowel + single cons + silent e at end of core
   let body = core, magicE=false, yeEnd=false;
-  const me = core.match(/^(.*[aeiou][bcdfghjklmnpqrstvwxyz])e$/);
-  if(me && !VOWELS.has(core[core.length-2])){ magicE = true; body = core.slice(0,-1); }
+  // "th" counts as the one consonant (bathe, tithe, clothe, soothe): it is a single
+  // sound, so its final e is magic, not a second syllable.
+  const me = core.match(/^(.*[aeiou](?:th|[bcdfghjklmnpqrstvwxyz]))e$/);
+  if(me && (core.endsWith("the") || !VOWELS.has(core[core.length-2]))){ magicE = true; body = core.slice(0,-1); }
   // y-e split digraph (type, style, byte, rhyme, enzyme): a medial vowel y —
   // one sitting between two consonants, see "Medial y" below — takes a silent
   // final e exactly like i-e does, giving /ī/. Requiring a CONSONANT before the
@@ -1352,6 +1354,10 @@ const ALT_VOWEL = [
     "nothing among above glove shove oven dozen cover govern onion comfort compass sponge smother"],
   ["a", "/ŏ/ (wash, swan)", "wash watch wasp swan swap swamp swat wand wander wallet waddle " +
     "wallow swallow squash squat squad squabble quality quantity"],
+  ["o", "/oo/ (wolf, woman)", "wolf wolves woman"],
+  ["u", "/oo/ (bull, bush)", "bull bully bullet bulldog bush bushy pudding puss pussy pulley " +
+    "pullet cushion butcher"],
+  ["a", "/aw/ (salt, halt)", "salt malt halt false also almost always altar alter"],
   ["or", "/er/ (word, work)", "word work world worm worth worse worst worship worthy"],
   // o + consonant + silent e that says /oo/, not long o (move, lose): the final e isn't a magic e
   ["o", "/oo/ (move, lose)", "move moved moves moving movement lose loses losing loser prove proved " +

@@ -152,6 +152,14 @@ The original roadmap 1–4 is **done**, plus two extras. On `main`:
     issue/tissue (ss = /sh/), machine/chef/chute (ch = /sh/) are `alt` via closed `ALT_VOWEL` lists.
     Not done: clothes (scored as two syllables).
 
+
+21. **/oo/, /aw/ and th + magic-e (2026-10-26 PR):** a scan found wolf/bull/bush/bullet/pudding
+    green for SoR K / UK Reception (u and o say /oo/), salt/malt/halt/false/also green (a says
+    /aw/ before l), and bathe/lathe/tithe/clothes green because the magic-e rule needed a single
+    consonant letter and `th` has two. All three are `alt`/`magice` now: `ALT_VOWEL` gained
+    o /oo/, u /oo/ and a /aw/ lists, and `th` counts as one consonant for magic-e (also under -s:
+    clothes, tithes). Not modelled: bathing/clothed (base rebuild with th), ski/pizza/spa.
+
 ## Product direction — delegated (Kyle, 2026-10-02)
 Kyle has handed **product direction** to the nightly maintainer: what to build, in
 what order, and how phonics edge cases are bucketed are your calls. Record each
