@@ -400,7 +400,7 @@ const DECODABLE = [
   ["smallest", ["alt", "blend", "double"]],
   //     guards — the ll after a short a that isn't the end of the base:
   ["shall", ["digraph", "double"]],                         // short a: the listed exception
-  ["tally", ["double", "team"]], ["ballet", ["double"]],    // all + more letters: not -all
+  ["tally", ["double", "team"]],    // all + more letters: not -all
   ["alley", ["double", "team"]], ["gallon", ["double"]], ["shallow", ["digraph", "double", "team"]],
   ["really", ["double", "team"]],                           // ea + ll: no -all at all
 
@@ -427,7 +427,7 @@ const DECODABLE = [
   ["question", ["adv", "syll"]],                            // the s before -tion closes ques-
   //     a digraph, x, qu or a double between the vowels closes the first
   //     syllable, so the vowel is short and no open syllable is needed
-  ["bishop", ["digraph", "syll"]], ["rocket", ["digraph", "syll"]], ["taxi", ["syll"]],
+  ["bishop", ["digraph", "syll"]], ["rocket", ["digraph", "syll"]],
   ["liquid", ["syll"]],                                     // (doubles: rabbit, kitten — see above)
   //     compounds with no consonant pair between the vowels still have two syllables
   ["lunchbox", ["digraph", "syll"]], ["hotdog", ["syll"]],
@@ -554,6 +554,10 @@ const DECODABLE = [
   ["bushes", ["alt", "digraph", "endings"]], ["bullet", ["alt", "double"]], ["pudding", ["alt", "double", "endings"]],
   ["salt", ["alt", "blend"]], ["halt", ["alt", "blend"]], ["false", ["alt", "blend"]],
   ["bathe", ["magice", "digraph"]], ["tithe", ["magice", "digraph"]], ["clothes", ["magice", "digraph", "blend", "endings"]],
+  // --- 2026-10-28: loan words (ski, taxi, spa, ballet, pizza) were plain CVC / blend words ---
+  ["ski", ["alt", "blend"]], ["taxi", ["alt", "syll"]], ["spa", ["alt", "blend"]], ["bra", ["alt", "blend"]],
+  ["spaghetti", ["alt", "blend", "double", "syll"]], ["ballet", ["alt", "double"]], ["buffet", ["alt", "double"]],
+  ["pizza", ["alt", "syll"]], ["pizzas", ["alt", "syll"]], ["bet", []], ["pet", []], ["spat", ["blend"]],
   ["son", ["alt"]], ["won", ["alt"]], ["front", ["alt", "blend"]], ["month", ["alt", "digraph"]],
   ["months", ["alt", "digraph", "endings"]], ["money", ["alt", "syll", "team"]], ["honey", ["alt", "syll", "team"]],
   ["wonder", ["alt", "rctrl", "syll"]], ["cover", ["alt", "rctrl", "syll"]], ["covered", ["alt", "endings", "rctrl", "syll"]],
@@ -613,6 +617,9 @@ const NEEDS_SKILL = [
   ["vein", "sor-k", ["alt"]],
   ["beige", "uk-early", ["alt"]],
   ["wolf", "uk-early", ["alt"]],
+  ["ski", "uk-early", ["alt"]],
+  ["ballet", "sor-k", ["alt"]],
+  ["pizza", "uk-early", ["alt"]],
   ["bush", "sor-k", ["alt"]],
   ["salt", "sor-k", ["alt"]],
   ["bathe", "sor-k", ["magice"]],
@@ -888,7 +895,7 @@ const DECODABLE_UNDER = [
   // open syllables are taught with or soon after magic-e: Year 1 / G1 read them
   ["robot", "uk-y1"], ["music", "sor-g1"], ["lion", "ufli-g1"], ["lemon", "sor-g1"],
   // a digraph / x / double between the vowels keeps the vowel short: Reception reads it
-  ["bishop", "uk-early"], ["rocket", "uk-early"], ["taxi", "uk-early"], ["hotdog", "uk-early"],
+  ["bishop", "uk-early"], ["rocket", "uk-early"], ["hotdog", "uk-early"],
   // -aste words decode once alternative pronunciations are taught (Year 1 / G1)
   ["taste", "uk-y1"], ["waste", "ufli-g1"], ["tasty", "uk-y1"],
   // the mb between vowels was a false AMBER: both letters are sounded

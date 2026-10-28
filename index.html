@@ -1372,6 +1372,12 @@ const ALT_VOWEL = [
   ["u", "silent (guard, guarantee)", "guard guardian guarantee"],
   ["ss", "/sh/ (issue, tissue)", "issue tissue"],
   ["ch", "/sh/ (machine, chef)", "machine chef chute parachute brochure"],
+  // loan words (2026-10-28): a final i that says /ē/, a final a that says /ah/, a French -et
+  // that says /ā/ with a silent t, and zz = /ts/. Each sounded out is a plain CVC / blend word
+  ["i", "/ē/ (ski, taxi)", "ski skis taxi taxis spaghetti confetti safari broccoli salami khaki"],
+  ["a", "/ah/ (spa, bra)", "spa spas bra bras"],
+  ["e", "/ā/ (ballet, buffet)", "ballet ballets buffet buffets chalet sachet gourmet"],
+  ["zz", "/ts/ (pizza)", "pizza pizzas"],
 ];
 const ALT_VOWEL_MAP = new Map();
 for(const [g, sound, words] of ALT_VOWEL)
