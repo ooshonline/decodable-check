@@ -160,6 +160,13 @@ The original roadmap 1–4 is **done**, plus two extras. On `main`:
     o /oo/, u /oo/ and a /aw/ lists, and `th` counts as one consonant for magic-e (also under -s:
     clothes, tithes). Not modelled: bathing/clothed (base rebuild with th), ski/pizza/spa.
 
+22. **Loan words (2026-10-28 PR):** a scan found ski/taxi/spaghetti/confetti (final i = /ee/), spa/bra
+    (a = /ah/), ballet/buffet/chalet/sachet (French -et = /ay/, silent t) and pizza (zz = /ts/) green for
+    SoR K / UK Reception, since sounded out they are plain CVC or blend words. Closed `ALT_VOWEL` lists,
+    all `alt`. Still not modelled: bathing/clothed (th base rebuild), medial gh = /g/ (spaghetti is
+    caught by its final i instead), cabaret/valet. Roadmap items 1-7 are all built; the engine scan is
+    the standing work.
+
 ## Product direction — delegated (Kyle, 2026-10-02)
 Kyle has handed **product direction** to the nightly maintainer: what to build, in
 what order, and how phonics edge cases are bucketed are your calls. Record each
