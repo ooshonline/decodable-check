@@ -167,6 +167,11 @@ The original roadmap 1–4 is **done**, plus two extras. On `main`:
     caught by its final i instead), cabaret/valet. Roadmap items 1-7 are all built; the engine scan is
     the standing work.
 
+23. **th + dropped e (2026-11-04 PR):** bathing/bathed/lathed/tithed (base bathe…) and clothed (clothe)
+    were rebuilt without their magic-e because `th` is two letters, so they were short-vowel words:
+    green for any group with endings but no magic-e. The base is rebuilt from a closed list; `clothing`
+    (cloth + ing, short o) is unchanged. Still not modelled: cabaret/valet.
+
 ## Product direction — delegated (Kyle, 2026-10-02)
 Kyle has handed **product direction** to the nightly maintainer: what to build, in
 what order, and how phonics edge cases are bucketed are your calls. Record each

@@ -941,6 +941,10 @@ function analyseWord(raw, taught){
          || /(dg|[nr]c|[rl]g)$/.test(core)
          || /.tur$/.test(core)                       // pictured, capturing (-ture)
          || (ending==="ed" && /[bcdfgkptz]l$/.test(core))) base = core+"e";
+    // th is one consonant but two letters, so the test above misses it: bathing/bathed
+    // (bathe), lathed, tithed, clothed (clothe) were short-vowel words, a false green.
+    // A closed list: "clothing" is cloth + ing (short o) and stays as it is.
+    else if(/^(bath|lath|tith|scath)$/.test(core) || (ending==="ed" && core==="cloth")) base = core+"e";
     if(base && !TRICKY.has(base) && !NO_SILENT_E.has(word)) core = base;
   }
 
