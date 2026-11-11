@@ -172,6 +172,12 @@ The original roadmap 1–4 is **done**, plus two extras. On `main`:
     green for any group with endings but no magic-e. The base is rebuilt from a closed list; `clothing`
     (cloth + ing, short o) is unchanged. Still not modelled: cabaret/valet.
 
+24. **Silent letters, -que and accents (2026-11-11 PR):** a scan found yacht (silent ch), debt (silent b),
+    genre (g = /zh/), plaque/cheque (-que = /k/) green for SoR K / UK Reception, and café green because
+    the tokenizer dropped the é and scored "caf". All `alt` via closed `ALT_VOWEL` lists. The tokenizer
+    now keeps Latin accented letters in a word, and any accented word is `alt` (loan word). Still open:
+    gel/gem (onset soft g, locked), antique/technique now `alt` too.
+
 ## Product direction — delegated (Kyle, 2026-10-02)
 Kyle has handed **product direction** to the nightly maintainer: what to build, in
 what order, and how phonics edge cases are bucketed are your calls. Record each
