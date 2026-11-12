@@ -841,6 +841,14 @@ function analyseWord(raw, taught){
   // most common words in early reading books. The word is a heart word plus a
   // taught ending, so it scores as tricky once endings are ticked, and as
   // needing endings until then.
+  // An accented letter (café, naïve, résumé) marks a loan word with its own
+  // sound. The segmenter only knows a-z, so it dropped the accent and scored
+  // "café" as the plain CVC word "caf". Filed with the other loan words as `alt`.
+  if(/[\u00C0-\u024F]/.test(word)){
+    const missing = taught.has("alt") ? [] : ["alt"];
+    return {cat:missing.length?"new":"ok", need:["alt"], missing, magicE:false, ending:"",
+      parts:[{g:word, skill:"alt"}], hint:`"${raw}" has an accented letter: a loan word with its own sound (café, naïve)`, hintSkill:"alt"};
+  }
   const hi = heartInflection(word);
   if(hi){
     const label = `"${hi.base}" is a heart word`;
@@ -1382,6 +1390,12 @@ const ALT_VOWEL = [
   ["a", "/ah/ (spa, bra)", "spa spas bra bras"],
   ["e", "/ā/ (ballet, buffet)", "ballet ballets buffet buffets chalet sachet gourmet"],
   ["zz", "/ts/ (pizza)", "pizza pizzas"],
+  // silent letters and rare sounds (2026-11-11): yacht (silent ch), debt/doubt/subtle (silent b),
+  // genre (g = /zh/), and -que = /k/ (plaque, cheque, antique, technique)
+  ["ch", "silent (yacht)", "yacht yachts yachting"],
+  ["b", "silent (debt, doubt)", "debt debts doubt doubts doubted subtle"],
+  ["g", "/zh/ (genre)", "genre genres"],
+  ["qu", "/k/ (plaque, cheque)", "plaque plaques cheque cheques antique antiques technique techniques"],
 ];
 const ALT_VOWEL_MAP = new Map();
 for(const [g, sound, words] of ALT_VOWEL)
@@ -2341,7 +2355,7 @@ function makerThemeReady(taughtSet, heart, theme){
    passage, so the title on a pupil copy is decodable too (no "the" when
    heart words are off). */
 function makerTitle(text, P){
-  const words = (text.match(/[A-Za-z]+/g) || []);
+  const words = (text.match(/[A-Za-z\u00C0-\u024F]+/g) || []);
   const lower = words.map(w=>w.toLowerCase());
   const first = w => lower.indexOf(w);
   const byText = (list, key) => list.filter(x=>first(key(x))>=0 || first(P.plurals.get(x)||"")>=0)
@@ -2444,7 +2458,7 @@ function makePassage(opts){
     // SAFETY GATE: the finished passage must re-score at 100% for this group.
     // The one exception is a teacher's own typed word: it may be amber, and
     // is flagged instead — every other word must still be decodable.
-    const toks = tokenize(text).filter(t=>/^[A-Za-z']+$/.test(t));
+    const toks = tokenize(text).filter(t=>/^[A-Za-z\u00C0-\u024F']+$/.test(t));
     const cats = toks.map(t=>[t.toLowerCase(), analyseWord(t, taughtSet).cat]);
     if(cats.some(([w, c])=>c==="new" && !typed.has(w))) continue;
     if(!cats.some(([w, c])=>c==="ok")) continue;
@@ -2452,7 +2466,7 @@ function makePassage(opts){
     const flagged = [...new Set(cats.filter(([w, c])=>c==="new").map(([w])=>w))];
     let focusPct = 0;
     if(focus){
-      const okWords = tokenize(text).filter(t=>/^[A-Za-z']+$/.test(t) && analyseWord(t, taughtSet).cat==="ok");
+      const okWords = tokenize(text).filter(t=>/^[A-Za-z\u00C0-\u024F']+$/.test(t) && analyseWord(t, taughtSet).cat==="ok");
       focusPct = Math.round(okWords.filter(isFocus).length / okWords.length * 100);
     }
     const cand = {ok:true, text, focusPct, focusMet: !focus || focusPct>=40, flagged};
@@ -2539,7 +2553,7 @@ const tip = document.getElementById('tip');
 
 function tokenize(t){
   // keep words and non-words as tokens
-  return t.match(/[A-Za-z']+|[^A-Za-z']+/g) || [];
+  return t.match(/[A-Za-z\u00C0-\u024F']+|[^A-Za-z\u00C0-\u024F']+/g) || [];
 }
 
 function render(){
@@ -2548,7 +2562,7 @@ function render(){
   const amber = new Map();          // lower-cased word -> missing skills (first seen)
   reader.innerHTML = "";
   for(const tok of tokens){
-    if(/^[A-Za-z']+$/.test(tok)){
+    if(/^[A-Za-z\u00C0-\u024F']+$/.test(tok)){
       const res = analyseWord(tok, taught);
       const span = document.createElement('span');
       span.className = "w "+res.cat;
@@ -3073,7 +3087,7 @@ function escHtml(s){
 function computeStats(t, taughtSet){
   let ok=0, nw=0, tr=0;
   for(const tok of tokenize(t)){
-    if(!/^[A-Za-z']+$/.test(tok)) continue;
+    if(!/^[A-Za-z\u00C0-\u024F']+$/.test(tok)) continue;
     const c = analyseWord(tok, taughtSet).cat;
     if(c==="ok") ok++; else if(c==="new") nw++; else if(c==="known"){/* excluded, like heart words */} else tr++;
   }
@@ -3089,7 +3103,7 @@ function scoreColors(pct){
 }
 
 function suggestTitle(t){
-  const words = (t.trim().match(/[A-Za-z']+/g) || []).slice(0,5).join(" ");
+  const words = (t.trim().match(/[A-Za-z\u00C0-\u024F']+/g) || []).slice(0,5).join(" ");
   if(!words) return "Untitled passage";
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
@@ -3411,7 +3425,7 @@ function syncNewPassBtn(){
    100% (skills changed after making) says so on paper. */
 function pupilSheetHtml(passage, title, taughtSet, seqName){
   const st = computeStats(passage, taughtSet);
-  const hearts = [...new Set(tokenize(passage).filter(t=>/^[A-Za-z']+$/.test(t)
+  const hearts = [...new Set(tokenize(passage).filter(t=>/^[A-Za-z\u00C0-\u024F']+$/.test(t)
     && analyseWord(t, taughtSet).cat==="tricky").map(t=>t.toLowerCase()))];
   const paras = passage.split(/\n+/).map(l=>l.trim()).filter(Boolean)
     .map(l=>`<p>${escHtml(l)}</p>`).join("");

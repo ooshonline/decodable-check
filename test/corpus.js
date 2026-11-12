@@ -558,6 +558,9 @@ const DECODABLE = [
   ["ski", ["alt", "blend"]], ["taxi", ["alt", "syll"]], ["spa", ["alt", "blend"]], ["bra", ["alt", "blend"]],
   ["spaghetti", ["alt", "blend", "double", "syll"]], ["ballet", ["alt", "double"]], ["buffet", ["alt", "double"]],
   ["pizza", ["alt", "syll"]], ["pizzas", ["alt", "syll"]], ["bet", []], ["pet", []], ["spat", ["blend"]],
+  // --- 2026-11-11: silent ch/b, g = /zh/, -que = /k/, accented loan words ---
+  ["yacht", ["alt"]], ["debt", ["alt", "blend"]], ["genre", ["alt", "blend"]],
+  ["plaque", ["alt", "blend"]], ["cheque", ["alt", "digraph"]], ["café", ["alt"]],
   // --- 2026-11-04: th base rebuild: bathing/bathed (bathe), clothed (clothe) were short-vowel words ---
   ["bathing", ["magice", "digraph", "endings"]], ["bathed", ["magice", "digraph", "endings"]],
   ["clothed", ["magice", "digraph", "blend", "endings"]], ["lathed", ["magice", "digraph", "endings"]],
@@ -624,6 +627,8 @@ const NEEDS_SKILL = [
   ["ski", "uk-early", ["alt"]],
   ["ballet", "sor-k", ["alt"]],
   ["pizza", "uk-early", ["alt"]],
+  ["yacht", "sor-k", ["alt"]], ["debt", "uk-early", ["alt"]], ["genre", "sor-k", ["alt"]],
+  ["plaque", "uk-early", ["alt"]], ["café", "sor-k", ["alt"]],
   ["bush", "sor-k", ["alt"]],
   ["salt", "sor-k", ["alt"]],
   ["bathe", "sor-k", ["magice"]],
