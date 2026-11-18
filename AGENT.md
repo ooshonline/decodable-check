@@ -178,6 +178,12 @@ The original roadmap 1–4 is **done**, plus two extras. On `main`:
     now keeps Latin accented letters in a word, and any accented word is `alt` (loan word). Still open:
     gel/gem (onset soft g, locked), antique/technique now `alt` too.
 
+25. **Vowelless sound words and ex- = /gz/ (2026-11-18 PR):** a scan found hmm, shh, psst, tsk, zzz, brr,
+    grr, mmm, ahh, ugh green for SoR K / UK Reception (letter by letter they are CVC/double/digraph), and
+    exam/exact/exist/example/examine (x = /gz/) scored as plain letters. All `alt` via closed `ALT_VOWEL`
+    lists; the hint reads "a sound word with no vowel: children learn it by sight". `exit` (/eks/) is
+    unchanged. PR #56 (open) touches the same list, so expect a trivial merge conflict.
+
 ## Product direction — delegated (Kyle, 2026-10-02)
 Kyle has handed **product direction** to the nightly maintainer: what to build, in
 what order, and how phonics edge cases are bucketed are your calls. Record each
