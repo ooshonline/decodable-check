@@ -1390,6 +1390,22 @@ const ALT_VOWEL = [
   ["a", "/ah/ (spa, bra)", "spa spas bra bras"],
   ["e", "/ā/ (ballet, buffet)", "ballet ballets buffet buffets chalet sachet gourmet"],
   ["zz", "/ts/ (pizza)", "pizza pizzas"],
+  // sound words with no vowel at all (2026-11-18): hmm, shh, psst, tsk, zzz, brr, grr, ugh. Sounded out
+  // letter by letter they were plain CVC / double / digraph words, so a group taught only CVC saw them
+  // as green. A child learns each one by sight, as a whole sound word: the first letter carries it
+  ["h", "none (hmm, hm)", "hm hmm hmmm"],
+  ["sh", "none (shh, shhh)", "shh shhh"],
+  ["p", "none (psst, pfft)", "psst pst pfft"],
+  ["t", "none (tsk)", "tsk"],
+  ["zz", "none (zzz)", "zzz zzzz"],
+  ["b", "none (brr)", "brr brrr"],
+  ["g", "none (grr)", "grr grrr"],
+  ["mm", "none (mmm)", "mmm mmmm"],
+  ["a", "none (ahh)", "ahh ahhh"],
+  ["u", "none (ugh)", "ugh"],
+  // x = /gz/ after an unstressed ex- before a vowel (exam, exact, exist, example)
+  ["x", "/gz/ (exam, exact)", "exam exams exact exactly exist exists existed existing example examples " +
+    "examine examined"],
   // silent letters and rare sounds (2026-11-11): yacht (silent ch), debt/doubt/subtle (silent b),
   // genre (g = /zh/), and -que = /k/ (plaque, cheque, antique, technique)
   ["ch", "silent (yacht)", "yacht yachts yachting"],
@@ -1416,6 +1432,7 @@ function altVowels(whole, parts, word){
     if(p && (p.g===e.g || (e.g==="a" && p.g==="wa"))) out.push({part:p, was:p.skill, skill:"alt",
       rctrl:/r\/$/.test(e.sound), single:e.g.length===1,
       hint: e.sound==="silent" ? `the ${e.g} in "${key}" is silent (${e.ex})`
+        : e.sound==="none" ? `"${key}" is a sound word with no vowel (${e.ex}): children learn it by sight`
         : `the ${e.g} in "${key}" says ${e.sound}, not ${/[aeiou]/.test(e.g[0]) ? "its first sound" : "its usual sound"} (${e.ex})`});
   }
   if(/[aeiouy][^aeiou]*ous$/.test(whole)){
