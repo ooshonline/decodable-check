@@ -560,6 +560,10 @@ const DECODABLE = [
   ["pizza", ["alt", "syll"]], ["pizzas", ["alt", "syll"]], ["bet", []], ["pet", []], ["spat", ["blend"]],
   // --- 2026-11-11: silent ch/b, g = /zh/, -que = /k/, accented loan words ---
   ["yacht", ["alt"]], ["debt", ["alt", "blend"]], ["genre", ["alt", "blend"]],
+  // --- 2026-11-18: vowelless sound words (hmm, shh, ugh) and ex- = /egz/ (exam, exact) ---
+  ["hmm", ["alt", "double"]], ["shh", ["alt"]], ["psst", ["alt", "double"]], ["tsk", ["alt", "blend"]],
+  ["zzz", ["alt"]], ["brr", ["alt", "double"]], ["ugh", ["alt", "blend"]],
+  ["exam", ["alt", "syll"]], ["exact", ["alt", "blend", "syll"]], ["exist", ["alt", "blend", "syll"]],
   ["plaque", ["alt", "blend"]], ["cheque", ["alt", "digraph"]], ["café", ["alt"]],
   // --- 2026-11-12 sweep: silent n/m, -gue, -que, and single-sound exceptions ---
   ["damn", ["alt", "blend"]], ["condemn", ["alt", "blend", "syll"]], ["mnemonic", ["alt", "open", "blend", "syll"]],
@@ -633,6 +637,8 @@ const NEEDS_SKILL = [
   ["ballet", "sor-k", ["alt"]],
   ["pizza", "uk-early", ["alt"]],
   ["yacht", "sor-k", ["alt"]], ["debt", "uk-early", ["alt"]], ["genre", "sor-k", ["alt"]],
+  ["hmm", "sor-k", ["alt"]], ["shh", "uk-early", ["alt"]], ["ugh", "sor-k", ["alt"]],
+  ["exam", "uk-early", ["alt"]], ["exist", "sor-k", ["alt", "syll"]],
   ["plaque", "uk-early", ["alt"]], ["café", "sor-k", ["alt"]],
   ["damn", "sor-k", ["alt"]], ["mosque", "uk-early", ["alt"]], ["latte", "sor-k", ["alt"]],
   ["none", "sor-g1", ["alt"]], ["league", "sor-g1", ["alt"]], ["unique", "sor-g1", ["alt"]],
