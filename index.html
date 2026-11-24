@@ -1395,7 +1395,23 @@ const ALT_VOWEL = [
   ["ch", "silent (yacht)", "yacht yachts yachting"],
   ["b", "silent (debt, doubt)", "debt debts doubt doubts doubted subtle"],
   ["g", "/zh/ (genre)", "genre genres"],
-  ["qu", "/k/ (plaque, cheque)", "plaque plaques cheque cheques antique antiques technique techniques"],
+  ["qu", "/k/ (plaque, cheque)", "plaque plaques cheque cheques antique antiques technique techniques " +
+    "unique mosque mosques"],
+  // 2026-11-12 sweep: silent n after m (damn, autumn), silent m/g at a word start, a silent u in -gue,
+  // and a few more single-sound exceptions
+  ["n", "silent (damn, autumn)", "damn damns damned condemn condemned condemns autumn column columns solemn hymn hymns"],
+  ["m", "silent (mnemonic)", "mnemonic mnemonics"],
+  ["ue", "silent u (league, vague)", "league leagues vague fatigue intrigue colleague colleagues " +
+    "catalogue dialogue prologue monologue"],
+  ["e", "/ā/ (latte)", "latte lattes"],
+  ["o", "/ŭ/ (none)", "none"],
+  ["e", "/ĭ/ (pretty)", "pretty prettier prettiest prettily"],
+  ["ey", "/ā/ (whey, convey)", "whey convey conveyed survey surveys surveyed"],
+  ["ll", "/y/ (llama)", "llama llamas"],
+  ["g", "silent (lasagna)", "lasagna lasagne"],
+  ["j", "/h/ (jalapeno)", "jalapeno jalapenos"],
+  ["ou", "/ŭ/ (colour)", "colour colours coloured colourful favourite favourites vigour"],
+  ["oe", "/oo/ (shoe, canoe)", "shoe shoes canoe canoes"],
 ];
 const ALT_VOWEL_MAP = new Map();
 for(const [g, sound, words] of ALT_VOWEL)
@@ -1409,7 +1425,7 @@ function altVowels(whole, parts, word){
   const key = [whole, word, undoubled].find(k=>k && ALT_VOWEL_MAP.has(k)) || whole;
   const e = ALT_VOWEL_MAP.get(key);
   if(e){
-    const p = partAt(parts, key.indexOf(e.g));
+    const p = partAt(parts, e.g==='n' ? key.lastIndexOf('n') : key.indexOf(e.g));
     // an r sound (bear, learn, four, door, journey) is still an r-controlled
     // vowel: the child needs that skill AND the alternative spelling.
     // The a of wash/swan sits inside the "wa" grapheme.
