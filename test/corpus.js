@@ -565,6 +565,11 @@ const DECODABLE = [
   ["zzz", ["alt"]], ["brr", ["alt", "double"]], ["ugh", ["alt", "blend"]],
   ["exam", ["alt", "syll"]], ["exact", ["alt", "blend", "syll"]], ["exist", ["alt", "blend", "syll"]],
   ["plaque", ["alt", "blend"]], ["cheque", ["alt", "digraph"]], ["café", ["alt"]],
+  // --- 2026-11-12 sweep: silent n/m, -gue, -que, and single-sound exceptions ---
+  ["damn", ["alt", "blend"]], ["condemn", ["alt", "blend", "syll"]], ["mnemonic", ["alt", "open", "blend", "syll"]],
+  ["league", ["team", "alt", "syll"]], ["vague", ["alt", "open", "syll"]], ["unique", ["alt", "open", "syll"]],
+  ["mosque", ["alt"]], ["latte", ["double", "alt"]], ["none", ["alt"]], ["convey", ["alt", "syll"]],
+  ["llama", ["alt", "open", "syll"]], ["colour", ["alt", "open", "syll"]], ["shoe", ["digraph", "alt"]],
   // --- 2026-11-04: th base rebuild: bathing/bathed (bathe), clothed (clothe) were short-vowel words ---
   ["bathing", ["magice", "digraph", "endings"]], ["bathed", ["magice", "digraph", "endings"]],
   ["clothed", ["magice", "digraph", "blend", "endings"]], ["lathed", ["magice", "digraph", "endings"]],
@@ -635,6 +640,9 @@ const NEEDS_SKILL = [
   ["hmm", "sor-k", ["alt"]], ["shh", "uk-early", ["alt"]], ["ugh", "sor-k", ["alt"]],
   ["exam", "uk-early", ["alt"]], ["exist", "sor-k", ["alt", "syll"]],
   ["plaque", "uk-early", ["alt"]], ["café", "sor-k", ["alt"]],
+  ["damn", "sor-k", ["alt"]], ["mosque", "uk-early", ["alt"]], ["latte", "sor-k", ["alt"]],
+  ["none", "sor-g1", ["alt"]], ["league", "sor-g1", ["alt"]], ["unique", "sor-g1", ["alt"]],
+  ["colour", "sor-g1", ["alt"]], ["shoe", "sor-g1", ["alt"]],
   ["bush", "sor-k", ["alt"]],
   ["salt", "sor-k", ["alt"]],
   ["bathe", "sor-k", ["magice"]],

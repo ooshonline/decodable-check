@@ -178,11 +178,18 @@ The original roadmap 1–4 is **done**, plus two extras. On `main`:
     now keeps Latin accented letters in a word, and any accented word is `alt` (loan word). Still open:
     gel/gem (onset soft g, locked), antique/technique now `alt` too.
 
-25. **Vowelless sound words and ex- = /gz/ (2026-11-18 PR):** a scan found hmm, shh, psst, tsk, zzz, brr,
+25. **Engine sweep (2026-11-12 PR, Kyle's "one big run"):** a ~600-word scan of silent letters, loan words,
+    vowel exceptions and spelling families. Newly `alt`: damn/condemn/autumn/column/solemn/hymn (silent n),
+    mnemonic, -gue (league, vague, fatigue), unique/mosque, latte, none, pretty, whey/convey/survey,
+    llama, lasagna, jalapeno, colour/favourite/vigour, shoe/canoe. Nothing else was green for SoR K / UK
+    Reception. Considered and left: schwa words (panda, extra, banana), -tre (theatre), view, hiatus
+    words (idea, video) which are fine as vowel teams. Engine sweeps are now done; go back to features.
+
+26. **Vowelless sound words and ex- = /gz/ (2026-11-18 PR):** a scan found hmm, shh, psst, tsk, zzz, brr,
     grr, mmm, ahh, ugh green for SoR K / UK Reception (letter by letter they are CVC/double/digraph), and
     exam/exact/exist/example/examine (x = /gz/) scored as plain letters. All `alt` via closed `ALT_VOWEL`
     lists; the hint reads "a sound word with no vowel: children learn it by sight". `exit` (/eks/) is
-    unchanged. PR #56 (open) touches the same list, so expect a trivial merge conflict.
+    unchanged.
 
 ## Product direction — delegated (Kyle, 2026-10-02)
 Kyle has handed **product direction** to the nightly maintainer: what to build, in
