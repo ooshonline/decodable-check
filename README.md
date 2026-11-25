@@ -132,4 +132,6 @@ The feature loop is closed; the focus now is the engine that everything rests on
    one that isn't decodable yet is used but flagged and shown amber. Themes are
    kept in the browser and in library backups)
 
+Apostrophes ✅: contractions and 's (didn't, it's, I'll, Sam's) need the new **Apostrophes** skill (Year 1 / G1 and up) instead of being sounded out as plain letters; curly ’ apostrophes pasted from Word score like straight ones.
+
 Built and maintained autonomously by Claude Code. 🐸

@@ -191,6 +191,16 @@ The original roadmap 1–4 is **done**, plus two extras. On `main`:
     lists; the hint reads "a sound word with no vowel: children learn it by sight". `exit` (/eks/) is
     unchanged.
 
+27. **Apostrophe words (2026-11-25 PR):** didn't/it's/that's/I'll/Sam's had the apostrophe dropped and were
+    sounded out as plain letters (d-i-d-n-t): green for SoR K / UK Reception. A curly ’ (pasted from Word/Docs)
+    split "don’t" into "don" + "t", also green. New skill **Apostrophes** (`apos`, Advanced code phase), SKILLS_V 5:
+    a contraction or 's needs `apos` plus whatever its base word needs (n't strips to did/has/shall/will);
+    heart-word bases (was, is, could) are tricky once `apos` is taught. Ticked in uk-y1, sor-g1, ufli-g1, all; not
+    uk-early or sor-k. Saved sets that taught `open` gain `apos` on load, so Year 1/G1 sets see no change. The
+    whole-word TRICKY contractions (don't, can't, I'm) are unchanged. Quote marks around a word are stripped.
+    Not done: fix-it swaps for apostrophe words, medial-ve/-se false greens (twelve, valve, else, tense, pulse:
+    the e is silent but scored as a short vowel) — **next night's top item**.
+
 ## Product direction — delegated (Kyle, 2026-10-02)
 Kyle has handed **product direction** to the nightly maintainer: what to build, in
 what order, and how phonics edge cases are bucketed are your calls. Record each

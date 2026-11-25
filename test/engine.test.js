@@ -323,7 +323,7 @@ for (const [word, skill, text] of C.HINTS) {
   const up = (ids, v) => sorted(upgradeSkills(ids, v));
   // v3 preset lists = today's minus `open` (added in v4); v2 = v3 minus `alt`
   // (split out of `adv` in v3); v1 = v2 minus `syll`
-  const v3 = (id) => PRESETS.find((p) => p.id === id).skills.filter((s) => s !== "open");
+  const v3 = (id) => PRESETS.find((p) => p.id === id).skills.filter((s) => s !== "open" && s !== "apos");
   const v2 = (id) => v3(id).filter((s) => s !== "alt");
   const legacy = (id) => v2(id).filter((s) => s !== "syll");
   for (const id of ["uk-early", "uk-y1", "sor-g1", "ufli-g1", "all", "sor-k"]) {
@@ -331,7 +331,7 @@ for (const [word, skill, text] of C.HINTS) {
     // `open` exactly when it taught magic-e
     const base = v2(id);
     const want = sorted([...base, ...(base.includes("adv") ? ["alt"] : []),
-      ...(base.includes("magice") ? ["open"] : [])]);
+      ...(base.includes("magice") ? ["open", "apos"] : [])]);
     check(`MIGRATE  legacy ${id} -> v4 ${id}`, eqSet(up(legacy(id), 1), want),
       `got ${show(up(legacy(id), 1))} want ${show(want)}`);
     check(`MIGRATE  v2 ${id} -> v4`, eqSet(up(v2(id), 2), want),
@@ -344,7 +344,7 @@ for (const [word, skill, text] of C.HINTS) {
   // G1 set keeps robot / music / lion green. A set without magic-e doesn't:
   // for it robot was a FALSE green, and the fix is meant to show.
   check("MIGRATE  v3 custom with magice gains open",
-    eqSet(up(["cvc", "magice"], 3), ["cvc", "magice", "open"]));
+    eqSet(up(["cvc", "magice"], 3), ["cvc", "magice", "open", "apos"]));
   check("MIGRATE  v3 custom without magice unchanged",
     eqSet(up(["cvc", "blend", "syll"], 3), ["blend", "cvc", "syll"]));
   check("MIGRATE  v3 uk-y1 still reads robot", analyseWord("robot", new Set(upgradeSkills(v3("uk-y1"), 3))).cat === "ok");
@@ -877,6 +877,46 @@ let disagreeFn = null;   // section 15's agreement validator, reused by section 
    report
    ============================================================ */
 const line = "─".repeat(56);
+/* ============================================================
+   APOSTROPHE WORDS — contractions and 's need the `apos` skill.
+   didn't / it's / I'll were green for K and Reception (apostrophe dropped,
+   letters sounded out); a curly ’ split "don’t" into "don" + "t".
+   ============================================================ */
+freshKnown();
+{
+  const K = taughtFor("sor-k"), R = taughtFor("uk-early"), Y1 = taughtFor("uk-y1"), G1 = taughtFor("sor-g1");
+  for (const w of ["didn't", "it's", "that's", "let's", "I'll", "he'll", "hasn't", "Sam's", "dog's", "shan't"]) {
+    for (const [nm, set] of [["sor-k", K], ["uk-early", R]]) {
+      const r = analyseWord(w, set);
+      check(`APOS  "${w}" needs apos @ ${nm}`, r.cat === "new" && r.missing.includes("apos"), `got ${r.cat} ${show(r.missing || [])}`);
+    }
+  }
+  // curly apostrophes score exactly like straight ones
+  for (const w of ["don\u2019t", "didn\u2019t", "it\u2019s", "Sam\u2019s", "I\u2019ll"]) {
+    const a = analyseWord(w, K), b = analyseWord(w.replace(/\u2019/g, "'"), K);
+    check(`APOS  curly "${w}" = straight`, a.cat === b.cat && eqSet(a.missing || [], b.missing || []));
+  }
+  check("APOS  don’t stays a heart word", analyseWord("don\u2019t", K).cat === "tricky");
+  // taught: green (base decodable) or heart word (base tricky)
+  for (const w of ["didn't", "it's", "that's", "let's", "hasn't", "Sam's", "dog's"]) {
+    for (const [nm, set] of [["uk-y1", Y1], ["sor-g1", G1]]) {
+      const r = analyseWord(w, set);
+      check(`APOS  "${w}" ok @ ${nm}`, r.cat === "ok" && r.need.includes("apos"), `got ${r.cat} ${show(r.missing || [])}`);
+    }
+  }
+  for (const w of ["wasn't", "isn't", "couldn't"]) {
+    check(`APOS  "${w}" heart base: new @ K, tricky @ uk-y1`,
+      analyseWord(w, K).cat === "new" && analyseWord(w, Y1).cat === "tricky");
+  }
+  // base still has to be taught: shan't = shall (double), didn't = did
+  check("APOS  base skill still needed", (() => { const r = analyseWord("shan't", new Set(["cvc", "apos"])); return r.cat === "new" && r.missing.includes("digraph"); })());
+  // quote marks are not apostrophes
+  check("APOS  'cat' in quotes = cat", analyseWord("'cat'", K).cat === "ok" && !analyseWord("'cat'", K).need.includes("apos"));
+  check("APOS  \u2018cat\u2019 in curly quotes = cat", analyseWord("\u2018cat\u2019", K).cat === "ok");
+  check("APOS  apos is in Year 1 / G1 / UFLI / all, not K / Reception",
+    !K.has("apos") && !R.has("apos") && Y1.has("apos") && G1.has("apos") && taughtFor("ufli-g1").has("apos") && taughtFor("all").has("apos"));
+}
+
 console.log("\nDecodable Check — engine corpus");
 console.log(line);
 console.log(`  Hard assertions passed: ${pass}`);
