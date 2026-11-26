@@ -753,6 +753,9 @@ const PHASES = [
     // a Year 1 group can be scored on them without ticking everything.
     {id:"alt",     n:"Alternative pronunciations", ex:"city, page, kind, walk, ball, head, son, wash"},
     {id:"adv",     n:"Advanced patterns", ex:"knee, gentle, badge"},
+    // `apos` = apostrophe words: contractions (it's, didn't, I'll) and 's for
+    // belonging (Sam's). Taught from Grade 1 / Year 1, so Reception / K see them amber.
+    {id:"apos",    n:"Apostrophes (contractions, 's)", ex:"it's, didn't, I'll, Sam's"},
   ]},
 ];
 
@@ -829,10 +832,56 @@ function heartInflection(word){
   return null;
 }
 
+/* Apostrophe words (it's, didn't, I'll, Sam's). The segmenter only knows a-z,
+   so it used to drop the apostrophe and sound the rest out as plain letters:
+   didn't was d-i-d-n-t, it's was i-t-s, and a curly apostrophe (what Word and
+   Google Docs paste) split "don’t" into "don" + "t". Every one was GREEN for
+   Kindergarten and Reception groups that have never met a contraction. The word
+   now needs the Apostrophes skill (`apos`) on top of whatever its base word needs
+   (did, it, that, Sam). Heart-word bases (was, is, could) stay heart words once
+   `apos` is taught; the whole-word contractions on TRICKY (don't, can't) are
+   unchanged. Quote marks around a word are stripped, not read as an apostrophe. */
+const APOS_N_BASE = {shan:"shall", won:"will", ain:"is"};
+function apostropheWord(word, taught){
+  const m = word.match(/^([a-z]+)'(s|d|ll|ve|re|m|t)$/);
+  let base = "", tail = "";
+  if(m){
+    tail = m[2];
+    base = m[1];
+    if(tail==="t"){
+      if(!base.endsWith("n")) return null;
+      base = APOS_N_BASE[base.slice(0,-1)] || base.slice(0,-1);
+    }
+  } else {
+    base = word.replace(/'/g,"");          // an unusual pattern: still needs apostrophes
+    if(!base) return null;
+  }
+  const res = analyseWord(base, taught);
+  const has = taught.has("apos");
+  const hint = `"${word}" has an apostrophe: letters are left out or it shows belonging (it's, didn't, Sam's)`;
+  if(res.cat==="tricky" || res.cat==="known"){
+    if(has) return res;
+    return {cat:"new", need:["apos"], missing:["apos"], magicE:false, ending:"",
+      parts:[{g:word, skill:"apos"}], hint, hintSkill:"apos"};
+  }
+  const need = [...new Set([...(res.need||[]), "apos"])];
+  const missing = [...new Set([...(res.missing||[]), ...(has ? [] : ["apos"])])];
+  const parts = [...(res.parts||[]), {g:"'"+(tail||""), skill:"apos"}];
+  const own = !has;
+  return {cat:missing.length?"new":"ok", need, missing, magicE:!!res.magicE, ending:res.ending||"",
+    parts, hint: own ? hint : (res.hint||""), hintSkill: own ? "apos" : (res.hintSkill||"")};
+}
+
 function analyseWord(raw, taught){
-  const word = raw.toLowerCase();
+  const word = raw.toLowerCase().replace(/[\u2018\u2019]/g, "'");   // curly apostrophes read as straight
   if(known.has(word)) return {cat:"known", reason:"Marked as known for this group — a name or a word you've taught."};
   if(TRICKY.has(word)) return {cat:"tricky", reason:"On the heart-word list — taught as a whole word."};
+  if(word.includes("'")){
+    const core = word.replace(/^'+|'+$/g, "");
+    if(core !== word) return core ? analyseWord(core, taught) : {cat:"ok", need:[], missing:[], magicE:false, ending:"", parts:[], hint:"", hintSkill:""};
+    const ap = apostropheWord(word, taught);
+    if(ap) return ap;
+  }
   // A heart word with an inflectional ending (coming, having, lived, pulled,
   // wants, friends, going, doing) is still a heart word: the irregular part
   // doesn't become regular when -s/-ing/-ed is added. Sounded out, these read
@@ -1755,15 +1804,15 @@ const PRESETS = [
   {id:"uk-early", name:"UK Reception - Phases 2-4", desc:"CVC, digraphs, blends and simple endings. No long-vowel code yet.",
     skills:["cvc","double","digraph","blend","syll","endings"]},
   {id:"uk-y1", name:"UK Year 1 - Phase 5", desc:"Adds long-vowel spellings: magic-e, open syllables, vowel teams, diphthongs, r-controlled and alternative pronunciations (soft c, kind, walk).",
-    skills:["cvc","double","digraph","blend","syll","endings","magice","open","team","diph","rctrl","alt"]},
+    skills:["cvc","double","digraph","blend","syll","endings","magice","open","team","diph","rctrl","alt","apos"]},
   {id:"sor-k", name:"SoR - Kindergarten", desc:"Foundations: single letters, CVC, double letters, digraphs and early blends.",
     skills:["cvc","double","digraph","blend"]},
   {id:"sor-g1", name:"SoR - Grade 1", desc:"Endings plus the long-vowel patterns most G1 sequences introduce.",
-    skills:["cvc","double","digraph","blend","syll","endings","magice","open","team","diph"]},
+    skills:["cvc","double","digraph","blend","syll","endings","magice","open","team","diph","apos"]},
   {id:"ufli-g1", name:"UFLI - through Grade 1", desc:"Broad first-grade code, up to r-controlled vowels and closed-syllable exceptions (kind, old, most).",
-    skills:["cvc","double","digraph","blend","syll","endings","magice","open","team","diph","rctrl","alt"]},
+    skills:["cvc","double","digraph","blend","syll","endings","magice","open","team","diph","rctrl","alt","apos"]},
   {id:"all", name:"Everything (advanced code)", desc:"All skills, including advanced patterns (kn-, wr-, -dge, -le).",
-    skills:["cvc","double","digraph","blend","syll","endings","magice","open","team","diph","rctrl","alt","adv"]},
+    skills:["cvc","double","digraph","blend","syll","endings","magice","open","team","diph","rctrl","alt","adv","apos"]},
 ];
 
 /* Skill sets saved before "Two-syllable words" (`syll`) existed. Back then a
@@ -1779,10 +1828,12 @@ const PRESETS = [
    upgrade never turns a word green (or amber) behind a teacher's back.
    v4 added "Open syllables" (`open`). It fixes FALSE greens (robot, music
    and lion were scored as short-vowel CVC), so unlike v3 it's meant to make
-   some words amber. A set that taught magic-e gains `open`: every program
+   some words amber. v5 added Apostrophes (`apos`): didn't and it's were green for
+   everyone. A set that taught open syllables (Year 1 / G1 and up) gains it, so those
+   groups see no change; Reception / K sets now flag contractions. A set that taught magic-e gains `open`: every program
    teaches open syllables alongside or soon after magic-e, so a Year 1 / G1
    set keeps robot green, while a Reception / K set now flags it. */
-const SKILLS_V = 4;
+const SKILLS_V = 5;
 function upgradeSkills(ids, v){
   v = Number(v)||0;
   if(v >= SKILLS_V) return ids;
@@ -1797,6 +1848,7 @@ function upgradeSkills(ids, v){
   }
   if(out.includes("adv") && !out.includes("alt")) out = [...out, "alt"];
   if(v < 4 && out.includes("magice") && !out.includes("open")) out = [...out, "open"];
+  if(v < 5 && out.includes("open") && !out.includes("apos")) out = [...out, "apos"];
   return out;
 }
 
@@ -2491,7 +2543,7 @@ function makePassage(opts){
     // SAFETY GATE: the finished passage must re-score at 100% for this group.
     // The one exception is a teacher's own typed word: it may be amber, and
     // is flagged instead — every other word must still be decodable.
-    const toks = tokenize(text).filter(t=>/^[A-Za-z\u00C0-\u024F']+$/.test(t));
+    const toks = tokenize(text).filter(t=>/^[A-Za-z\u00C0-\u024F'\u2019]+$/.test(t));
     const cats = toks.map(t=>[t.toLowerCase(), analyseWord(t, taughtSet).cat]);
     if(cats.some(([w, c])=>c==="new" && !typed.has(w))) continue;
     if(!cats.some(([w, c])=>c==="ok")) continue;
@@ -2499,7 +2551,7 @@ function makePassage(opts){
     const flagged = [...new Set(cats.filter(([w, c])=>c==="new").map(([w])=>w))];
     let focusPct = 0;
     if(focus){
-      const okWords = tokenize(text).filter(t=>/^[A-Za-z\u00C0-\u024F']+$/.test(t) && analyseWord(t, taughtSet).cat==="ok");
+      const okWords = tokenize(text).filter(t=>/^[A-Za-z\u00C0-\u024F'\u2019]+$/.test(t) && analyseWord(t, taughtSet).cat==="ok");
       focusPct = Math.round(okWords.filter(isFocus).length / okWords.length * 100);
     }
     const cand = {ok:true, text, focusPct, focusMet: !focus || focusPct>=40, flagged};
@@ -2586,7 +2638,7 @@ const tip = document.getElementById('tip');
 
 function tokenize(t){
   // keep words and non-words as tokens
-  return t.match(/[A-Za-z\u00C0-\u024F']+|[^A-Za-z\u00C0-\u024F']+/g) || [];
+  return t.match(/[A-Za-z\u00C0-\u024F'\u2019]+|[^A-Za-z\u00C0-\u024F']+/g) || [];
 }
 
 function render(){
@@ -2595,7 +2647,7 @@ function render(){
   const amber = new Map();          // lower-cased word -> missing skills (first seen)
   reader.innerHTML = "";
   for(const tok of tokens){
-    if(/^[A-Za-z\u00C0-\u024F']+$/.test(tok)){
+    if(/^[A-Za-z\u00C0-\u024F'\u2019]+$/.test(tok)){
       const res = analyseWord(tok, taught);
       const span = document.createElement('span');
       span.className = "w "+res.cat;
@@ -3120,7 +3172,7 @@ function escHtml(s){
 function computeStats(t, taughtSet){
   let ok=0, nw=0, tr=0;
   for(const tok of tokenize(t)){
-    if(!/^[A-Za-z\u00C0-\u024F']+$/.test(tok)) continue;
+    if(!/^[A-Za-z\u00C0-\u024F'\u2019]+$/.test(tok)) continue;
     const c = analyseWord(tok, taughtSet).cat;
     if(c==="ok") ok++; else if(c==="new") nw++; else if(c==="known"){/* excluded, like heart words */} else tr++;
   }
@@ -3136,7 +3188,7 @@ function scoreColors(pct){
 }
 
 function suggestTitle(t){
-  const words = (t.trim().match(/[A-Za-z\u00C0-\u024F']+/g) || []).slice(0,5).join(" ");
+  const words = (t.trim().match(/[A-Za-z\u00C0-\u024F'\u2019]+/g) || []).slice(0,5).join(" ");
   if(!words) return "Untitled passage";
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
@@ -3458,7 +3510,7 @@ function syncNewPassBtn(){
    100% (skills changed after making) says so on paper. */
 function pupilSheetHtml(passage, title, taughtSet, seqName){
   const st = computeStats(passage, taughtSet);
-  const hearts = [...new Set(tokenize(passage).filter(t=>/^[A-Za-z\u00C0-\u024F']+$/.test(t)
+  const hearts = [...new Set(tokenize(passage).filter(t=>/^[A-Za-z\u00C0-\u024F'\u2019]+$/.test(t)
     && analyseWord(t, taughtSet).cat==="tricky").map(t=>t.toLowerCase()))];
   const paras = passage.split(/\n+/).map(l=>l.trim()).filter(Boolean)
     .map(l=>`<p>${escHtml(l)}</p>`).join("");

@@ -30,7 +30,7 @@
 
 /* Skill ids (from PHASES): cvc double digraph blend endings
                             magice team diph rctrl alt adv      */
-const ALL = ["cvc", "double", "digraph", "blend", "syll", "endings", "magice", "open", "team", "diph", "rctrl", "alt", "adv"];
+const ALL = ["cvc", "double", "digraph", "blend", "syll", "endings", "magice", "open", "team", "diph", "rctrl", "alt", "adv", "apos"];
 
 /* ---------------------------------------------------------------
    1. DECODABLE — the segmenter's grapheme→skill decomposition.
